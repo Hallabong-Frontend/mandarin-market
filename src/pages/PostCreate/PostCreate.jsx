@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { createPost, updatePost, getPost } from '../../api/post';
 import { uploadImage } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
-import { getImageUrl } from '../../utils/format';
+import { getImageUrl, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 import { useEffect } from 'react';
 
 const Wrapper = styled.div`
@@ -243,7 +243,7 @@ const PostCreate = ({ isEdit = false }) => {
         <AuthorAvatar
           src={getImageUrl(user?.image)}
           alt={user?.username}
-          onError={(e) => { e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png'; }}
+          onError={(e) => { e.target.src = DEFAULT_PROFILE_IMAGE; }}
         />
         <TextArea
           value={content}
@@ -257,7 +257,11 @@ const PostCreate = ({ isEdit = false }) => {
         <ImagePreviews>
           {images.map((img, i) => (
             <ImagePreviewItem key={i}>
-              <PreviewImage src={img.url} alt={`이미지 ${i + 1}`} />
+              <PreviewImage
+                src={img.url}
+                alt={`이미지 ${i + 1}`}
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
               <RemoveImageBtn onClick={() => handleRemoveImage(i)}>✕</RemoveImageBtn>
             </ImagePreviewItem>
           ))}

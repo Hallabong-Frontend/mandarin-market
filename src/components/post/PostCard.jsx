@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import { likePost, unlikePost, deletePost, reportPost } from '../../api/post';
-import { getImageUrl, formatTimeAgo } from '../../utils/format';
+import { getImageUrl, formatTimeAgo, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 import BottomModal from '../common/BottomModal';
 import AlertModal from '../common/AlertModal';
 
@@ -217,7 +217,7 @@ const PostCard = ({ post, onDelete }) => {
             src={getImageUrl(post.author?.image)}
             alt={post.author?.username}
             onClick={handleGoProfile}
-            onError={(e) => { e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png'; }}
+            onError={(e) => { e.target.src = DEFAULT_PROFILE_IMAGE; }}
           />
           <UserInfo onClick={handleGoProfile}>
             <Username>{post.author?.username}</Username>
