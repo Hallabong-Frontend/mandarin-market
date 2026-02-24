@@ -52,8 +52,7 @@ export const uploadImage = async (file) => {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   const data = response.data;
-  // filename을 풀 URL로 변환하여 반환
-  return { ...data, filename: `https://dev.wenivops.co.kr/services/mandarin/${data.filename}` };
+  return data.info;
 };
 
 // 내 프로필 수정
