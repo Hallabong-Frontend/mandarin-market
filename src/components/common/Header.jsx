@@ -1,26 +1,14 @@
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import BackIconSvg from '../../assets/icons/icon-arrow-left.svg';
+import MoreIconSvg from '../../assets/icons/icon-more-vertical.svg';
+import SearchIconSvg from '../../assets/icons/icon-search.svg';
 
-const BackIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M15 18L9 12L15 6" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
+const BackIcon = () => <img src={BackIconSvg} alt="" width="22" height="22" />;
 
-const MoreIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <circle cx="5" cy="12" r="2" fill="#767676"/>
-    <circle cx="12" cy="12" r="2" fill="#767676"/>
-    <circle cx="19" cy="12" r="2" fill="#767676"/>
-  </svg>
-);
+const MoreIcon = () => <img src={MoreIconSvg} alt="" width="24" height="24" />;
 
-const SearchIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <circle cx="11" cy="11" r="8" stroke="#767676" strokeWidth="2"/>
-    <path d="M21 21L16.65 16.65" stroke="#767676" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-);
+const SearchIcon = () => <img src={SearchIconSvg} alt="" width="24" height="24" />;
 
 const HeaderWrapper = styled.header`
   position: sticky;
@@ -49,7 +37,7 @@ const Title = styled.h1`
   font-weight: ${({ theme }) => theme.fonts.weight.bold};
   color: ${({ theme }) => theme.colors.black};
   flex: 1;
-  text-align: ${({ $titleLeft }) => $titleLeft ? 'left' : 'center'};
+  text-align: ${({ $titleLeft }) => ($titleLeft ? 'left' : 'center')};
 `;
 
 const LogoText = styled.h1`
@@ -71,7 +59,7 @@ const RightButton = styled.button`
 const TextButton = styled.button`
   font-size: ${({ theme }) => theme.fonts.size.base};
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
-  color: ${({ disabled, theme }) => disabled ? theme.colors.gray300 : theme.colors.primary};
+  color: ${({ disabled, theme }) => (disabled ? theme.colors.gray300 : theme.colors.primary)};
   padding: 4px 8px;
   border-radius: ${({ theme }) => theme.borderRadius.round};
   transition: ${({ theme }) => theme.transitions.base};
@@ -81,7 +69,7 @@ const TextButton = styled.button`
 `;
 
 const UploadButton = styled.button`
-  background-color: ${({ disabled, theme }) => disabled ? theme.colors.gray200 : theme.colors.primary};
+  background-color: ${({ disabled, theme }) => (disabled ? theme.colors.gray200 : theme.colors.primary)};
   color: ${({ theme }) => theme.colors.white};
   font-size: ${({ theme }) => theme.fonts.size.sm};
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
@@ -163,9 +151,14 @@ const Header = ({
           {rightText}
         </TextButton>
       )}
-      {!['back-search', 'back-more', 'back-title-more', 'back-title-upload', 'back-title-save', 'back-title-text'].includes(type) && (
-        <div style={{ width: 32 }} />
-      )}
+      {![
+        'back-search',
+        'back-more',
+        'back-title-more',
+        'back-title-upload',
+        'back-title-save',
+        'back-title-text',
+      ].includes(type) && <div style={{ width: 32 }} />}
     </HeaderWrapper>
   );
 };
