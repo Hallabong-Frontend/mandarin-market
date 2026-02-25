@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 import { useEffect } from 'react';
 import ImageUploadIcon from '../../assets/image_upload.svg';
+import AlertModal from '../../components/common/AlertModal';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -157,6 +158,7 @@ const PostCreate = ({ isEdit = false }) => {
   const [content, setContent] = useState('');
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [removeTargetIndex, setRemoveTargetIndex] = useState(null);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -214,7 +216,12 @@ const PostCreate = ({ isEdit = false }) => {
   };
 
   const handleRemoveImage = (index) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    setRemoveTargetIndex(index);
+  };
+
+  const confirmRemoveImage = () => {
+    setImages((prev) => prev.filter((_, i) => i !== removeTargetIndex));
+    setRemoveTargetIndex(null);
   };
 
   const handleUpload = async () => {
@@ -309,6 +316,16 @@ const PostCreate = ({ isEdit = false }) => {
           <img src={ImageUploadIcon} alt="이미지 업로드" width="28" height="28" />
         </FloatingCameraBtn>
       )}
+
+      <AlertModal
+        isOpen={removeTargetIndex !== null}
+        title="사진 삭제"
+        description="사진을 삭제하시겠습니까?"
+        confirmText="삭제"
+        onCancel={() => setRemoveTargetIndex(null)}
+        onConfirm={confirmRemoveImage}
+        danger
+      />
     </Wrapper>
   );
 };
