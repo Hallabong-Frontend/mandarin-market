@@ -1,41 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { getFollowerList, getFollowingList } from '../../api/user';
 import UserItem from '../../components/user/UserItem';
 import Spinner from '../../components/common/Spinner';
+import Header from '../../components/common/Header';
 
 const Wrapper = styled.div`
   min-height: 100vh;
   background-color: ${({ theme }) => theme.colors.white};
-`;
-
-const HeaderNav = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: ${({ theme }) => theme.zIndex.header};
-  background-color: ${({ theme }) => theme.colors.white};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  height: 48px;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 8px;
-`;
-
-const BackButton = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-`;
-
-const HeaderTitle = styled.h1`
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  font-weight: ${({ theme }) => theme.fonts.weight.bold};
-  color: ${({ theme }) => theme.colors.black};
 `;
 
 const TabRow = styled.div`
@@ -66,14 +39,7 @@ const EmptyText = styled.p`
   color: ${({ theme }) => theme.colors.gray400};
 `;
 
-const BackIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M15 18L9 12L15 6" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
 const FollowList = ({ type = 'follower' }) => {
-  const navigate = useNavigate();
   const { accountname } = useParams();
   const [activeTab, setActiveTab] = useState(type);
   const [list, setList] = useState([]);
@@ -98,14 +64,11 @@ const FollowList = ({ type = 'follower' }) => {
 
   return (
     <Wrapper>
-      <HeaderNav>
-        <BackButton onClick={() => navigate(-1)}>
-          <BackIcon />
-        </BackButton>
-        <HeaderTitle>
-          {activeTab === 'follower' ? 'Followers' : 'Followings'}
-        </HeaderTitle>
-      </HeaderNav>
+      <Header
+        type="back-title"
+        title={activeTab === 'follower' ? 'Followers' : 'Followings'}
+        titleLeft
+      />
 
       <TabRow>
         <Tab $active={activeTab === 'follower'} onClick={() => setActiveTab('follower')}>

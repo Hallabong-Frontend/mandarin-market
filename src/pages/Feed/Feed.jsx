@@ -7,37 +7,11 @@ import BottomTabNav from '../../components/common/BottomTabNav';
 import BottomModal from '../../components/common/BottomModal';
 import AlertModal from '../../components/common/AlertModal';
 import Spinner from '../../components/common/Spinner';
+import Header from '../../components/common/Header';
 import { useAuth } from '../../context/AuthContext';
 
 const Wrapper = styled.div`
   padding-bottom: 70px;
-`;
-
-const FeedHeader = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: ${({ theme }) => theme.zIndex.header};
-  background-color: ${({ theme }) => theme.colors.white};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-`;
-
-const LogoText = styled.h1`
-  font-size: ${({ theme }) => theme.fonts.size.lg};
-  font-weight: ${({ theme }) => theme.fonts.weight.bold};
-  color: ${({ theme }) => theme.colors.black};
-`;
-
-const IconBtn = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 `;
 
 const EmptyFeed = styled.div`
@@ -63,13 +37,6 @@ const SearchButton = styled.button`
   font-size: ${({ theme }) => theme.fonts.size.base};
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
 `;
-
-const SearchIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <circle cx="11" cy="11" r="8" stroke="#767676" strokeWidth="2"/>
-    <path d="M21 21L16.65 16.65" stroke="#767676" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-);
 
 /* 빈 피드 상태용 연한 감귤 로고 */
 const EmptyLogo = () => (
@@ -125,12 +92,7 @@ const Feed = () => {
   return (
     <>
       <Wrapper>
-        <FeedHeader>
-          <LogoText>감귤마켓 피드</LogoText>
-          <IconBtn onClick={() => navigate('/search')} aria-label="검색">
-            <SearchIcon />
-          </IconBtn>
-        </FeedHeader>
+        <Header type="logo-search" logo="감귤마켓 피드" onSearch={() => navigate('/search')} />
 
         {isLoading ? (
           <Spinner />

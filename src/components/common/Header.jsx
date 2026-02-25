@@ -1,14 +1,12 @@
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
-// 뒤로가기 아이콘
 const BackIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
     <path d="M15 18L9 12L15 6" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
-// 점 세개 아이콘
 const MoreIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
     <circle cx="5" cy="12" r="2" fill="#767676"/>
@@ -17,7 +15,6 @@ const MoreIcon = () => (
   </svg>
 );
 
-// 검색 아이콘
 const SearchIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
     <circle cx="11" cy="11" r="8" stroke="#767676" strokeWidth="2"/>
@@ -52,7 +49,14 @@ const Title = styled.h1`
   font-weight: ${({ theme }) => theme.fonts.weight.bold};
   color: ${({ theme }) => theme.colors.black};
   flex: 1;
-  text-align: center;
+  text-align: ${({ $titleLeft }) => $titleLeft ? 'left' : 'center'};
+`;
+
+const LogoText = styled.h1`
+  font-size: ${({ theme }) => theme.fonts.size.lg};
+  font-weight: ${({ theme }) => theme.fonts.weight.bold};
+  color: ${({ theme }) => theme.colors.black};
+  flex: 1;
 `;
 
 const RightButton = styled.button`
@@ -89,18 +93,20 @@ const UploadButton = styled.button`
   }
 `;
 
-// type: 'back-search' | 'back-more' | 'back-title' | 'back-title-more' | 'back-title-upload' | 'back-title-save'
+// type: 'back-only' | 'back-search' | 'back-more' | 'back-title' | 'back-title-more' | 'back-title-upload' | 'back-title-save' | 'back-title-text' | 'logo-search'
 const Header = ({
   type = 'back-title',
   title = '',
+  logo = '',
+  titleLeft = false,
   onBack,
   onMore,
   onSearch,
   rightText,
   onRightText,
   rightDisabled = false,
-  showUpload = false,
   uploadDisabled = true,
+  uploadText = '업로드',
   onUpload,
   saveDisabled = true,
   onSave,
@@ -112,13 +118,24 @@ const Header = ({
     else navigate(-1);
   };
 
+  if (type === 'logo-search') {
+    return (
+      <HeaderWrapper>
+        <LogoText>{logo}</LogoText>
+        <RightButton onClick={onSearch} aria-label="검색">
+          <SearchIcon />
+        </RightButton>
+      </HeaderWrapper>
+    );
+  }
+
   return (
     <HeaderWrapper>
       <BackButton onClick={handleBack} aria-label="뒤로가기">
         <BackIcon />
       </BackButton>
 
-      {title && <Title>{title}</Title>}
+      {title && <Title $titleLeft={titleLeft}>{title}</Title>}
       {!title && <div style={{ flex: 1 }} />}
 
       {type === 'back-search' && (
@@ -126,19 +143,14 @@ const Header = ({
           <SearchIcon />
         </RightButton>
       )}
-      {type === 'back-more' && (
-        <RightButton onClick={onMore} aria-label="더보기">
-          <MoreIcon />
-        </RightButton>
-      )}
-      {(type === 'back-title-more' || type === 'back-more') && onMore && (
+      {(type === 'back-more' || type === 'back-title-more') && (
         <RightButton onClick={onMore} aria-label="더보기">
           <MoreIcon />
         </RightButton>
       )}
       {type === 'back-title-upload' && (
         <UploadButton disabled={uploadDisabled} onClick={onUpload}>
-          업로드
+          {uploadText}
         </UploadButton>
       )}
       {type === 'back-title-save' && (

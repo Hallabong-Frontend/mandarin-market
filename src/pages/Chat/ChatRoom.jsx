@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import BottomModal from '../../components/common/BottomModal';
+import Header from '../../components/common/Header';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -11,46 +12,6 @@ const Wrapper = styled.div`
   padding-bottom: 72px;
 `;
 
-const ChatRoomHeader = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: ${({ theme }) => theme.zIndex.header};
-  background-color: ${({ theme }) => theme.colors.white};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-`;
-
-const HeaderLeft = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const BackButton = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const HeaderTitle = styled.h1`
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  font-weight: ${({ theme }) => theme.fonts.weight.bold};
-  color: ${({ theme }) => theme.colors.black};
-`;
-
-const MoreButton = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
 
 const MessageList = styled.div`
   flex: 1;
@@ -151,20 +112,6 @@ const SendButton = styled.button`
   color: ${({ disabled, theme }) => disabled ? theme.colors.gray300 : theme.colors.primary};
 `;
 
-const BackIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M15 18L9 12L15 6" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const MoreDots = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <circle cx="5" cy="12" r="2" fill="#767676"/>
-    <circle cx="12" cy="12" r="2" fill="#767676"/>
-    <circle cx="19" cy="12" r="2" fill="#767676"/>
-  </svg>
-);
-
 const ImageIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
     <rect x="3" y="3" width="18" height="18" rx="3" stroke="#767676" strokeWidth="2"/>
@@ -215,17 +162,12 @@ const ChatRoom = () => {
   return (
     <>
       <Wrapper>
-        <ChatRoomHeader>
-          <HeaderLeft>
-            <BackButton onClick={() => navigate(-1)}>
-              <BackIcon />
-            </BackButton>
-            <HeaderTitle>애월읍 위니브 감귤농장</HeaderTitle>
-          </HeaderLeft>
-          <MoreButton onClick={() => setShowModal(true)}>
-            <MoreDots />
-          </MoreButton>
-        </ChatRoomHeader>
+        <Header
+          type="back-title-more"
+          title="애월읍 위니브 감귤농장"
+          titleLeft
+          onMore={() => setShowModal(true)}
+        />
 
         <MessageList>
           {DUMMY_MESSAGES.map((msg) => (

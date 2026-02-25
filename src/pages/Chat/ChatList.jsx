@@ -2,41 +2,13 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import BottomTabNav from '../../components/common/BottomTabNav';
 import BottomModal from '../../components/common/BottomModal';
+import Header from '../../components/common/Header';
 import { useState } from 'react';
 
 const Wrapper = styled.div`
   min-height: 100vh;
   background-color: ${({ theme }) => theme.colors.white};
   padding-bottom: 70px;
-`;
-
-const ChatHeader = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: ${({ theme }) => theme.zIndex.header};
-  background-color: ${({ theme }) => theme.colors.white};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-`;
-
-const BackButton = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const MoreButton = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 `;
 
 const ChatItemEl = styled.div`
@@ -105,20 +77,6 @@ const ChatLastMsg = styled.p`
   text-overflow: ellipsis;
 `;
 
-const BackIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M15 18L9 12L15 6" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const MoreDots = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <circle cx="5" cy="12" r="2" fill="#767676"/>
-    <circle cx="12" cy="12" r="2" fill="#767676"/>
-    <circle cx="19" cy="12" r="2" fill="#767676"/>
-  </svg>
-);
-
 const DUMMY_CHATS = [
   {
     id: 1,
@@ -157,14 +115,7 @@ const ChatList = () => {
   return (
     <>
       <Wrapper>
-        <ChatHeader>
-          <BackButton onClick={() => navigate(-1)}>
-            <BackIcon />
-          </BackButton>
-          <MoreButton onClick={() => setShowModal(true)}>
-            <MoreDots />
-          </MoreButton>
-        </ChatHeader>
+        <Header type="back-more" onMore={() => setShowModal(true)} />
 
         {DUMMY_CHATS.map((chat) => (
           <ChatItemEl key={chat.id} onClick={() => navigate(`/chat/${chat.id}`)}>

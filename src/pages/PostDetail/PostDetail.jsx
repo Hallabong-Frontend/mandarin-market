@@ -9,31 +9,12 @@ import PostCard from '../../components/post/PostCard';
 import BottomModal from '../../components/common/BottomModal';
 import AlertModal from '../../components/common/AlertModal';
 import Spinner from '../../components/common/Spinner';
+import Header from '../../components/common/Header';
 
 const Wrapper = styled.div`
   min-height: 100vh;
   background-color: ${({ theme }) => theme.colors.white};
   padding-bottom: 80px;
-`;
-
-const PostDetailHeader = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: ${({ theme }) => theme.zIndex.header};
-  background-color: ${({ theme }) => theme.colors.white};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  height: 48px;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-`;
-
-const BackButton = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 `;
 
 const Divider = styled.div`
@@ -143,12 +124,6 @@ const PostCommentBtn = styled.button`
   color: ${({ disabled, theme }) => (disabled ? theme.colors.gray300 : theme.colors.primary)};
 `;
 
-const BackIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M15 18L9 12L15 6" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
 const MoreDots = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
     <circle cx="5" cy="12" r="1.5" fill="#767676" />
@@ -256,11 +231,7 @@ const PostDetail = () => {
   return (
     <>
       <Wrapper>
-        <PostDetailHeader>
-          <BackButton onClick={() => navigate(-1)}>
-            <BackIcon />
-          </BackButton>
-        </PostDetailHeader>
+        <Header />
 
         <PostCard post={post} onDelete={() => navigate(-1)} />
 

@@ -8,46 +8,13 @@ import { getImageUrl, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 import { useEffect } from 'react';
 import ImageUploadIcon from '../../assets/images/image_upload.svg';
 import AlertModal from '../../components/common/AlertModal';
+import Header from '../../components/common/Header';
 
 const Wrapper = styled.div`
   min-height: 100vh;
   background-color: ${({ theme }) => theme.colors.white};
   padding-bottom: 80px;
   overflow-x: hidden;
-`;
-
-const PostHeader = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: ${({ theme }) => theme.zIndex.header};
-  background-color: ${({ theme }) => theme.colors.white};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-`;
-
-const BackButton = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const UploadButton = styled.button`
-  background-color: ${({ disabled, theme }) => (disabled ? theme.colors.gray200 : theme.colors.primary)};
-  color: ${({ theme }) => theme.colors.white};
-  font-size: ${({ theme }) => theme.fonts.size.sm};
-  font-weight: ${({ theme }) => theme.fonts.weight.medium};
-  padding: 6px 16px;
-  border-radius: ${({ theme }) => theme.borderRadius.round};
-  transition: ${({ theme }) => theme.transitions.base};
-  &:disabled {
-    pointer-events: none;
-  }
 `;
 
 const Content = styled.div`
@@ -139,12 +106,6 @@ const FloatingCameraBtn = styled.button`
   justify-content: center;
   box-shadow: ${({ theme }) => theme.shadows.base};
 `;
-
-const BackIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M15 18L9 12L15 6" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
 
 const MAX_IMAGES = 3;
 
@@ -259,14 +220,12 @@ const PostCreate = ({ isEdit = false }) => {
 
   return (
     <Wrapper>
-      <PostHeader>
-        <BackButton onClick={() => navigate(-1)}>
-          <BackIcon />
-        </BackButton>
-        <UploadButton disabled={!isActive || isLoading} onClick={handleUpload}>
-          {isLoading ? '업로드 중...' : isEdit ? '수정' : '업로드'}
-        </UploadButton>
-      </PostHeader>
+      <Header
+        type="back-title-upload"
+        uploadDisabled={!isActive || isLoading}
+        onUpload={handleUpload}
+        uploadText={isLoading ? '업로드 중...' : isEdit ? '수정' : '업로드'}
+      />
 
       <Content>
         <AuthorAvatar
