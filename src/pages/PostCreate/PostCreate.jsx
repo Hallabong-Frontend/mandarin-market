@@ -12,6 +12,7 @@ const Wrapper = styled.div`
   min-height: 100vh;
   background-color: ${({ theme }) => theme.colors.white};
   padding-bottom: 80px;
+  overflow-x: hidden;
 `;
 
 const PostHeader = styled.header`
@@ -65,13 +66,14 @@ const AuthorAvatar = styled.img`
 
 const TextArea = styled.textarea`
   flex: 1;
-  min-height: 120px;
+  margin-top: 12px;
   font-size: ${({ theme }) => theme.fonts.size.base};
   color: ${({ theme }) => theme.colors.black};
   resize: none;
   line-height: 1.6;
   border: none;
   outline: none;
+  overflow: hidden;
 
   &::placeholder {
     color: ${({ theme }) => theme.colors.gray300};
@@ -80,9 +82,13 @@ const TextArea = styled.textarea`
 
 const ImagePreviews = styled.div`
   display: flex;
+  flex-wrap: nowrap;
   gap: 8px;
   padding: 0 16px 16px 60px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  box-sizing: border-box;
   &::-webkit-scrollbar {
     display: none;
   }
@@ -145,10 +151,19 @@ const PostCreate = ({ isEdit = false }) => {
   const { postId } = useParams();
   const { user } = useAuth();
   const fileRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const [content, setContent] = useState('');
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  }, [content]);
 
   useEffect(() => {
     if (isEdit && postId) {
@@ -177,6 +192,10 @@ const PostCreate = ({ isEdit = false }) => {
   }, [isEdit, postId]);
 
   const isActive = content.trim() || images.length > 0;
+
+  const handleContentChange = (e) => {
+    setContent(e.target.value);
+  };
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
@@ -250,8 +269,9 @@ const PostCreate = ({ isEdit = false }) => {
           }}
         />
         <TextArea
+          ref={textareaRef}
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={handleContentChange}
           placeholder="게시글을 작성해주세요..."
           autoFocus
         />
