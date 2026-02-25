@@ -129,6 +129,8 @@ const CommentTextInput = styled.input`
   font-size: ${({ theme }) => theme.fonts.size.base};
   color: ${({ theme }) => theme.colors.black};
   background: transparent;
+  border: none;
+  outline: none;
 
   &::placeholder {
     color: ${({ theme }) => theme.colors.gray300};
