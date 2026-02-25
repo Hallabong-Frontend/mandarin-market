@@ -130,26 +130,28 @@ const CommentTextInput = styled.input`
   color: ${({ theme }) => theme.colors.black};
   background: transparent;
 
-  &::placeholder { color: ${({ theme }) => theme.colors.gray300}; }
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.gray300};
+  }
 `;
 
 const PostCommentBtn = styled.button`
   font-size: ${({ theme }) => theme.fonts.size.sm};
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
-  color: ${({ disabled, theme }) => disabled ? theme.colors.gray300 : theme.colors.primary};
+  color: ${({ disabled, theme }) => (disabled ? theme.colors.gray300 : theme.colors.primary)};
 `;
 
 const BackIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M15 18L9 12L15 6" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M15 18L9 12L15 6" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const MoreDots = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <circle cx="5" cy="12" r="1.5" fill="#767676"/>
-    <circle cx="12" cy="12" r="1.5" fill="#767676"/>
-    <circle cx="19" cy="12" r="1.5" fill="#767676"/>
+    <circle cx="5" cy="12" r="1.5" fill="#767676" />
+    <circle cx="12" cy="12" r="1.5" fill="#767676" />
+    <circle cx="19" cy="12" r="1.5" fill="#767676" />
   </svg>
 );
 
@@ -171,10 +173,7 @@ const PostDetail = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [postData, commentsData] = await Promise.all([
-          getPost(postId),
-          getComments(postId),
-        ]);
+        const [postData, commentsData] = await Promise.all([getPost(postId), getComments(postId)]);
         setPost(postData.post);
         setComments(commentsData.comments || []);
       } catch (err) {
@@ -193,6 +192,7 @@ const PostDetail = () => {
       const data = await createComment(postId, commentText);
       setComments((prev) => [...prev, data.comment]);
       setCommentText('');
+      setPost((prev) => ({ ...prev, commentCount: prev.commentCount + 1 }));
     } catch (err) {
       console.error(err);
     } finally {
@@ -212,14 +212,20 @@ const PostDetail = () => {
         {
           label: '삭제',
           danger: true,
-          onClick: () => { setAlertType('delete'); setShowDeleteAlert(true); },
+          onClick: () => {
+            setAlertType('delete');
+            setShowDeleteAlert(true);
+          },
         },
       ]
     : [
         {
           label: '신고하기',
           danger: true,
-          onClick: () => { setAlertType('report'); setShowDeleteAlert(true); },
+          onClick: () => {
+            setAlertType('report');
+            setShowDeleteAlert(true);
+          },
         },
       ];
 
@@ -229,6 +235,7 @@ const PostDetail = () => {
       try {
         await deleteComment(postId, selectedComment.id);
         setComments((prev) => prev.filter((c) => c.id !== selectedComment.id));
+        setPost((prev) => ({ ...prev, commentCount: prev.commentCount - 1 }));
       } catch (err) {
         console.error(err);
       }
@@ -264,7 +271,9 @@ const PostDetail = () => {
                 src={getImageUrl(comment.author?.image)}
                 alt={comment.author?.username}
                 onClick={() => navigate(`/profile/${comment.author?.accountname}`)}
-                onError={(e) => { e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png'; }}
+                onError={(e) => {
+                  e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png';
+                }}
               />
               <CommentContent>
                 <CommentMeta>
@@ -285,7 +294,9 @@ const PostDetail = () => {
         <CommentAvatar2
           src={getImageUrl(user?.image)}
           alt={user?.username}
-          onError={(e) => { e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png'; }}
+          onError={(e) => {
+            e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png';
+          }}
         />
         <CommentTextInput
           value={commentText}
@@ -293,24 +304,19 @@ const PostDetail = () => {
           placeholder="댓글을 입력하세요..."
           onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()}
         />
-        <PostCommentBtn
-          disabled={!commentText.trim() || isSubmitting}
-          onClick={handleSubmitComment}
-        >
+        <PostCommentBtn disabled={!commentText.trim() || isSubmitting} onClick={handleSubmitComment}>
           게시
         </PostCommentBtn>
       </CommentInput>
 
-      <BottomModal
-        isOpen={showCommentModal}
-        onClose={() => setShowCommentModal(false)}
-        items={commentModalItems}
-      />
+      <BottomModal isOpen={showCommentModal} onClose={() => setShowCommentModal(false)} items={commentModalItems} />
 
       <AlertModal
         isOpen={showDeleteAlert}
         title={alertType === 'delete' ? '댓글을 삭제할까요?' : '댓글을 신고할까요?'}
-        description={alertType === 'delete' ? '삭제된 댓글은 복구할 수 없습니다.' : '신고된 댓글은 관리자가 검토합니다.'}
+        description={
+          alertType === 'delete' ? '삭제된 댓글은 복구할 수 없습니다.' : '신고된 댓글은 관리자가 검토합니다.'
+        }
         confirmText={alertType === 'delete' ? '삭제' : '신고'}
         danger
         onCancel={() => setShowDeleteAlert(false)}
