@@ -1,13 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import styled, { keyframes } from 'styled-components';
+import styled from 'styled-components';
 import { createProduct, updateProduct, getProduct } from '../../api/product';
 import { uploadImage } from '../../api/auth';
 import { generateProductInfo, parseProductInfo } from '../../api/ai';
 import { getImageUrl, formatPrice, parsePrice } from '../../utils/format';
 import Header from '../../components/common/Header';
 import AlertModal from '../../components/common/AlertModal';
-import { useEffect } from 'react';
+import AuthInput from '../../components/common/AuthInput';
+import { SpinnerRing } from '../../components/common/Spinner';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -63,37 +64,10 @@ const Form = styled.form`
   margin-top: 16px;
 `;
 
-const Field = styled.div`
+const ItemNameField = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
-`;
-
-const Label = styled.label`
-  font-size: ${({ theme }) => theme.fonts.size.sm};
-  color: ${({ theme }) => theme.colors.gray400};
-`;
-
-const Input = styled.input`
-  width: 100%;
-  border: none;
-  border-bottom: 1px solid ${({ $focused, theme }) => $focused ? theme.colors.primary : theme.colors.border};
-  padding: 8px 0;
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  color: ${({ theme }) => theme.colors.black};
-  background: transparent;
-  transition: border-color 0.2s;
-
-  &::placeholder { color: ${({ theme }) => theme.colors.gray300}; }
-`;
-
-const ErrorText = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.xs};
-  color: ${({ theme }) => theme.colors.error};
-`;
-
-const spin = keyframes`
-  to { transform: rotate(360deg); }
 `;
 
 const AiButton = styled.button`
@@ -123,16 +97,6 @@ const AiButton = styled.button`
     background-color: ${({ theme }) => theme.colors.gray100};
     cursor: not-allowed;
   }
-`;
-
-const SpinnerCircle = styled.span`
-  width: 14px;
-  height: 14px;
-  border: 2px solid ${({ theme }) => theme.colors.primary};
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: ${spin} 0.7s linear infinite;
-  display: inline-block;
 `;
 
 const AiDescBox = styled.div`
@@ -171,7 +135,6 @@ const ProductRegister = ({ isEdit = false }) => {
     price: '',
     link: '',
   });
-  const [focused, setFocused] = useState({});
   const [errors, setErrors] = useState({});
   const [previewImage, setPreviewImage] = useState('');
   const [imageFile, setImageFile] = useState(null);
@@ -222,7 +185,6 @@ const ProductRegister = ({ isEdit = false }) => {
   };
 
   const handleNameBlur = () => {
-    setFocused({ ...focused, itemName: false });
     if (!form.itemName) return;
     if (form.itemName.length < 2 || form.itemName.length > 15) {
       setErrors({ ...errors, itemName: '상품명은 2~15자 이내여야 합니다.' });
@@ -339,7 +301,7 @@ const ProductRegister = ({ isEdit = false }) => {
         >
           {isAiLoading ? (
             <>
-              <SpinnerCircle />
+              <SpinnerRing size="14px" />
               AI 생성 중...
             </>
           ) : aiGenerated ? (
@@ -350,55 +312,41 @@ const ProductRegister = ({ isEdit = false }) => {
         </AiButton>
 
         <Form onSubmit={handleSave}>
-          <Field>
-            <Label>상품명</Label>
-            <Input
-              type="text"
+          <ItemNameField>
+            <AuthInput
+              label="상품명"
               name="itemName"
               value={form.itemName}
               onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, itemName: true })}
               onBlur={handleNameBlur}
-              $focused={focused.itemName}
               placeholder="상품명을 입력해주세요"
+              errorText={errors.itemName}
             />
-            {errors.itemName && <ErrorText>{errors.itemName}</ErrorText>}
-            {aiDescription ? (
+            {aiDescription && (
               <>
                 <AiDescLabel>AI 생성 설명</AiDescLabel>
                 <AiDescBox>{aiDescription}</AiDescBox>
               </>
-            ) : null}
-          </Field>
+            )}
+          </ItemNameField>
 
-          <Field>
-            <Label>가격</Label>
-            <Input
-              type="text"
-              name="price"
-              value={form.price ? formatPrice(form.price) : ''}
-              onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, price: true })}
-              onBlur={() => setFocused({ ...focused, price: false })}
-              $focused={focused.price}
-              placeholder="가격을 입력해주세요"
-              inputMode="numeric"
-            />
-          </Field>
+          <AuthInput
+            label="가격"
+            name="price"
+            value={form.price ? formatPrice(form.price) : ''}
+            onChange={handleChange}
+            placeholder="가격을 입력해주세요"
+            inputMode="numeric"
+          />
 
-          <Field>
-            <Label>판매링크</Label>
-            <Input
-              type="url"
-              name="link"
-              value={form.link}
-              onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, link: true })}
-              onBlur={() => setFocused({ ...focused, link: false })}
-              $focused={focused.link}
-              placeholder="URL을 입력해주세요"
-            />
-          </Field>
+          <AuthInput
+            label="판매링크"
+            type="url"
+            name="link"
+            value={form.link}
+            onChange={handleChange}
+            placeholder="URL을 입력해주세요"
+          />
         </Form>
       </Content>
 

@@ -4,7 +4,7 @@ const spin = keyframes`
   to { transform: rotate(360deg); }
 `;
 
-const SpinnerRing = styled.div`
+export const SpinnerRing = styled.div`
   width: ${({ size }) => size || '40px'};
   height: ${({ size }) => size || '40px'};
   border: 3px solid ${({ theme }) => theme.colors.gray200};
