@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { login } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
+import AuthInput from '../../components/common/AuthInput';
+import SubmitButton from '../../components/common/SubmitButton';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -23,51 +25,8 @@ const Form = styled.form`
   gap: 24px;
 `;
 
-const Field = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-`;
-
-const Label = styled.label`
-  font-size: ${({ theme }) => theme.fonts.size.sm};
-  color: ${({ theme }) => theme.colors.gray400};
-`;
-
-const Input = styled.input`
-  width: 100%;
-  border: none;
-  border-bottom: 1px solid ${({ $focused, theme }) => $focused ? theme.colors.primary : theme.colors.border};
-  padding: 8px 0;
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  color: ${({ theme }) => theme.colors.black};
-  background: transparent;
-  transition: border-color 0.2s;
-
-  &::placeholder {
-    color: ${({ theme }) => theme.colors.gray300};
-  }
-`;
-
-const ErrorText = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.xs};
-  color: ${({ theme }) => theme.colors.error};
-  margin-top: 4px;
-`;
-
-const SubmitButton = styled.button`
+const ButtonWrapper = styled.div`
   margin-top: 8px;
-  width: 100%;
-  padding: 14px;
-  border-radius: ${({ theme }) => theme.borderRadius.round};
-  background-color: ${({ disabled, theme }) => disabled ? theme.colors.gray200 : theme.colors.primary};
-  color: ${({ theme }) => theme.colors.white};
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  font-weight: ${({ theme }) => theme.fonts.weight.medium};
-  transition: ${({ theme }) => theme.transitions.base};
-  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
-
-  &:not(:disabled):hover { opacity: 0.9; }
 `;
 
 const SignUpLink = styled.p`
@@ -84,7 +43,6 @@ const LoginEmail = () => {
   const navigate = useNavigate();
   const { login: authLogin } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
-  const [focused, setFocused] = useState({ email: false, password: false });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -124,36 +82,28 @@ const LoginEmail = () => {
     <Wrapper>
       <Title>로그인</Title>
       <Form onSubmit={handleSubmit}>
-        <Field>
-          <Label>이메일</Label>
-          <Input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            onFocus={() => setFocused({ ...focused, email: true })}
-            onBlur={() => setFocused({ ...focused, email: false })}
-            $focused={focused.email}
-            autoComplete="email"
-          />
-        </Field>
-        <Field>
-          <Label>비밀번호</Label>
-          <Input
-            type="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            onFocus={() => setFocused({ ...focused, password: true })}
-            onBlur={() => setFocused({ ...focused, password: false })}
-            $focused={focused.password}
-            autoComplete="current-password"
-          />
-          {error && <ErrorText>{error}</ErrorText>}
-        </Field>
-        <SubmitButton type="submit" disabled={!isActive || isLoading}>
-          {isLoading ? '로그인 중...' : '로그인'}
-        </SubmitButton>
+        <AuthInput
+          label="이메일"
+          type="email"
+          name="email"
+          value={form.email}
+          onChange={handleChange}
+          autoComplete="email"
+        />
+        <AuthInput
+          label="비밀번호"
+          type="password"
+          name="password"
+          value={form.password}
+          onChange={handleChange}
+          autoComplete="current-password"
+          errorText={error}
+        />
+        <ButtonWrapper>
+          <SubmitButton disabled={!isActive || isLoading}>
+            {isLoading ? '로그인 중...' : '로그인'}
+          </SubmitButton>
+        </ButtonWrapper>
       </Form>
       <SignUpLink onClick={() => navigate('/signup')}>
         이메일로 회원가입

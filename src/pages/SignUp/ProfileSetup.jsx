@@ -4,6 +4,8 @@ import styled from 'styled-components';
 import { register, uploadImage, checkAccountValid } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 import { validateAccountname, getImageUrl } from '../../utils/format';
+import AuthInput from '../../components/common/AuthInput';
+import SubmitButton from '../../components/common/SubmitButton';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -65,34 +67,10 @@ const Form = styled.form`
   gap: 20px;
 `;
 
-const Field = styled.div`
+const FieldGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
-`;
-
-const Label = styled.label`
-  font-size: ${({ theme }) => theme.fonts.size.sm};
-  color: ${({ theme }) => theme.colors.gray400};
-`;
-
-const Input = styled.input`
-  width: 100%;
-  border: none;
-  border-bottom: 1px solid ${({ $focused, $error, theme }) =>
-    $error ? theme.colors.error : $focused ? theme.colors.primary : theme.colors.border};
-  padding: 8px 0;
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  color: ${({ theme }) => theme.colors.black};
-  background: transparent;
-  transition: border-color 0.2s;
-
-  &::placeholder { color: ${({ theme }) => theme.colors.gray300}; }
-`;
-
-const ErrorText = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.xs};
-  color: ${({ theme }) => theme.colors.error};
 `;
 
 const SuccessText = styled.p`
@@ -100,17 +78,14 @@ const SuccessText = styled.p`
   color: ${({ theme }) => theme.colors.success};
 `;
 
-const SubmitButton = styled.button`
+const ErrorText = styled.p`
+  font-size: ${({ theme }) => theme.fonts.size.xs};
+  color: ${({ theme }) => theme.colors.error};
+  text-align: center;
+`;
+
+const ButtonWrapper = styled.div`
   margin-top: 8px;
-  width: 100%;
-  padding: 14px;
-  border-radius: ${({ theme }) => theme.borderRadius.round};
-  background-color: ${({ disabled, theme }) => disabled ? theme.colors.gray200 : theme.colors.primary};
-  color: ${({ theme }) => theme.colors.white};
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  font-weight: ${({ theme }) => theme.fonts.weight.medium};
-  transition: ${({ theme }) => theme.transitions.base};
-  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
 `;
 
 const CameraIcon = () => (
@@ -129,7 +104,6 @@ const ProfileSetup = () => {
   const { email, password } = location.state || {};
 
   const [form, setForm] = useState({ username: '', accountname: '', intro: '' });
-  const [focused, setFocused] = useState({});
   const [errors, setErrors] = useState({});
   const [accountValid, setAccountValid] = useState(false);
   const [previewImage, setPreviewImage] = useState('https://dev.wenivops.co.kr/services/mandarin/Ellipse.png');
@@ -150,27 +124,25 @@ const ProfileSetup = () => {
   };
 
   const handleUsernameBlur = () => {
-    setFocused({ ...focused, username: false });
     if (!form.username) return;
     if (form.username.length < 2 || form.username.length > 10) {
-      setErrors({ ...errors, username: '사용자 이름은 2~10자 이내여야 합니다.' });
+      setErrors({ ...errors, username: '*사용자 이름은 2~10자 이내여야 합니다.' });
     } else {
       setErrors({ ...errors, username: '' });
     }
   };
 
   const handleAccountBlur = async () => {
-    setFocused({ ...focused, accountname: false });
     if (!form.accountname) return;
 
     if (!validateAccountname(form.accountname)) {
-      setErrors({ ...errors, accountname: '영문, 숫자, 밑줄, 마침표만 사용 가능합니다.' });
+      setErrors({ ...errors, accountname: '*영문, 숫자, 밑줄 및 마침표만 사용할 수 있습니다.' });
       return;
     }
 
     try {
       const data = await checkAccountValid(form.accountname);
-      if (data.message === '사용 가능한 계정ID 입니다.') {
+      if (data.message === '*이미 사용 중인 ID 입니다.') {
         setErrors({ ...errors, accountname: '' });
         setAccountValid(true);
       } else {
@@ -178,7 +150,7 @@ const ProfileSetup = () => {
         setAccountValid(false);
       }
     } catch (err) {
-      setErrors({ ...errors, accountname: err.response?.data?.message || '이미 사용 중인 계정ID입니다.' });
+      setErrors({ ...errors, accountname: err.response?.data?.message || '*이미 사용 중인 ID 입니다.' });
       setAccountValid(false);
     }
   };
@@ -250,58 +222,47 @@ const ProfileSetup = () => {
       </AvatarWrapper>
 
       <Form onSubmit={handleSubmit}>
-        <Field>
-          <Label>사용자 이름</Label>
-          <Input
-            type="text"
-            name="username"
-            value={form.username}
-            onChange={handleChange}
-            onFocus={() => setFocused({ ...focused, username: true })}
-            onBlur={handleUsernameBlur}
-            $focused={focused.username}
-            $error={!!errors.username}
-            placeholder="2~10자 이내여야 합니다."
-          />
-          {errors.username && <ErrorText>{errors.username}</ErrorText>}
-        </Field>
+        <AuthInput
+          label="사용자 이름"
+          type="text"
+          name="username"
+          value={form.username}
+          onChange={handleChange}
+          onBlur={handleUsernameBlur}
+          placeholder="2~10자 이내여야 합니다."
+          errorText={errors.username}
+        />
 
-        <Field>
-          <Label>계정 ID</Label>
-          <Input
+        <FieldGroup>
+          <AuthInput
+            label="계정 ID"
             type="text"
             name="accountname"
             value={form.accountname}
             onChange={handleChange}
-            onFocus={() => setFocused({ ...focused, accountname: true })}
             onBlur={handleAccountBlur}
-            $focused={focused.accountname}
-            $error={!!errors.accountname}
-            placeholder="영문, 숫자, 밑줄, 마침표 사용 가능"
+            placeholder="영문, 숫자, 특수문자(.),(_)만 사용 가능합니다."
+            errorText={errors.accountname}
           />
-          {errors.accountname && <ErrorText>{errors.accountname}</ErrorText>}
           {accountValid && !errors.accountname && <SuccessText>사용 가능한 계정ID입니다.</SuccessText>}
-        </Field>
+        </FieldGroup>
 
-        <Field>
-          <Label>소개</Label>
-          <Input
-            type="text"
-            name="intro"
-            value={form.intro}
-            onChange={handleChange}
-            onFocus={() => setFocused({ ...focused, intro: true })}
-            onBlur={() => setFocused({ ...focused, intro: false })}
-            $focused={focused.intro}
-            placeholder="자신을 소개해주세요"
-          />
-        </Field>
+        <AuthInput
+          label="소개"
+          type="text"
+          name="intro"
+          value={form.intro}
+          onChange={handleChange}
+          placeholder="자신과 판매할 상품에 대해 소개해 주세요!"
+        />
 
-        {errors.general && <ErrorText style={{ textAlign: 'center' }}>{errors.general}</ErrorText>}
+        {errors.general && <ErrorText>{errors.general}</ErrorText>}
 
-        <SubmitButton type="submit" disabled={!isValid || isLoading}>
-          {isLoading ? '가입 중...' : '감귤마켓 시작하기'}
-        </SubmitButton>
+        <ButtonWrapper>
+          <SubmitButton disabled={!isValid || isLoading}>
+            {isLoading ? '가입 중...' : '감귤마켓 시작하기'}
+          </SubmitButton>
+        </ButtonWrapper>
       </Form>
     </Wrapper>
   );
