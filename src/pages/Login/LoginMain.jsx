@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import symbolLogoW from '../../assets/images/symbol-logo-W.png';
 
 const PageWrapper = styled.div`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: ${({ theme }) => theme.colors.primary};
+  background-color: #EA7F42;
 `;
 
 const LogoSection = styled.div`
@@ -15,25 +16,10 @@ const LogoSection = styled.div`
   justify-content: center;
 `;
 
-const LogoSvg = () => (
-  <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* leaf */}
-    <path d="M60 14 C60 14 52 6 44 10 C44 10 52 8 56 18 Z" fill="white" />
-    <path d="M60 14 C60 14 68 6 76 10 C76 10 68 8 64 18 Z" fill="white" />
-    {/* outer circle */}
-    <circle cx="60" cy="60" r="38" stroke="white" strokeWidth="8" fill="none" />
-    {/* chat bubble tail */}
-    <path d="M44 90 L38 104 L56 94 Z" fill="white" />
-    {/* eyes */}
-    <circle cx="50" cy="60" r="4" fill="white" />
-    <circle cx="62" cy="60" r="4" fill="white" />
-    <circle cx="74" cy="60" r="4" fill="white" />
-  </svg>
-);
-
 const BottomSheet = styled.div`
   background-color: ${({ theme }) => theme.colors.white};
-  border-radius: 30px 30px 0 0;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
   padding: 40px 32px 48px;
   display: flex;
   flex-direction: column;
@@ -135,7 +121,7 @@ const LoginMain = () => {
   return (
     <PageWrapper>
       <LogoSection>
-        <LogoSvg />
+        <img src={symbolLogoW} alt="감귤마켓 심볼" width="120" />
       </LogoSection>
 
       <BottomSheet>
