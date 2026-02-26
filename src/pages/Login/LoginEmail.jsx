@@ -22,11 +22,11 @@ const Title = styled.h1`
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 `;
 
 const ButtonWrapper = styled.div`
-  margin-top: 8px;
+  margin-top: 14px;
 `;
 
 const SignUpLink = styled.p`
@@ -36,7 +36,9 @@ const SignUpLink = styled.p`
   color: ${({ theme }) => theme.colors.gray400};
   cursor: pointer;
 
-  &:hover { text-decoration: underline; }
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const LoginEmail = () => {
@@ -100,14 +102,10 @@ const LoginEmail = () => {
           errorText={error}
         />
         <ButtonWrapper>
-          <SubmitButton disabled={!isActive || isLoading}>
-            {isLoading ? '로그인 중...' : '로그인'}
-          </SubmitButton>
+          <SubmitButton disabled={!isActive || isLoading}>{isLoading ? '로그인 중...' : '로그인'}</SubmitButton>
         </ButtonWrapper>
       </Form>
-      <SignUpLink onClick={() => navigate('/signup')}>
-        이메일로 회원가입
-      </SignUpLink>
+      <SignUpLink onClick={() => navigate('/signup')}>이메일로 회원가입</SignUpLink>
     </Wrapper>
   );
 };

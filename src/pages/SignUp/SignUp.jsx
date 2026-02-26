@@ -15,18 +15,18 @@ const Title = styled.h1`
   font-size: ${({ theme }) => theme.fonts.size.xxl};
   font-weight: ${({ theme }) => theme.fonts.weight.bold};
   color: ${({ theme }) => theme.colors.black};
-  margin-bottom: 32px;
+  margin-bottom: 40px;
   text-align: center;
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 `;
 
 const ButtonWrapper = styled.div`
-  margin-top: 8px;
+  margin-top: 14px;
 `;
 
 const SignUp = () => {
