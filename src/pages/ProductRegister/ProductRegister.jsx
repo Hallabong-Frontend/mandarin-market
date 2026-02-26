@@ -282,7 +282,6 @@ const ProductRegister = ({ isEdit = false }) => {
     <Wrapper>
       <Header
         type="back-title-save"
-        title={isEdit ? '상품 수정' : '상품 등록'}
         saveDisabled={!isValid || isLoading}
         onSave={handleSave}
       />

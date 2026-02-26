@@ -17,9 +17,9 @@ const Button = styled.button`
   }
 `;
 
-export default function SubmitButton({ children, disabled, onClick, type = 'submit' }) {
+export default function SubmitButton({ children, disabled, onClick, type = 'submit', className }) {
   return (
-    <Button type={type} disabled={disabled} onClick={onClick}>
+    <Button type={type} disabled={disabled} onClick={onClick} className={className}>
       {children}
     </Button>
   );

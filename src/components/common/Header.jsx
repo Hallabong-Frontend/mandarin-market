@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import SubmitButton from './SubmitButton';
 import BackIconSvg from '../../assets/icons/icon-arrow-left.svg';
 import MoreIconSvg from '../../assets/icons/icon-more-vertical.svg';
 import SearchIconSvg from '../../assets/icons/icon-search.svg';
@@ -56,29 +57,16 @@ const RightButton = styled.button`
   flex-shrink: 0;
 `;
 
-const TextButton = styled.button`
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  font-weight: ${({ theme }) => theme.fonts.weight.medium};
-  color: ${({ disabled, theme }) => (disabled ? theme.colors.gray300 : theme.colors.primary)};
-  padding: 4px 8px;
-  border-radius: ${({ theme }) => theme.borderRadius.round};
-  transition: ${({ theme }) => theme.transitions.base};
-  &:disabled {
-    pointer-events: none;
-  }
+const TextButton = styled(SubmitButton)`
+  width: auto;
+  padding: 6px 30px;
 `;
 
-const UploadButton = styled.button`
-  background-color: ${({ disabled, theme }) => (disabled ? theme.colors.gray200 : theme.colors.primary)};
-  color: ${({ theme }) => theme.colors.white};
+const UploadButton = styled(SubmitButton)`
+  width: auto;
+  padding: 6px 16px;
   font-size: ${({ theme }) => theme.fonts.size.sm};
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
-  padding: 6px 16px;
-  border-radius: ${({ theme }) => theme.borderRadius.round};
-  transition: ${({ theme }) => theme.transitions.base};
-  &:disabled {
-    pointer-events: none;
-  }
 `;
 
 const SearchInputWrapper = styled.div`

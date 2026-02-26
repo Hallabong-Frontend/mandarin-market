@@ -179,7 +179,7 @@ const EditProfile = () => {
 
   return (
     <Wrapper>
-      <Header type="back-title-save" title="프로필 수정" saveDisabled={!isValid || isLoading} onSave={handleSave} />
+      <Header type="back-title-save" saveDisabled={!isValid || isLoading} onSave={handleSave} />
 
       <Content>
         <AvatarWrapper>
