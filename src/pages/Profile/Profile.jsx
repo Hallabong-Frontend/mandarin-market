@@ -359,12 +359,10 @@ const Profile = () => {
     },
   ];
 
-  const headerModalItems = isMyProfile
-    ? [
-        { label: '설정 및 개인정보', onClick: () => {} },
-        { label: '로그아웃', danger: true, onClick: () => setShowLogoutAlert(true) },
-      ]
-    : [];
+  const headerModalItems = [
+    { label: '설정 및 개인정보', onClick: () => {} },
+    { label: '로그아웃', danger: true, onClick: () => setShowLogoutAlert(true) },
+  ];
 
   if (isLoading) return <Spinner />;
   if (!profile) return null;
@@ -374,7 +372,7 @@ const Profile = () => {
   return (
     <>
       <Wrapper>
-        <Header type="back-more" onMore={isMyProfile ? () => setShowHeaderModal(true) : undefined} />
+        <Header type="back-more" onMore={() => setShowHeaderModal(true)} />
 
         <ProfileSection>
           {/* 팔로워 | 프로필 이미지 | 팔로잉 */}
