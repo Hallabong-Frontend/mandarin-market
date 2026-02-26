@@ -6,6 +6,9 @@ import { likePost, unlikePost, deletePost, reportPost } from '../../api/post';
 import { getImageUrl, formatTimeAgo, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 import BottomModal from '../common/BottomModal';
 import AlertModal from '../common/AlertModal';
+import HeartIconSvg from '../../assets/icons/icon-heart.svg';
+import CommentIconSvg from '../../assets/icons/icon-message-circle.svg';
+import MoreDotsIconSvg from '../../assets/icons/s-icon-more-vertical.svg';
 
 const Card = styled.article`
   padding: 16px;
@@ -76,7 +79,9 @@ const PostImageWrapper = styled.div`
   overflow-x: auto;
   scroll-snap-type: x mandatory;
 
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
 `;
 
 const PostImage = styled.img`
@@ -103,27 +108,11 @@ const ActionButton = styled.button`
   color: ${({ theme }) => theme.colors.gray400};
 `;
 
-const HeartIcon = ({ liked }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill={liked ? '#EB5757' : 'none'}>
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-      stroke={liked ? '#EB5757' : '#767676'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
+const HeartIcon = () => <img src={HeartIconSvg} alt="" width="20" height="20" />;
 
-const CommentIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"
-      stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
+const CommentIcon = () => <img src={CommentIconSvg} alt="" width="20" height="20" />;
 
-const MoreDots = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <circle cx="5" cy="12" r="1.5" fill="#767676"/>
-    <circle cx="12" cy="12" r="1.5" fill="#767676"/>
-    <circle cx="19" cy="12" r="1.5" fill="#767676"/>
-  </svg>
-);
+const MoreDots = () => <img src={MoreDotsIconSvg} alt="" width="18" height="18" />;
 
 const TimeText = styled.span`
   font-size: ${({ theme }) => theme.fonts.size.xs};
@@ -217,7 +206,9 @@ const PostCard = ({ post, onDelete }) => {
             src={getImageUrl(post.author?.image)}
             alt={post.author?.username}
             onClick={handleGoProfile}
-            onError={(e) => { e.target.src = DEFAULT_PROFILE_IMAGE; }}
+            onError={(e) => {
+              e.target.src = DEFAULT_PROFILE_IMAGE;
+            }}
           />
           <UserInfo onClick={handleGoProfile}>
             <Username>{post.author?.username}</Username>
@@ -238,7 +229,9 @@ const PostCard = ({ post, onDelete }) => {
                   key={i}
                   src={getImageUrl(img.trim())}
                   alt={`게시글 이미지 ${i + 1}`}
-                  onError={(e) => { e.target.style.display = 'none'; }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
                 />
               ))}
             </PostImageWrapper>
@@ -263,7 +256,9 @@ const PostCard = ({ post, onDelete }) => {
       <AlertModal
         isOpen={showAlert}
         title={alertType === 'delete' ? '게시글을 삭제할까요?' : '게시글을 신고할까요?'}
-        description={alertType === 'delete' ? '삭제된 게시글은 복구할 수 없습니다.' : '신고된 게시글은 관리자가 검토합니다.'}
+        description={
+          alertType === 'delete' ? '삭제된 게시글은 복구할 수 없습니다.' : '신고된 게시글은 관리자가 검토합니다.'
+        }
         confirmText={alertType === 'delete' ? '삭제' : '신고'}
         danger={true}
         onCancel={() => setShowAlert(false)}
