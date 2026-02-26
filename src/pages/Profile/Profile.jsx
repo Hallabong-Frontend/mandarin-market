@@ -14,6 +14,10 @@ import AlertModal from '../../components/common/AlertModal';
 import PostCard from '../../components/post/PostCard';
 import Spinner from '../../components/common/Spinner';
 import Header from '../../components/common/Header';
+import ListIconSvg from '../../assets/icons/icon-post-list-on.svg?react';
+import AlbumIconSvg from '../../assets/icons/icon-post-album-on.svg?react';
+import ChatIcon from '../../assets/icons/icon-message-circle.svg?react';
+import ShareIcon from '../../assets/icons/icon-share.svg?react';
 
 const Wrapper = styled.div`
   padding-bottom: 70px;
@@ -105,7 +109,9 @@ const IconActionBtn = styled.button`
   justify-content: center;
   background: ${({ theme }) => theme.colors.white};
   transition: background-color 0.2s;
-  &:hover { background-color: ${({ theme }) => theme.colors.gray100}; }
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.gray100};
+  }
 `;
 
 const FollowButton = styled.button`
@@ -115,18 +121,18 @@ const FollowButton = styled.button`
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
   transition: ${({ theme }) => theme.transitions.base};
 
-  ${({ $following, theme }) => $following
-    ? `
+  ${({ $following, theme }) =>
+    $following
+      ? `
       background-color: ${theme.colors.white};
       color: ${theme.colors.gray400};
       border: 1px solid ${theme.colors.gray200};
     `
-    : `
+      : `
       background-color: ${theme.colors.primary};
       color: ${theme.colors.white};
       border: 1px solid ${theme.colors.primary};
-    `
-  }
+    `}
 `;
 
 const EditButton = styled.button`
@@ -138,7 +144,9 @@ const EditButton = styled.button`
   color: ${({ theme }) => theme.colors.gray500};
   background: ${({ theme }) => theme.colors.white};
   transition: ${({ theme }) => theme.transitions.base};
-  &:hover { background-color: ${({ theme }) => theme.colors.gray100}; }
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.gray100};
+  }
 `;
 
 const Divider = styled.div`
@@ -162,7 +170,9 @@ const ProductList = styled.div`
   gap: 12px;
   overflow-x: auto;
   padding-bottom: 4px;
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
 `;
 
 const ProductCard = styled.div`
@@ -207,7 +217,7 @@ const ToggleBtn = styled.button`
   padding: 10px;
   display: flex;
   justify-content: center;
-  border-bottom: 2px solid ${({ $active, theme }) => $active ? theme.colors.primary : 'transparent'};
+  border-bottom: 2px solid ${({ $active, theme }) => ($active ? theme.colors.primary : 'transparent')};
   transition: ${({ theme }) => theme.transitions.base};
 `;
 
@@ -225,35 +235,23 @@ const AlbumItem = styled.img`
   cursor: pointer;
 `;
 
-const ListIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <path d="M8 6H21M8 12H21M8 18H21M3 6H3.01M3 12H3.01M3 18H3.01" stroke="#767676" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-);
+const ListIcon = styled(ListIconSvg)`
+  width: 26px;
+  height: 26px;
+  path {
+    stroke: ${({ $viewMode }) => ($viewMode === 'list' ? '#F26E22' : '#FFC7A7')};
+    fill: ${({ $viewMode }) => ($viewMode === 'list' ? '#F26E22' : '#FFC7A7')};
+  }
+`;
 
-const AlbumIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="3" width="8" height="8" rx="1" stroke="#767676" strokeWidth="2"/>
-    <rect x="13" y="3" width="8" height="8" rx="1" stroke="#767676" strokeWidth="2"/>
-    <rect x="3" y="13" width="8" height="8" rx="1" stroke="#767676" strokeWidth="2"/>
-    <rect x="13" y="13" width="8" height="8" rx="1" stroke="#767676" strokeWidth="2"/>
-  </svg>
-);
-
-const ChatBubbleIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const ShareIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <circle cx="18" cy="5" r="3" stroke="#767676" strokeWidth="2"/>
-    <circle cx="6" cy="12" r="3" stroke="#767676" strokeWidth="2"/>
-    <circle cx="18" cy="19" r="3" stroke="#767676" strokeWidth="2"/>
-    <path d="M8.59 13.51L15.42 17.49M15.41 6.51L8.59 10.49" stroke="#767676" strokeWidth="2"/>
-  </svg>
-);
+const AlbumIcon = styled(AlbumIconSvg)`
+  width: 26px;
+  height: 26px;
+  path {
+    stroke: ${({ $viewMode }) => ($viewMode === 'album' ? '#F26E22' : '#FFC7A7')};
+    fill: ${({ $viewMode }) => ($viewMode === 'album' ? '#F26E22' : '#FFC7A7')};
+  }
+`;
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -346,7 +344,10 @@ const Profile = () => {
     {
       label: '삭제',
       danger: true,
-      onClick: () => { setShowProductModal(false); setShowDeleteProductAlert(true); },
+      onClick: () => {
+        setShowProductModal(false);
+        setShowDeleteProductAlert(true);
+      },
     },
     {
       label: '수정',
@@ -373,10 +374,7 @@ const Profile = () => {
   return (
     <>
       <Wrapper>
-        <Header
-          type="back-more"
-          onMore={isMyProfile ? () => setShowHeaderModal(true) : undefined}
-        />
+        <Header type="back-more" onMore={isMyProfile ? () => setShowHeaderModal(true) : undefined} />
 
         <ProfileSection>
           {/* 팔로워 | 프로필 이미지 | 팔로잉 */}
@@ -389,7 +387,9 @@ const Profile = () => {
             <Avatar
               src={getImageUrl(profile.image)}
               alt={profile.username}
-              onError={(e) => { e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png'; }}
+              onError={(e) => {
+                e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png';
+              }}
             />
 
             <StatItem onClick={() => navigate(`/profile/${accountname}/following`)}>
@@ -414,7 +414,7 @@ const Profile = () => {
           ) : (
             <ActionButtons>
               <IconActionBtn onClick={handleChat}>
-                <ChatBubbleIcon />
+                <ChatIcon />
               </IconActionBtn>
               <FollowButton $following={following} onClick={handleFollow}>
                 {following ? '언팔로우' : '팔로우'}
@@ -437,7 +437,9 @@ const Profile = () => {
                     <ProductImage
                       src={getImageUrl(product.itemImage)}
                       alt={product.itemName}
-                      onError={(e) => { e.target.src = 'https://via.placeholder.com/130?text=No+Image'; }}
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/130?text=No+Image';
+                      }}
                     />
                     <ProductName>{product.itemName}</ProductName>
                     <ProductPrice>{formatPrice(product.price)}원</ProductPrice>
@@ -453,16 +455,20 @@ const Profile = () => {
         <Section>
           <PostToggle>
             <ToggleBtn $active={viewMode === 'list'} onClick={() => setViewMode('list')}>
-              <ListIcon />
+              <ListIcon $viewMode={viewMode} />
             </ToggleBtn>
             <ToggleBtn $active={viewMode === 'album'} onClick={() => setViewMode('album')}>
-              <AlbumIcon />
+              <AlbumIcon $viewMode={viewMode} />
             </ToggleBtn>
           </PostToggle>
 
           {viewMode === 'list' ? (
             posts.map((post) => (
-              <PostCard key={post.id} post={post} onDelete={(id) => setPosts((p) => p.filter((item) => item.id !== id))} />
+              <PostCard
+                key={post.id}
+                post={post}
+                onDelete={(id) => setPosts((p) => p.filter((item) => item.id !== id))}
+              />
             ))
           ) : (
             <AlbumGrid>
@@ -474,7 +480,9 @@ const Profile = () => {
                     src={getImageUrl(firstImage)}
                     alt="게시글 이미지"
                     onClick={() => navigate(`/post/${post.id}`)}
-                    onError={(e) => { e.target.style.display = 'none'; }}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
                   />
                 );
               })}
@@ -485,17 +493,9 @@ const Profile = () => {
 
       <BottomTabNav />
 
-      <BottomModal
-        isOpen={showHeaderModal}
-        onClose={() => setShowHeaderModal(false)}
-        items={headerModalItems}
-      />
+      <BottomModal isOpen={showHeaderModal} onClose={() => setShowHeaderModal(false)} items={headerModalItems} />
 
-      <BottomModal
-        isOpen={showProductModal}
-        onClose={() => setShowProductModal(false)}
-        items={productModalItems}
-      />
+      <BottomModal isOpen={showProductModal} onClose={() => setShowProductModal(false)} items={productModalItems} />
 
       <AlertModal
         isOpen={showLogoutAlert}
@@ -504,7 +504,10 @@ const Profile = () => {
         confirmText="로그아웃"
         danger
         onCancel={() => setShowLogoutAlert(false)}
-        onConfirm={() => { logout(); navigate('/login', { replace: true }); }}
+        onConfirm={() => {
+          logout();
+          navigate('/login', { replace: true });
+        }}
       />
 
       <AlertModal
