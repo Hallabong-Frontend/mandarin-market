@@ -113,8 +113,8 @@ const HeartIcon = styled(HeartIconSvg)`
   width: 20px;
   height: 20px;
   path {
-    stroke: ${({ liked }) => (liked ? '#F26E22' : '#767676')}; 
-    fill: ${({ liked }) => (liked ? '#F26E22' : 'none')};
+    stroke: ${({ liked }) => (liked ? 'red' : '#767676')}; 
+    fill: ${({ liked }) => (liked ? 'red' : 'none')};
   }
 `;
 
