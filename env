@@ -1,8 +1,0 @@
-# Firebase 설정 (Firebase Console > 프로젝트 설정 > 내 앱 > SDK 설정에서 복사)
-VITE_FIREBASE_API_KEY=AIzaSyB-ngNzH0K_wpS5igM1_1EjhdDDY28puks
-VITE_FIREBASE_AUTH_DOMAIN=mandarin-market-e6cb2.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=mandarin-market-e6cb2
-VITE_FIREBASE_STORAGE_BUCKET=mandarin-market-e6cb2.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=69297987658
-VITE_FIREBASE_APP_ID=1:69297987658:web:bf5a5bd2d2e2673c0ec6b3
-VITE_FIREBASE_MEASUREMENT_ID=G-GH2WGYHS25

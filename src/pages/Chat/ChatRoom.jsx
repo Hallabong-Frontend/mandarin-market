@@ -4,9 +4,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import styled from 'styled-components';
 import BottomModal from '../../components/common/BottomModal';
 import Header from '../../components/common/Header';
-<<<<<<< HEAD
 import ImageIcon from '../../assets/icons/icon-image.svg?react';
-=======
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase/config';
 import {
@@ -16,7 +14,6 @@ import {
   markAsRead,
 } from '../../firebase/chat';
 import { getImageUrl, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
->>>>>>> dev
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -126,55 +123,12 @@ const SendButton = styled.button`
   color: ${({ disabled, theme }) => (disabled ? theme.colors.gray300 : theme.colors.primary)};
 `;
 
-<<<<<<< HEAD
-const DUMMY_MESSAGES = [
-  {
-    id: 1,
-    isMine: false,
-    text: '옷을 인생을 그러므로 없으면 것은 이상은 곧 우리의 위하여, 뿐이다. 이상의 청춘의 뼈 따뜻한 그들의 그와 약동하다. 대고, 못할 넋는 풍부하게 씩는 인생의 인생의 힘입니다.',
-    time: '12:37',
-    seen: false,
-    avatar: 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png',
-  },
-  {
-    id: 2,
-    isMine: true,
-    text: '안녕하세요. 감귤 사고싶어요요요요',
-    time: '12:41',
-    seen: true,
-  },
-  {
-    id: 3,
-    isMine: false,
-    text: '안녕하세요. 사진이 너무 맛있어요. 한라봉 언제 애월읍 있나요? 기다리고 기다렸어요 댕댕댕댕',
-    time: '12:50',
-    seen: false,
-    image: 'https://dev.wenivops.co.kr/services/mandarin/uploads/1608551784259.jpg',
-    avatar: 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png',
-  },
-];
-=======
-const ImageIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="3" width="18" height="18" rx="3" stroke="#767676" strokeWidth="2" />
-    <circle cx="8.5" cy="8.5" r="1.5" stroke="#767676" strokeWidth="1.5" />
-    <path
-      d="M21 15L16 10L5 21"
-      stroke="#767676"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 // Firestore Timestamp → "HH:MM" 포맷
 const formatMsgTime = (timestamp) => {
   if (!timestamp) return '';
   const date = timestamp.toDate();
   return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 };
->>>>>>> dev
 
 const ChatRoom = () => {
   const { chatId } = useParams();
@@ -291,13 +245,8 @@ const ChatRoom = () => {
       </Wrapper>
 
       <InputArea>
-<<<<<<< HEAD
-        <ImageInputBtn onClick={() => fileRef.current?.click()}>
-          <ImageIcon width="22" height="22" />
-=======
         <ImageInputBtn onClick={() => fileRef.current?.click()} disabled={isSending}>
-          <ImageIcon />
->>>>>>> dev
+          <ImageIcon width="22" height="22" />
         </ImageInputBtn>
         <input
           ref={fileRef}
