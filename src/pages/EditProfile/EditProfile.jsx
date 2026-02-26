@@ -5,6 +5,7 @@ import { updateMyProfile, uploadImage, checkAccountValid } from '../../api/auth'
 import { useAuth } from '../../context/AuthContext';
 import { validateAccountname, getImageUrl } from '../../utils/format';
 import Header from '../../components/common/Header';
+import AuthInput from '../../components/common/AuthInput';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -55,34 +56,10 @@ const Form = styled.form`
   gap: 20px;
 `;
 
-const Field = styled.div`
+const InputGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
-`;
-
-const Label = styled.label`
-  font-size: ${({ theme }) => theme.fonts.size.sm};
-  color: ${({ theme }) => theme.colors.gray400};
-`;
-
-const Input = styled.input`
-  width: 100%;
-  border: none;
-  border-bottom: 1px solid ${({ $focused, $error, theme }) =>
-    $error ? theme.colors.error : $focused ? theme.colors.primary : theme.colors.border};
-  padding: 8px 0;
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  color: ${({ theme }) => theme.colors.black};
-  background: transparent;
-  transition: border-color 0.2s;
-
-  &::placeholder { color: ${({ theme }) => theme.colors.gray300}; }
-`;
-
-const ErrorText = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.xs};
-  color: ${({ theme }) => theme.colors.error};
 `;
 
 const SuccessText = styled.p`
@@ -92,8 +69,14 @@ const SuccessText = styled.p`
 
 const CameraIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-    <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="2"/>
+    <path
+      d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z"
+      stroke="white"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="2" />
   </svg>
 );
 
@@ -107,14 +90,19 @@ const EditProfile = () => {
     accountname: user?.accountname || '',
     intro: user?.intro || '',
   });
-  const [focused, setFocused] = useState({});
   const [errors, setErrors] = useState({});
   const [accountValid, setAccountValid] = useState(true);
-  const [previewImage, setPreviewImage] = useState(getImageUrl(user?.image) || 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png');
+  const [previewImage, setPreviewImage] = useState(
+    getImageUrl(user?.image) || 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png',
+  );
   const [imageFile, setImageFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const isChanged = form.username !== user?.username || form.accountname !== user?.accountname || form.intro !== user?.intro || imageFile;
+  const isChanged =
+    form.username !== user?.username ||
+    form.accountname !== user?.accountname ||
+    form.intro !== user?.intro ||
+    imageFile;
 
   const isValid =
     form.username.length >= 2 &&
@@ -131,7 +119,6 @@ const EditProfile = () => {
   };
 
   const handleUsernameBlur = () => {
-    setFocused({ ...focused, username: false });
     if (!form.username) return;
     if (form.username.length < 2 || form.username.length > 10) {
       setErrors({ ...errors, username: '사용자 이름은 2~10자 이내여야 합니다.' });
@@ -141,7 +128,6 @@ const EditProfile = () => {
   };
 
   const handleAccountBlur = async () => {
-    setFocused({ ...focused, accountname: false });
     if (!form.accountname || form.accountname === user?.accountname) return;
 
     if (!validateAccountname(form.accountname)) {
@@ -203,12 +189,7 @@ const EditProfile = () => {
 
   return (
     <Wrapper>
-      <Header
-        type="back-title-save"
-        title="프로필 수정"
-        saveDisabled={!isValid || isLoading}
-        onSave={handleSave}
-      />
+      <Header type="back-title-save" title="프로필 수정" saveDisabled={!isValid || isLoading} onSave={handleSave} />
 
       <Content>
         <AvatarWrapper>
@@ -216,61 +197,62 @@ const EditProfile = () => {
             <Avatar
               src={previewImage}
               alt="프로필 이미지"
-              onError={(e) => { e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png'; }}
+              onError={(e) => {
+                e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png';
+              }}
             />
             <AvatarEditBtn type="button" onClick={() => fileRef.current?.click()}>
               <CameraIcon />
             </AvatarEditBtn>
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleImageChange}
+            />
           </AvatarContainer>
         </AvatarWrapper>
 
         <Form onSubmit={handleSave}>
-          <Field>
-            <Label>사용자 이름 (2~10자)</Label>
-            <Input
-              type="text"
-              name="username"
-              value={form.username}
-              onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, username: true })}
-              onBlur={handleUsernameBlur}
-              $focused={focused.username}
-              $error={!!errors.username}
-            />
-            {errors.username && <ErrorText>{errors.username}</ErrorText>}
-          </Field>
+          <AuthInput
+            label="사용자 이름 (2~10자)"
+            type="text"
+            id="username"
+            name="username"
+            value={form.username}
+            onChange={handleChange}
+            onBlur={handleUsernameBlur}
+            errorText={errors.username}
+            placeholder="2~10자 이내여야 합니다."
+          />
 
-          <Field>
-            <Label>계정 ID</Label>
-            <Input
+          <InputGroup>
+            <AuthInput
+              label="계정 ID"
               type="text"
+              id="accountname"
               name="accountname"
               value={form.accountname}
               onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, accountname: true })}
               onBlur={handleAccountBlur}
-              $focused={focused.accountname}
-              $error={!!errors.accountname}
+              errorText={errors.accountname}
+              placeholder="영문, 숫자, 특수문자(.,_)만 사용 가능합니다."
             />
-            {errors.accountname && <ErrorText>{errors.accountname}</ErrorText>}
             {accountValid && form.accountname !== user?.accountname && !errors.accountname && (
               <SuccessText>사용 가능한 계정ID입니다.</SuccessText>
             )}
-          </Field>
+          </InputGroup>
 
-          <Field>
-            <Label>소개</Label>
-            <Input
-              type="text"
-              name="intro"
-              value={form.intro}
-              onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, intro: true })}
-              onBlur={() => setFocused({ ...focused, intro: false })}
-              $focused={focused.intro}
-            />
-          </Field>
+          <AuthInput
+            label="소개"
+            type="text"
+            id="intro"
+            name="intro"
+            value={form.intro}
+            onChange={handleChange}
+            placeholder="자신과 판매할 상품에 대해 소개해 주세요!"
+          />
         </Form>
       </Content>
     </Wrapper>
