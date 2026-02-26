@@ -6,7 +6,7 @@ import { uploadImage } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 import { useEffect } from 'react';
-import ImageUploadIcon from '../../assets/icons/icon-upload.svg?react';
+import ImageIcon from '../../assets/icons/icon-image.svg?react';
 import AlertModal from '../../components/common/AlertModal';
 import Header from '../../components/common/Header';
 
@@ -272,7 +272,7 @@ const PostCreate = ({ isEdit = false }) => {
 
       {images.length < MAX_IMAGES && (
         <FloatingCameraBtn onClick={() => fileRef.current?.click()}>
-          <ImageUploadIcon width="28" height="28" fill="white" />
+          <ImageIcon width="28" height="28" />
         </FloatingCameraBtn>
       )}
 
