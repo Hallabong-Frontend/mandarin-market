@@ -7,6 +7,7 @@ import { getUserPosts } from '../../api/user';
 import { followUser, unfollowUser } from '../../api/user';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, formatPrice } from '../../utils/format';
+import { getChatId, getOrCreateChat } from '../../firebase/chat';
 import BottomTabNav from '../../components/common/BottomTabNav';
 import BottomModal from '../../components/common/BottomModal';
 import AlertModal from '../../components/common/AlertModal';
@@ -321,6 +322,16 @@ const Profile = () => {
     }
   };
 
+  const handleChat = async () => {
+    const chatId = getChatId(me.accountname, profile.accountname);
+    await getOrCreateChat(
+      chatId,
+      { accountname: me.accountname, username: me.username, image: me.image },
+      { accountname: profile.accountname, username: profile.username, image: profile.image },
+    );
+    navigate(`/chat/${chatId}`);
+  };
+
   const handleDeleteProduct = async () => {
     setShowDeleteProductAlert(false);
     try {
@@ -402,7 +413,7 @@ const Profile = () => {
             </ActionButtons>
           ) : (
             <ActionButtons>
-              <IconActionBtn onClick={() => navigate('/chat')}>
+              <IconActionBtn onClick={handleChat}>
                 <ChatBubbleIcon />
               </IconActionBtn>
               <FollowButton $following={following} onClick={handleFollow}>

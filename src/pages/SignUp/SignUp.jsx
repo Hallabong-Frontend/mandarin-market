@@ -73,10 +73,29 @@ const SignUp = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isValid) return;
-    navigate('/signup/profile', { state: { email: form.email, password: form.password } });
+    if (!isValid || isChecking) return;
+
+    if (!validateEmail(form.email)) {
+      setErrors((prev) => ({ ...prev, email: '*이메일 형식이 올바르지 않습니다.' }));
+      return;
+    }
+
+    setIsChecking(true);
+    try {
+      const data = await checkEmailValid(form.email);
+      if (data.message.includes('사용 가능한')) {
+        setErrors((prev) => ({ ...prev, email: '' }));
+        navigate('/signup/profile', { state: { email: form.email, password: form.password } });
+      } else {
+        setErrors((prev) => ({ ...prev, email: '*이미 가입된 이메일 주소입니다.' }));
+      }
+    } catch (err) {
+      setErrors((prev) => ({ ...prev, email: '*이미 가입된 이메일 주소입니다.' }));
+    } finally {
+      setIsChecking(false);
+    }
   };
 
   return (

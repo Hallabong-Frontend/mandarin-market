@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-import { register, uploadImage, checkAccountValid } from '../../api/auth';
+import { register, uploadImage, checkAccountValid, login } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 import { validateAccountname, getImageUrl } from '../../utils/format';
 import AuthInput from '../../components/common/AuthInput';
@@ -74,11 +74,6 @@ const FieldGroup = styled.div`
   gap: 6px;
 `;
 
-const SuccessText = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.xs};
-  color: ${({ theme }) => theme.colors.success};
-`;
-
 const ErrorText = styled.p`
   font-size: ${({ theme }) => theme.fonts.size.xs};
   color: ${({ theme }) => theme.colors.error};
@@ -91,6 +86,7 @@ const ButtonWrapper = styled.div`
 
 const ImageIcon = () => <ImageIconSvg width="18" height="18" />;
 
+
 const ProfileSetup = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -98,6 +94,12 @@ const ProfileSetup = () => {
   const fileRef = useRef(null);
 
   const { email, password } = location.state || {};
+
+  useEffect(() => {
+    if (!email || !password) {
+      navigate('/signup');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [form, setForm] = useState({ username: '', accountname: '', intro: '' });
   const [errors, setErrors] = useState({});
@@ -107,11 +109,7 @@ const ProfileSetup = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const isValid =
-    form.username.length >= 2 &&
-    form.username.length <= 10 &&
-    accountValid &&
-    !errors.username &&
-    !errors.accountname;
+    form.username.length >= 2 && form.username.length <= 10 && accountValid && !errors.username && !errors.accountname;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -138,15 +136,15 @@ const ProfileSetup = () => {
 
     try {
       const data = await checkAccountValid(form.accountname);
-      if (data.message === '*이미 사용 중인 ID 입니다.') {
+      if (data.message === '사용 가능한 계정ID 입니다.') {
         setErrors({ ...errors, accountname: '' });
         setAccountValid(true);
       } else {
-        setErrors({ ...errors, accountname: data.message });
+        setErrors({ ...errors, accountname: '*이미 사용 중인 ID입니다.' });
         setAccountValid(false);
       }
     } catch (err) {
-      setErrors({ ...errors, accountname: err.response?.data?.message || '*이미 사용 중인 ID 입니다.' });
+      setErrors({ ...errors, accountname: '*이미 사용 중인 ID입니다.' });
       setAccountValid(false);
     }
   };
@@ -189,6 +187,8 @@ const ProfileSetup = () => {
       const msg = err.response?.data?.message;
       if (msg?.includes('계정')) {
         setErrors({ ...errors, accountname: msg });
+      } else if (msg?.includes('이메일')) {
+        navigate('/');
       } else {
         setErrors({ ...errors, general: msg || '회원가입에 실패했습니다.' });
       }
@@ -198,7 +198,6 @@ const ProfileSetup = () => {
   };
 
   if (!email || !password) {
-    navigate('/signup');
     return null;
   }
 
@@ -209,7 +208,13 @@ const ProfileSetup = () => {
 
       <AvatarWrapper>
         <AvatarContainer>
-          <Avatar src={previewImage} alt="프로필 이미지" onError={(e) => { e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png'; }} />
+          <Avatar
+            src={previewImage}
+            alt="프로필 이미지"
+            onError={(e) => {
+              e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png';
+            }}
+          />
           <AvatarEditBtn type="button" onClick={() => fileRef.current?.click()}>
             <ImageIcon />
           </AvatarEditBtn>
@@ -240,7 +245,6 @@ const ProfileSetup = () => {
             placeholder="영문, 숫자, 특수문자(.),(_)만 사용 가능합니다."
             errorText={errors.accountname}
           />
-          {accountValid && !errors.accountname && <SuccessText>사용 가능한 계정ID입니다.</SuccessText>}
         </FieldGroup>
 
         <AuthInput
@@ -255,9 +259,7 @@ const ProfileSetup = () => {
         {errors.general && <ErrorText>{errors.general}</ErrorText>}
 
         <ButtonWrapper>
-          <SubmitButton disabled={!isValid || isLoading}>
-            {isLoading ? '가입 중...' : '감귤마켓 시작하기'}
-          </SubmitButton>
+          <SubmitButton disabled={!isValid || isLoading}>{isLoading ? '가입 중...' : '감귤마켓 시작하기'}</SubmitButton>
         </ButtonWrapper>
       </Form>
     </Wrapper>

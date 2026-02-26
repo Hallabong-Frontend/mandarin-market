@@ -1,9 +1,13 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import BottomTabNav from '../../components/common/BottomTabNav';
 import BottomModal from '../../components/common/BottomModal';
 import Header from '../../components/common/Header';
-import { useState } from 'react';
+import Spinner from '../../components/common/Spinner';
+import { useAuth } from '../../context/AuthContext';
+import { subscribeToChats } from '../../firebase/chat';
+import { getImageUrl, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -79,36 +83,54 @@ const ChatLastMsg = styled.p`
   text-overflow: ellipsis;
 `;
 
-const DUMMY_CHATS = [
-  {
-    id: 1,
-    username: '애월읍 위니브 감귤농장',
-    lastMessage: '이번에 정정 언제하맨마씀?',
-    time: '2020.10.25',
-    unread: true,
-    avatar: 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png',
-  },
-  {
-    id: 2,
-    username: '제주감귤마을',
-    lastMessage: '깊은 어둠의 존재감, 롤스로이스 뉴 블랙 배지...',
-    time: '2020.10.25',
-    unread: true,
-    avatar: 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png',
-  },
-  {
-    id: 3,
-    username: '누구네 농장 친환경 한라봉',
-    lastMessage: '내 차는 내가 평가한다. 오픈 이벤트에 참여 하...',
-    time: '2020.10.25',
-    unread: false,
-    avatar: 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png',
-  },
-];
+const EmptyText = styled.p`
+  text-align: center;
+  padding: 60px 0;
+  color: ${({ theme }) => theme.colors.gray300};
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+`;
+
+// Firestore Timestamp → "HH:MM" 또는 "M.D" 포맷
+const formatChatTime = (timestamp) => {
+  if (!timestamp) return '';
+  const date = timestamp.toDate();
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) {
+    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+  return `${date.getMonth() + 1}.${date.getDate()}`;
+};
 
 const ChatList = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [chats, setChats] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    if (!user?.accountname) return;
+    const unsubscribe = subscribeToChats(user.accountname, (data) => {
+      setChats(data);
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, [user?.accountname]);
+
+  // 상대방 참여자 정보 추출
+  const getOtherParticipant = (chat) => {
+    const otherAccountname = chat.participants?.find((p) => p !== user.accountname);
+    return chat.participantInfo?.[otherAccountname] || { username: otherAccountname, image: '' };
+  };
+
+  // 안읽은 메시지 여부: 마지막 발신자가 나이고, 내 readAt이 lastMessageAt보다 이전이면 unread
+  const isUnread = (chat) => {
+    if (!chat.lastMessage || chat.lastSenderId === user.accountname) return false;
+    const myReadAt = chat.readAt?.[user.accountname];
+    if (!myReadAt) return true;
+    return (chat.lastMessageAt?.toMillis() || 0) > myReadAt.toMillis();
+  };
 
   const modalItems = [{ label: '설정', onClick: () => {} }];
 
@@ -117,21 +139,33 @@ const ChatList = () => {
       <Wrapper>
         <Header type="back-more" onMore={() => setShowModal(true)} />
 
-        {DUMMY_CHATS.map((chat) => (
-          <ChatItemEl key={chat.id} onClick={() => navigate(`/chat/${chat.id}`)}>
-            <AvatarWrapper>
-              <Avatar src={chat.avatar} alt={chat.username} />
-              {chat.unread && <UnreadDot />}
-            </AvatarWrapper>
-            <ChatInfo>
-              <ChatTop>
-                <ChatUsername>{chat.username}</ChatUsername>
-                <ChatTime>{chat.time}</ChatTime>
-              </ChatTop>
-              <ChatLastMsg>{chat.lastMessage}</ChatLastMsg>
-            </ChatInfo>
-          </ChatItemEl>
-        ))}
+        {isLoading ? (
+          <Spinner padding="40vh 0" />
+        ) : chats.length === 0 ? (
+          <EmptyText>채팅 내역이 없습니다.</EmptyText>
+        ) : (
+          chats.map((chat) => {
+            const other = getOtherParticipant(chat);
+            return (
+              <ChatItemEl key={chat.id} onClick={() => navigate(`/chat/${chat.id}`)}>
+                <AvatarWrapper>
+                  <Avatar
+                    src={getImageUrl(other.image) || DEFAULT_PROFILE_IMAGE}
+                    alt={other.username}
+                  />
+                  {isUnread(chat) && <UnreadDot />}
+                </AvatarWrapper>
+                <ChatInfo>
+                  <ChatTop>
+                    <ChatUsername>{other.username}</ChatUsername>
+                    <ChatTime>{formatChatTime(chat.lastMessageAt)}</ChatTime>
+                  </ChatTop>
+                  <ChatLastMsg>{chat.lastMessage || '채팅을 시작해보세요.'}</ChatLastMsg>
+                </ChatInfo>
+              </ChatItemEl>
+            );
+          })
+        )}
       </Wrapper>
 
       <BottomTabNav />
