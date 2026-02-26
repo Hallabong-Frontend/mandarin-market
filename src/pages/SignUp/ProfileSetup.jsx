@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-import { register, uploadImage, checkAccountValid } from '../../api/auth';
+import { register, uploadImage, checkAccountValid, login } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 import { validateAccountname, getImageUrl } from '../../utils/format';
 import AuthInput from '../../components/common/AuthInput';
@@ -73,11 +73,6 @@ const FieldGroup = styled.div`
   gap: 6px;
 `;
 
-const SuccessText = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.xs};
-  color: ${({ theme }) => theme.colors.success};
-`;
-
 const ErrorText = styled.p`
   font-size: ${({ theme }) => theme.fonts.size.xs};
   color: ${({ theme }) => theme.colors.error};
@@ -90,8 +85,14 @@ const ButtonWrapper = styled.div`
 
 const CameraIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-    <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="2"/>
+    <path
+      d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z"
+      stroke="white"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="2" />
   </svg>
 );
 
@@ -103,6 +104,12 @@ const ProfileSetup = () => {
 
   const { email, password } = location.state || {};
 
+  useEffect(() => {
+    if (!email || !password) {
+      navigate('/signup');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [form, setForm] = useState({ username: '', accountname: '', intro: '' });
   const [errors, setErrors] = useState({});
   const [accountValid, setAccountValid] = useState(false);
@@ -111,11 +118,7 @@ const ProfileSetup = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const isValid =
-    form.username.length >= 2 &&
-    form.username.length <= 10 &&
-    accountValid &&
-    !errors.username &&
-    !errors.accountname;
+    form.username.length >= 2 && form.username.length <= 10 && accountValid && !errors.username && !errors.accountname;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -142,15 +145,15 @@ const ProfileSetup = () => {
 
     try {
       const data = await checkAccountValid(form.accountname);
-      if (data.message === '*이미 사용 중인 ID 입니다.') {
+      if (data.message === '사용 가능한 계정ID 입니다.') {
         setErrors({ ...errors, accountname: '' });
         setAccountValid(true);
       } else {
-        setErrors({ ...errors, accountname: data.message });
+        setErrors({ ...errors, accountname: '*이미 사용 중인 ID입니다.' });
         setAccountValid(false);
       }
     } catch (err) {
-      setErrors({ ...errors, accountname: err.response?.data?.message || '*이미 사용 중인 ID 입니다.' });
+      setErrors({ ...errors, accountname: '*이미 사용 중인 ID입니다.' });
       setAccountValid(false);
     }
   };
@@ -193,6 +196,8 @@ const ProfileSetup = () => {
       const msg = err.response?.data?.message;
       if (msg?.includes('계정')) {
         setErrors({ ...errors, accountname: msg });
+      } else if (msg?.includes('이메일')) {
+        navigate('/');
       } else {
         setErrors({ ...errors, general: msg || '회원가입에 실패했습니다.' });
       }
@@ -202,7 +207,6 @@ const ProfileSetup = () => {
   };
 
   if (!email || !password) {
-    navigate('/signup');
     return null;
   }
 
@@ -213,7 +217,13 @@ const ProfileSetup = () => {
 
       <AvatarWrapper>
         <AvatarContainer>
-          <Avatar src={previewImage} alt="프로필 이미지" onError={(e) => { e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png'; }} />
+          <Avatar
+            src={previewImage}
+            alt="프로필 이미지"
+            onError={(e) => {
+              e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png';
+            }}
+          />
           <AvatarEditBtn type="button" onClick={() => fileRef.current?.click()}>
             <CameraIcon />
           </AvatarEditBtn>
@@ -244,7 +254,6 @@ const ProfileSetup = () => {
             placeholder="영문, 숫자, 특수문자(.),(_)만 사용 가능합니다."
             errorText={errors.accountname}
           />
-          {accountValid && !errors.accountname && <SuccessText>사용 가능한 계정ID입니다.</SuccessText>}
         </FieldGroup>
 
         <AuthInput
@@ -259,9 +268,7 @@ const ProfileSetup = () => {
         {errors.general && <ErrorText>{errors.general}</ErrorText>}
 
         <ButtonWrapper>
-          <SubmitButton disabled={!isValid || isLoading}>
-            {isLoading ? '가입 중...' : '감귤마켓 시작하기'}
-          </SubmitButton>
+          <SubmitButton disabled={!isValid || isLoading}>{isLoading ? '가입 중...' : '감귤마켓 시작하기'}</SubmitButton>
         </ButtonWrapper>
       </Form>
     </Wrapper>
