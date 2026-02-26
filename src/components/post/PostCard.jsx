@@ -64,6 +64,7 @@ const Content = styled.p`
   line-height: 1.6;
   margin-bottom: 12px;
   word-break: break-word;
+  white-space: pre-wrap;
 `;
 
 const ImageContainer = styled.div`
