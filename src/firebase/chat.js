@@ -1,4 +1,4 @@
-import { db, storage } from './config';
+import { db } from './config';
 import {
   collection,
   doc,
@@ -12,7 +12,8 @@ import {
   serverTimestamp,
   where,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadImage } from '../api/auth';
+import { getImageUrl } from '../utils/format';
 
 // chatId: 두 accountname을 알파벳순 정렬 후 '|' 로 결합
 // accountname은 영문/숫자/._만 허용되므로 '|'는 충돌 없음
@@ -58,11 +59,10 @@ export const sendTextMessage = async (chatId, senderId, text) => {
   });
 };
 
-// 이미지 메시지 전송 (Firebase Storage 업로드 후 URL 저장)
+// 이미지 메시지 전송 (Mandarin API 업로드 후 URL 저장)
 export const sendImageMessage = async (chatId, senderId, file) => {
-  const imageRef = ref(storage, `chat/${chatId}/${Date.now()}_${file.name}`);
-  const snapshot = await uploadBytes(imageRef, file);
-  const imageUrl = await getDownloadURL(snapshot.ref);
+  const info = await uploadImage(file);
+  const imageUrl = getImageUrl(info.filename);
 
   await addDoc(collection(db, 'chats', chatId, 'messages'), {
     senderId,
