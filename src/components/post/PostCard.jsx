@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import { likePost, unlikePost, deletePost, reportPost } from '../../api/post';
-import { getImageUrl, formatTimeAgo, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
+import { getImageUrl, formatDate, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 import BottomModal from '../common/BottomModal';
 import AlertModal from '../common/AlertModal';
 import HeartIconSvg from '../../assets/icons/icon-heart.svg';
@@ -116,9 +116,10 @@ const CommentIcon = () => <img src={CommentIconSvg} alt="" width="20" height="20
 const MoreDots = () => <img src={MoreDotsIconSvg} alt="" width="18" height="18" />;
 
 const TimeText = styled.span`
+  display: block;
   font-size: ${({ theme }) => theme.fonts.size.xs};
   color: ${({ theme }) => theme.colors.gray300};
-  margin-left: auto;
+  margin-top: 16px;
 `;
 
 const PostCard = ({ post, onDelete }) => {
@@ -248,8 +249,8 @@ const PostCard = ({ post, onDelete }) => {
             <CommentIcon />
             {post.commentCount > 0 && <span>{post.commentCount}</span>}
           </ActionButton>
-          <TimeText>{formatTimeAgo(post.createdAt)}</TimeText>
         </ActionBar>
+        <TimeText>{formatDate(post.createdAt)}</TimeText>
       </Card>
 
       <BottomModal isOpen={showModal} onClose={() => setShowModal(false)} items={modalItems} />

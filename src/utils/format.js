@@ -1,12 +1,12 @@
 // 가격 포맷 (숫자 → 원단위)
 export const formatPrice = (price) => {
-  if (!price && price !== 0) return "";
-  return Number(price).toLocaleString("ko-KR");
+  if (!price && price !== 0) return '';
+  return Number(price).toLocaleString('ko-KR');
 };
 
 // 가격 입력 정수화 (문자 → 숫자)
 export const parsePrice = (value) => {
-  return value.replace(/[^0-9]/g, "");
+  return value.replace(/[^0-9]/g, '');
 };
 
 // 시간 포맷 (몇 초/분/시간/일 전)
@@ -23,12 +23,21 @@ export const formatTimeAgo = (dateString) => {
   return `${Math.floor(diff / 31536000)}년 전`;
 };
 
-const IMAGE_BASE_URL = "https://dev.wenivops.co.kr/services/mandarin";
+// 날짜 포맷 (YYYY년 M월 D일)
+export const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${year}년 ${month}월 ${day}일`;
+};
+
+const IMAGE_BASE_URL = 'https://dev.wenivops.co.kr/services/mandarin';
 
 // 이미지 URL 처리 (상대경로 → 절대경로)
 export const getImageUrl = (url) => {
-  if (!url) return "";
-  if (url.startsWith("http")) return url;
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
   return `${IMAGE_BASE_URL}/${url}`;
 };
 
@@ -38,7 +47,7 @@ export const DEFAULT_PROFILE_IMAGE = `${IMAGE_BASE_URL}/Ellipse.png`;
 // 이미지 URL이 유효한지 확인
 export const isValidImageUrl = (url) => {
   if (!url) return false;
-  return url.startsWith("http") || url.startsWith("/");
+  return url.startsWith('http') || url.startsWith('/');
 };
 
 // 계정ID 유효성 검사 (영문, 숫자, 밑줄, 마침표만)
