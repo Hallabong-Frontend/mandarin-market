@@ -6,7 +6,7 @@ import { likePost, unlikePost, deletePost, reportPost } from '../../api/post';
 import { getImageUrl, formatDate, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 import BottomModal from '../common/BottomModal';
 import AlertModal from '../common/AlertModal';
-import HeartIconSvg from '../../assets/icons/icon-heart.svg';
+import HeartIconSvg from '../../assets/icons/icon-heart.svg?react';
 import CommentIconSvg from '../../assets/icons/icon-message-circle.svg';
 import MoreDotsIconSvg from '../../assets/icons/s-icon-more-vertical.svg';
 
@@ -109,7 +109,15 @@ const ActionButton = styled.button`
   color: ${({ theme }) => theme.colors.gray400};
 `;
 
-const HeartIcon = () => <img src={HeartIconSvg} alt="" width="20" height="20" />;
+const HeartIcon = styled(HeartIconSvg)`
+  width: 20px;
+  height: 20px;
+  path {
+    /* liked 상태에 따라 테두리와 내부 채우기 색상을 변경합니다 */
+    stroke: ${({ liked }) => (liked ? 'red' : '#767676')}; 
+    fill: ${({ liked }) => (liked ? 'red' : 'none')};
+  }
+`;
 
 const CommentIcon = () => <img src={CommentIconSvg} alt="" width="20" height="20" />;
 
