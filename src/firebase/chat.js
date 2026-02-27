@@ -4,11 +4,14 @@ import {
   doc,
   setDoc,
   getDoc,
+  getDocs,
   onSnapshot,
   addDoc,
   query,
   orderBy,
   updateDoc,
+  deleteDoc,
+  writeBatch,
   serverTimestamp,
   where,
 } from 'firebase/firestore';
@@ -98,6 +101,26 @@ export const subscribeToChats = (accountname, callback) => {
       );
     callback(chats);
   });
+};
+
+// 채팅방 및 하위 메시지 전체 삭제
+export const deleteChat = async (chatId) => {
+  const messagesRef = collection(db, 'chats', chatId, 'messages');
+  const snapshot = await getDocs(messagesRef);
+  const batch = writeBatch(db);
+  snapshot.docs.forEach((d) => batch.delete(d.ref));
+  await batch.commit();
+  await deleteDoc(doc(db, 'chats', chatId));
+};
+
+// 메시지 수정
+export const editMessage = async (chatId, messageId, newText) => {
+  await updateDoc(doc(db, 'chats', chatId, 'messages', messageId), { text: newText });
+};
+
+// 메시지 삭제
+export const deleteMessage = async (chatId, messageId) => {
+  await deleteDoc(doc(db, 'chats', chatId, 'messages', messageId));
 };
 
 // 채팅방 메시지 실시간 구독 (createdAt 오름차순)
