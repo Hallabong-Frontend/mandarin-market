@@ -5,6 +5,7 @@ import { searchUser } from '../../api/user';
 import UserItem from '../../components/user/UserItem';
 import Header from '../../components/common/Header';
 import EmptyState from '../../components/common/EmptyState';
+import Spinner from '../../components/common/Spinner';
 
 const Wrapper = styled.div`
   min-height: 100vh;
