@@ -162,8 +162,8 @@ const EditProfile = () => {
 
       updateUser(data.user);
       navigate(-1);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     } finally {
       setIsLoading(false);
     }

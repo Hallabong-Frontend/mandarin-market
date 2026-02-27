@@ -140,7 +140,7 @@ const ProfileSetup = () => {
         setErrors({ ...errors, accountname: '*이미 사용 중인 ID입니다.' });
         setAccountValid(false);
       }
-    } catch (err) {
+    } catch (error) {
       setErrors({ ...errors, accountname: '*이미 사용 중인 ID입니다.' });
       setAccountValid(false);
     }
