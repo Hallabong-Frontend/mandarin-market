@@ -9,7 +9,7 @@ import AlertModal from '../../components/common/AlertModal';
 import Spinner from '../../components/common/Spinner';
 import Header from '../../components/common/Header';
 import { useAuth } from '../../context/AuthContext';
-import EmptyLogoSvg from '../../assets/images/icon-logo-gray.svg?react';
+import EmptyLogoSvg from '../../assets/icons/icon-logo-gray.svg?react';
 const Wrapper = styled.div`
   padding-bottom: 70px;
 `;

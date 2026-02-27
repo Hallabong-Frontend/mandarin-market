@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import SubmitButton from './SubmitButton';
@@ -12,8 +13,10 @@ const MoreIcon = () => <MoreIconSvg width="24" height="24" />;
 const SearchIcon = () => <SearchIconSvg width="24" height="24" />;
 
 const HeaderWrapper = styled.header`
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 50%;
+  width: min(100%, 390px);
   z-index: ${({ theme }) => theme.zIndex.header};
   background-color: ${({ theme }) => theme.colors.white};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
@@ -22,6 +25,13 @@ const HeaderWrapper = styled.header`
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
+  transform: translateX(-50%) translateY(${({ $hidden }) => ($hidden ? '-100%' : '0')});
+  transition: transform 0.25s ease;
+`;
+
+const HeaderSpacer = styled.div`
+  height: 48px;
+  flex-shrink: 0;
 `;
 
 const BackButton = styled.button`
@@ -115,6 +125,26 @@ const Header = ({
   searchPlaceholder = '계정을 검색해보세요',
 }) => {
   const navigate = useNavigate();
+  const [hidden, setHidden] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const diff = currentY - lastScrollY.current;
+
+      if (diff < 0) {
+        setHidden(false);
+      } else if (diff > 5 && currentY > 48) {
+        setHidden(true);
+      }
+
+      lastScrollY.current = currentY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleBack = () => {
     if (onBack) onBack();
@@ -123,37 +153,44 @@ const Header = ({
 
   if (type === 'logo-search') {
     return (
-      <HeaderWrapper>
-        <LogoText>{logo}</LogoText>
-        <RightButton onClick={onSearch} aria-label="검색">
-          <SearchIcon />
-        </RightButton>
-      </HeaderWrapper>
+      <>
+        <HeaderWrapper $hidden={hidden}>
+          <LogoText>{logo}</LogoText>
+          <RightButton onClick={onSearch} aria-label="검색">
+            <SearchIcon />
+          </RightButton>
+        </HeaderWrapper>
+        <HeaderSpacer />
+      </>
     );
   }
 
   if (type === 'search-input') {
     return (
-      <HeaderWrapper>
-        <BackButton onClick={handleBack} aria-label="뒤로가기">
-          <BackIcon />
-        </BackButton>
-        <SearchInputWrapper>
-          <SearchIcon />
-          <SearchInput
-            type="text"
-            value={keyword}
-            onChange={onKeywordChange}
-            placeholder={searchPlaceholder}
-            autoFocus
-          />
-        </SearchInputWrapper>
-      </HeaderWrapper>
+      <>
+        <HeaderWrapper $hidden={hidden}>
+          <BackButton onClick={handleBack} aria-label="뒤로가기">
+            <BackIcon />
+          </BackButton>
+          <SearchInputWrapper>
+            <SearchIcon />
+            <SearchInput
+              type="text"
+              value={keyword}
+              onChange={onKeywordChange}
+              placeholder={searchPlaceholder}
+              autoFocus
+            />
+          </SearchInputWrapper>
+        </HeaderWrapper>
+        <HeaderSpacer />
+      </>
     );
   }
 
   return (
-    <HeaderWrapper>
+    <>
+    <HeaderWrapper $hidden={hidden}>
       <BackButton onClick={handleBack} aria-label="뒤로가기">
         <BackIcon />
       </BackButton>
@@ -195,6 +232,8 @@ const Header = ({
         'back-title-text',
       ].includes(type) && <div style={{ width: 32 }} />}
     </HeaderWrapper>
+    <HeaderSpacer />
+    </>
   );
 };
 
