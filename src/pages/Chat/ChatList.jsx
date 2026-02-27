@@ -8,6 +8,7 @@ import Spinner from '../../components/common/Spinner';
 import { useAuth } from '../../context/AuthContext';
 import { subscribeToChats } from '../../firebase/chat';
 import Avatar from '../../components/common/Avatar';
+import EmptyState from '../../components/common/EmptyState';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -75,13 +76,6 @@ const ChatLastMsg = styled.p`
   text-overflow: ellipsis;
 `;
 
-const EmptyText = styled.p`
-  text-align: center;
-  padding: 60px 0;
-  color: ${({ theme }) => theme.colors.gray300};
-  font-size: ${({ theme }) => theme.fonts.size.sm};
-`;
-
 // Firestore Timestamp → "HH:MM" 또는 "M.D" 포맷
 const formatChatTime = (timestamp) => {
   if (!timestamp) return '';
@@ -134,7 +128,7 @@ const ChatList = () => {
         {isLoading ? (
           <Spinner padding="40vh 0" />
         ) : chats.length === 0 ? (
-          <EmptyText>채팅 내역이 없습니다.</EmptyText>
+          <EmptyState text="채팅 내역이 없습니다." padding="60px 0" fontSize="sm" color="gray300" />
         ) : (
           chats.map((chat) => {
             const other = getOtherParticipant(chat);

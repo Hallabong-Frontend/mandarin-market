@@ -3,25 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { searchUser } from '../../api/user';
 import UserItem from '../../components/user/UserItem';
-import Spinner from '../../components/common/Spinner';
 import Header from '../../components/common/Header';
+import EmptyState from '../../components/common/EmptyState';
 
 const Wrapper = styled.div`
   min-height: 100vh;
   background-color: ${({ theme }) => theme.colors.white};
-`;
-
-const EmptySearch = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 32px;
-`;
-
-const EmptyText = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  color: ${({ theme }) => theme.colors.gray400};
 `;
 
 const ResultList = styled.ul``;
@@ -81,9 +68,7 @@ const Search = () => {
       {isLoading ? (
         <Spinner />
       ) : hasSearched && results.length === 0 ? (
-        <EmptySearch>
-          <EmptyText>검색 결과가 없습니다.</EmptyText>
-        </EmptySearch>
+        <EmptyState text="검색 결과가 없습니다." padding="80px 32px" />
       ) : (
         <ResultList>
           {results.map((user) => (

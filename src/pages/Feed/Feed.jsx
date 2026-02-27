@@ -8,25 +8,11 @@ import BottomModal from '../../components/common/BottomModal';
 import AlertModal from '../../components/common/AlertModal';
 import Spinner from '../../components/common/Spinner';
 import Header from '../../components/common/Header';
+import EmptyState from '../../components/common/EmptyState';
 import { useAuth } from '../../context/AuthContext';
 import EmptyLogoSvg from '../../assets/icons/icon-logo-gray.svg?react';
 const Wrapper = styled.div`
   padding-bottom: 70px;
-`;
-
-const EmptyFeed = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: calc(100vh - 130px);
-  gap: 16px;
-`;
-
-const EmptyText = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  color: ${({ theme }) => theme.colors.gray400};
-  text-align: center;
 `;
 
 const SearchButton = styled.button`
@@ -87,11 +73,10 @@ const Feed = () => {
         {isLoading ? (
           <Spinner />
         ) : posts.length === 0 ? (
-          <EmptyFeed>
+          <EmptyState text="유저를 검색해 팔로우 해보세요!" height="calc(100vh - 130px)">
             <EmptyLogo />
-            <EmptyText>유저를 검색해 팔로우 해보세요!</EmptyText>
             <SearchButton onClick={() => navigate('/search')}>검색하기</SearchButton>
-          </EmptyFeed>
+          </EmptyState>
         ) : (
           posts.map((post) => <PostCard key={post.id} post={post} onDelete={handleDelete} />)
         )}
