@@ -6,7 +6,13 @@ import BackIconSvg from '../../assets/icons/icon-arrow-left.svg?react';
 import MoreIconSvg from '../../assets/icons/icon-more-vertical.svg?react';
 import SearchIconSvg from '../../assets/icons/icon-search.svg?react';
 
-const BackIcon = () => <BackIconSvg width="22" height="22" />;
+const BackIcon = styled(BackIconSvg)`
+  width: 22px;
+  height: 22px;
+  path {
+    stroke: ${({ theme }) => theme.colors.black};
+  }
+`;
 
 const MoreIcon = () => <MoreIconSvg width="24" height="24" />;
 

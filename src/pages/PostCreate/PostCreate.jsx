@@ -1,11 +1,10 @@
-import { useState, useRef } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { createPost, updatePost, getPost } from '../../api/post';
 import { uploadImage } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
-import { useEffect } from 'react';
 import ImageIcon from '../../assets/icons/icon-image.svg?react';
 import AlertModal from '../../components/common/AlertModal';
 import Header from '../../components/common/Header';
@@ -13,7 +12,7 @@ import Header from '../../components/common/Header';
 const Wrapper = styled.div`
   min-height: 100vh;
   background-color: ${({ theme }) => theme.colors.white};
-  padding-bottom: 80px;
+  padding-bottom: 88px;
   overflow-x: hidden;
 `;
 
@@ -30,18 +29,20 @@ const AuthorAvatar = styled.img`
   object-fit: cover;
   flex-shrink: 0;
   background-color: ${({ theme }) => theme.colors.gray100};
+  border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const TextArea = styled.textarea`
   flex: 1;
-  margin-top: 12px;
+  min-height: 120px;
   font-size: ${({ theme }) => theme.fonts.size.base};
   color: ${({ theme }) => theme.colors.black};
   resize: none;
   line-height: 1.6;
   border: none;
   outline: none;
-  max-height: 40vh;
+  background: transparent;
+  max-height: 44vh;
   overflow-y: auto;
 
   &::placeholder {
@@ -58,6 +59,7 @@ const ImagePreviews = styled.div`
   -webkit-overflow-scrolling: touch;
   width: 100%;
   box-sizing: border-box;
+
   &::-webkit-scrollbar {
     display: none;
   }
@@ -75,31 +77,33 @@ const PreviewImage = styled.img`
   height: 100%;
   object-fit: cover;
   border-radius: ${({ theme }) => theme.borderRadius.base};
+  border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const RemoveImageBtn = styled.button`
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
-  background-color: rgba(0, 0, 0, 0.5);
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: none;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 12px;
+  background-color: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 14px;
 `;
 
-/* 우측 하단 플로팅 카메라 버튼 */
 const FloatingCameraBtn = styled.button`
   position: fixed;
   right: calc(50% - 195px + 16px);
   bottom: 24px;
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   background-color: ${({ theme }) => theme.colors.primary};
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -135,7 +139,7 @@ const PostCreate = ({ isEdit = false }) => {
         try {
           const data = await getPost(postId);
           const post = data.post;
-          setContent(post.content);
+          setContent(post.content || '');
           if (post.image) {
             const imgUrls = post.image
               .split(',')
@@ -169,6 +173,7 @@ const PostCreate = ({ isEdit = false }) => {
       e.target.value = '';
       return;
     }
+
     const validFiles = files.slice(0, remaining);
 
     validFiles.forEach((file) => {
@@ -178,6 +183,7 @@ const PostCreate = ({ isEdit = false }) => {
       };
       reader.readAsDataURL(file);
     });
+
     e.target.value = '';
   };
 
@@ -199,7 +205,6 @@ const PostCreate = ({ isEdit = false }) => {
       for (const img of images.slice(0, MAX_IMAGES)) {
         if (img.isNew && img.file) {
           const data = await uploadImage(img.file);
-          console.log(data);
           imageUrls.push(data.filename);
         } else if (img.rawUrl) {
           imageUrls.push(img.rawUrl);
@@ -207,7 +212,6 @@ const PostCreate = ({ isEdit = false }) => {
       }
 
       const imageString = imageUrls.join(',');
-      console.log(imageUrls);
 
       if (isEdit) {
         await updatePost(postId, content, imageString);
@@ -244,7 +248,7 @@ const PostCreate = ({ isEdit = false }) => {
           ref={textareaRef}
           value={content}
           onChange={handleContentChange}
-          placeholder="게시글을 작성해주세요..."
+          placeholder="게시글 입력하기..."
           autoFocus
         />
       </Content>
@@ -260,7 +264,9 @@ const PostCreate = ({ isEdit = false }) => {
                   e.target.style.display = 'none';
                 }}
               />
-              <RemoveImageBtn onClick={() => handleRemoveImage(i)}>✕</RemoveImageBtn>
+              <RemoveImageBtn type="button" onClick={() => handleRemoveImage(i)}>
+                ×
+              </RemoveImageBtn>
             </ImagePreviewItem>
           ))}
         </ImagePreviews>
@@ -276,7 +282,7 @@ const PostCreate = ({ isEdit = false }) => {
       />
 
       {images.length < MAX_IMAGES && (
-        <FloatingCameraBtn onClick={() => fileRef.current?.click()}>
+        <FloatingCameraBtn type="button" onClick={() => fileRef.current?.click()}>
           <ImageIcon width="28" height="28" />
         </FloatingCameraBtn>
       )}

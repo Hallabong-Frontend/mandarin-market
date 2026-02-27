@@ -5,7 +5,9 @@ import { getUserProfile } from '../../api/user';
 import { getMyProducts, deleteProduct } from '../../api/product';
 import { getUserPosts } from '../../api/user';
 import { followUser, unfollowUser } from '../../api/user';
+import { getMyInfo } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
+import { useThemeMode } from '../../context/ThemeModeContext';
 import { getImageUrl, formatPrice } from '../../utils/format';
 import { getChatId, getOrCreateChat } from '../../firebase/chat';
 import BottomTabNav from '../../components/common/BottomTabNav';
@@ -234,6 +236,119 @@ const ProductPrice = styled.p`
   margin-top: 2px;
 `;
 
+const SettingsOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background-color: ${({ theme }) => theme.colors.white};
+  z-index: ${({ theme }) => theme.zIndex.overlay};
+  display: flex;
+  justify-content: center;
+`;
+
+const SettingsSheet = styled.div`
+  width: 100%;
+  max-width: 390px;
+  min-height: 100vh;
+  background-color: ${({ theme }) => theme.colors.white};
+  padding: 20px 16px 24px;
+`;
+
+const SettingsTitle = styled.h4`
+  font-size: ${({ theme }) => theme.fonts.size.md};
+  font-weight: ${({ theme }) => theme.fonts.weight.bold};
+  color: ${({ theme }) => theme.colors.black};
+  margin: 0;
+`;
+
+const SettingsTopBar = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+`;
+
+const SettingsCloseIconBtn = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: ${({ theme }) => theme.borderRadius.circle};
+  color: ${({ theme }) => theme.colors.gray400};
+  font-size: 18px;
+`;
+
+const SettingRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const SettingLabel = styled.span`
+  font-size: ${({ theme }) => theme.fonts.size.base};
+  color: ${({ theme }) => theme.colors.text};
+`;
+
+const ThemeToggle = styled.button`
+  position: relative;
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  background-color: ${({ $active, theme }) => ($active ? theme.colors.primary : theme.colors.gray300)};
+  transition: ${({ theme }) => theme.transitions.base};
+`;
+
+const ThemeToggleKnob = styled.span`
+  position: absolute;
+  top: 3px;
+  left: ${({ $active }) => ($active ? '25px' : '3px')};
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #fff;
+  transition: ${({ theme }) => theme.transitions.base};
+`;
+
+const PrivacyToggleRow = styled.button`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.colors.text};
+  font-size: ${({ theme }) => theme.fonts.size.base};
+`;
+
+const PrivacyChevron = styled.span`
+  color: ${({ theme }) => theme.colors.gray400};
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+`;
+
+const PrivacyDetails = styled.div`
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  padding: 12px 0 4px;
+`;
+
+const PrivacyItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+`;
+
+const PrivacyKey = styled.span`
+  color: ${({ theme }) => theme.colors.gray400};
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+`;
+
+const PrivacyValue = styled.span`
+  color: ${({ theme }) => theme.colors.text};
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  word-break: break-all;
+  text-align: right;
+`;
+
 const PostToggle = styled.div`
   display: flex;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
@@ -305,6 +420,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { accountname } = useParams();
   const { user: me, logout } = useAuth();
+  const { isDark, toggleMode } = useThemeMode();
 
   const isMyProfile = me?.accountname === accountname;
 
@@ -316,6 +432,9 @@ const Profile = () => {
   const [following, setFollowing] = useState(false);
   const [showHeaderModal, setShowHeaderModal] = useState(false);
   const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
+  const [privacyEmail, setPrivacyEmail] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showDeleteProductAlert, setShowDeleteProductAlert] = useState(false);
@@ -343,6 +462,33 @@ const Profile = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!showPrivacyInfo) return;
+
+    const loadPrivacyEmail = async () => {
+      const savedEmail = localStorage.getItem('user_email') || '';
+      if (savedEmail) {
+        setPrivacyEmail(savedEmail);
+      }
+      if (me?.email) {
+        setPrivacyEmail(me.email);
+      }
+      try {
+        const data = await getMyInfo();
+        const fetchedUser = data.user ?? data;
+        const fetchedEmail = fetchedUser?.email || '';
+        if (fetchedEmail) {
+          setPrivacyEmail(fetchedEmail);
+          localStorage.setItem('user_email', fetchedEmail);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadPrivacyEmail();
+  }, [showPrivacyInfo, me?.email]);
 
   const handleFollow = async () => {
     try {
@@ -419,7 +565,7 @@ const Profile = () => {
   ];
 
   const headerModalItems = [
-    { label: '설정 및 개인정보', onClick: () => {} },
+    { label: '설정 및 개인정보', onClick: () => setShowSettingsModal(true) },
     { label: '로그아웃', danger: true, onClick: () => setShowLogoutAlert(true) },
   ];
 
@@ -579,6 +725,58 @@ const Profile = () => {
       <BottomTabNav />
 
       <BottomModal isOpen={showHeaderModal} onClose={() => setShowHeaderModal(false)} items={headerModalItems} />
+
+      {showSettingsModal && (
+        <SettingsOverlay onClick={() => setShowSettingsModal(false)}>
+          <SettingsSheet onClick={(e) => e.stopPropagation()}>
+            <SettingsTopBar>
+              <SettingsTitle>설정 및 개인정보</SettingsTitle>
+              <SettingsCloseIconBtn
+                type="button"
+                aria-label="설정 닫기"
+                onClick={() => setShowSettingsModal(false)}
+              >
+                ×
+              </SettingsCloseIconBtn>
+            </SettingsTopBar>
+            <SettingRow>
+              <SettingLabel>다크모드</SettingLabel>
+              <ThemeToggle
+                type="button"
+                $active={isDark}
+                role="switch"
+                aria-checked={isDark}
+                aria-label="다크모드 토글"
+                onClick={toggleMode}
+              >
+                <ThemeToggleKnob $active={isDark} />
+              </ThemeToggle>
+            </SettingRow>
+
+            <PrivacyToggleRow type="button" onClick={() => setShowPrivacyInfo((prev) => !prev)}>
+              <span>개인정보</span>
+              <PrivacyChevron>{showPrivacyInfo ? '▲' : '▼'}</PrivacyChevron>
+            </PrivacyToggleRow>
+
+            {showPrivacyInfo && (
+              <PrivacyDetails>
+                <PrivacyItem>
+                  <PrivacyKey>email</PrivacyKey>
+                  <PrivacyValue>{privacyEmail || '정보 없음'}</PrivacyValue>
+                </PrivacyItem>
+                <PrivacyItem>
+                  <PrivacyKey>username</PrivacyKey>
+                  <PrivacyValue>{me?.username || '정보 없음'}</PrivacyValue>
+                </PrivacyItem>
+                <PrivacyItem>
+                  <PrivacyKey>accountname</PrivacyKey>
+                  <PrivacyValue>{me?.accountname || '정보 없음'}</PrivacyValue>
+                </PrivacyItem>
+              </PrivacyDetails>
+            )}
+          </SettingsSheet>
+        </SettingsOverlay>
+      )}
 
       <BottomModal isOpen={showProductModal} onClose={() => setShowProductModal(false)} items={productModalItems} />
 

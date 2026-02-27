@@ -66,7 +66,7 @@ const LoginEmail = () => {
       const token = data.token ?? data.user?.token;
       const userData = data.token ? data : data.user;
       if (token) {
-        authLogin(token, userData);
+        authLogin(token, { ...userData, email: userData?.email ?? form.email });
         navigate('/feed', { replace: true });
       } else {
         console.error('[Login] token 없음:', data);
