@@ -9,7 +9,7 @@ import AlertModal from '../../components/common/AlertModal';
 import Spinner from '../../components/common/Spinner';
 import Header from '../../components/common/Header';
 import { useAuth } from '../../context/AuthContext';
-
+import EmptyLogoSvg from '../../assets/images/icon-logo-gray.svg?react';
 const Wrapper = styled.div`
   padding-bottom: 70px;
 `;
@@ -19,7 +19,7 @@ const EmptyFeed = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 100px 32px 40px;
+  height: calc(100vh - 130px);
   gap: 16px;
 `;
 
@@ -30,7 +30,8 @@ const EmptyText = styled.p`
 `;
 
 const SearchButton = styled.button`
-  padding: 12px 36px;
+  width: 120px;
+  height: 44px;
   border-radius: ${({ theme }) => theme.borderRadius.round};
   background-color: ${({ theme }) => theme.colors.primary};
   color: ${({ theme }) => theme.colors.white};
@@ -39,18 +40,7 @@ const SearchButton = styled.button`
 `;
 
 /* 빈 피드 상태용 연한 감귤 로고 */
-const EmptyLogo = () => (
-  <svg width="80" height="92" viewBox="0 0 100 115" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M50 16 C50 16 40 4 28 9 C28 9 38 7 44 20 Z" fill="#DBDBDB" />
-    <path d="M50 16 C50 16 60 4 72 9 C72 9 62 7 56 20 Z" fill="#DBDBDB" />
-    <circle cx="50" cy="62" r="36" fill="#DBDBDB" />
-    <ellipse cx="50" cy="60" rx="24" ry="22" fill="white" />
-    <path d="M38 78 L32 92 L50 82 Z" fill="white" />
-    <circle cx="42" cy="60" r="3" fill="#DBDBDB" />
-    <circle cx="50" cy="60" r="3" fill="#DBDBDB" />
-    <circle cx="58" cy="60" r="3" fill="#DBDBDB" />
-  </svg>
-);
+const EmptyLogo = () => <EmptyLogoSvg width="100" height="100" />;
 
 const Feed = () => {
   const navigate = useNavigate();
@@ -103,19 +93,13 @@ const Feed = () => {
             <SearchButton onClick={() => navigate('/search')}>검색하기</SearchButton>
           </EmptyFeed>
         ) : (
-          posts.map((post) => (
-            <PostCard key={post.id} post={post} onDelete={handleDelete} />
-          ))
+          posts.map((post) => <PostCard key={post.id} post={post} onDelete={handleDelete} />)
         )}
       </Wrapper>
 
       <BottomTabNav />
 
-      <BottomModal
-        isOpen={showHeaderModal}
-        onClose={() => setShowHeaderModal(false)}
-        items={headerModalItems}
-      />
+      <BottomModal isOpen={showHeaderModal} onClose={() => setShowHeaderModal(false)} items={headerModalItems} />
 
       <AlertModal
         isOpen={showLogoutAlert}
