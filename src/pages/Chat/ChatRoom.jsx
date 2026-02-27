@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import styled from 'styled-components';
@@ -29,6 +29,21 @@ const MessageList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+`;
+
+const DateDivider = styled.div`
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 4px;
+`;
+
+const DateDividerText = styled.span`
+  font-size: ${({ theme }) => theme.fonts.size.xs};
+  color: ${({ theme }) => theme.colors.gray400};
+  background-color: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.round};
+  padding: 4px 10px;
 `;
 
 const MessageWrapper = styled.div`
@@ -96,6 +111,8 @@ const ImageInputBtn = styled.button`
   width: 36px;
   height: 36px;
   background-color: ${({ theme }) => theme.colors.gray200};
+  border: none;
+  outline: none;
   border-radius: ${({ theme }) => theme.borderRadius.round};
   display: flex;
   align-items: center;
@@ -107,6 +124,8 @@ const ImageInputBtn = styled.button`
 const TextInput = styled.input`
   flex: 1;
   background-color: ${({ theme }) => theme.colors.gray100};
+  border: none;
+  outline: none;
   border-radius: ${({ theme }) => theme.borderRadius.round};
   padding: 8px 16px;
   font-size: ${({ theme }) => theme.fonts.size.base};
@@ -118,16 +137,38 @@ const TextInput = styled.input`
 `;
 
 const SendButton = styled.button`
+  border: none;
+  outline: none;
+  background: transparent;
   font-size: ${({ theme }) => theme.fonts.size.sm};
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
   color: ${({ disabled, theme }) => (disabled ? theme.colors.gray300 : theme.colors.primary)};
 `;
 
-// Firestore Timestamp → "HH:MM" 포맷
 const formatMsgTime = (timestamp) => {
   if (!timestamp) return '';
   const date = timestamp.toDate();
   return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
+const getMsgDateKey = (timestamp) => {
+  if (!timestamp) return '';
+  const date = timestamp.toDate();
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const formatMsgDate = (timestamp) => {
+  if (!timestamp) return '';
+  const date = timestamp.toDate();
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  });
 };
 
 const ChatRoom = () => {
@@ -143,7 +184,6 @@ const ChatRoom = () => {
   const [isSending, setIsSending] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  // 채팅방 문서 구독 (상대방 정보 가져오기)
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'chats', chatId), (snap) => {
       if (snap.exists()) setChatInfo(snap.data());
@@ -151,20 +191,17 @@ const ChatRoom = () => {
     return () => unsub();
   }, [chatId]);
 
-  // 메시지 실시간 구독
   useEffect(() => {
     const unsub = subscribeToMessages(chatId, setMessages);
     return () => unsub();
   }, [chatId]);
 
-  // 입장 시 읽음 처리
   useEffect(() => {
     if (user?.accountname) {
       markAsRead(chatId, user.accountname);
     }
   }, [chatId, user?.accountname]);
 
-  // 새 메시지 오면 맨 아래로 스크롤
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -219,25 +256,46 @@ const ChatRoom = () => {
         />
 
         <MessageList>
-          {messages.map((msg) => {
+          {messages.map((msg, index) => {
             const isMine = msg.senderId === user?.accountname;
+            const currentDateKey = getMsgDateKey(msg.createdAt);
+            const prevDateKey = index > 0 ? getMsgDateKey(messages[index - 1].createdAt) : '';
+            const showDateDivider = index === 0 || currentDateKey !== prevDateKey;
+            const currentTime = formatMsgTime(msg.createdAt);
+            const nextMsg = messages[index + 1];
+            const nextDateKey = nextMsg ? getMsgDateKey(nextMsg.createdAt) : '';
+            const nextTime = nextMsg ? formatMsgTime(nextMsg.createdAt) : '';
+            const showTime =
+              !nextMsg ||
+              nextDateKey !== currentDateKey ||
+              nextMsg.senderId !== msg.senderId ||
+              nextTime !== currentTime;
+
             return (
-              <MessageWrapper key={msg.id} $isMine={isMine}>
-                <MessageRow $isMine={isMine}>
-                  {!isMine && (
-                    <OtherAvatar
-                      src={getImageUrl(otherParticipant?.image) || DEFAULT_PROFILE_IMAGE}
-                      alt="상대방"
-                    />
-                  )}
-                  {msg.imageUrl ? (
-                    <ChatImage src={msg.imageUrl} alt="채팅 이미지" />
-                  ) : (
-                    <Bubble $isMine={isMine}>{msg.text}</Bubble>
-                  )}
-                  <ChatTime>{formatMsgTime(msg.createdAt)}</ChatTime>
-                </MessageRow>
-              </MessageWrapper>
+              <div key={msg.id}>
+                {showDateDivider && (
+                  <DateDivider>
+                    <DateDividerText>{formatMsgDate(msg.createdAt)}</DateDividerText>
+                  </DateDivider>
+                )}
+
+                <MessageWrapper $isMine={isMine}>
+                  <MessageRow $isMine={isMine}>
+                    {!isMine && (
+                      <OtherAvatar
+                        src={getImageUrl(otherParticipant?.image) || DEFAULT_PROFILE_IMAGE}
+                        alt="상대방"
+                      />
+                    )}
+                    {msg.imageUrl ? (
+                      <ChatImage src={msg.imageUrl} alt="채팅 이미지" />
+                    ) : (
+                      <Bubble $isMine={isMine}>{msg.text}</Bubble>
+                    )}
+                    {showTime && <ChatTime>{currentTime}</ChatTime>}
+                  </MessageRow>
+                </MessageWrapper>
+              </div>
             );
           })}
           <div ref={bottomRef} />
