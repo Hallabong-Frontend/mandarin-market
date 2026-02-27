@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import { likePost, unlikePost, deletePost, reportPost } from '../../api/post';
-import { getImageUrl, formatDate, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
+import { getImageUrl, formatDate } from '../../utils/format';
+import Avatar from '../common/Avatar';
 import BottomModal from '../common/BottomModal';
 import AlertModal from '../common/AlertModal';
 import HeartIconSvg from '../../assets/icons/icon-heart.svg?react';
@@ -21,16 +22,6 @@ const CardHeader = styled.div`
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
-`;
-
-const Avatar = styled.img`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  cursor: pointer;
-  background-color: ${({ theme }) => theme.colors.gray100};
 `;
 
 const UserInfo = styled.div`
@@ -135,7 +126,7 @@ const HeartIcon = styled(HeartIconSvg)`
   width: 20px;
   height: 20px;
   path {
-    stroke: ${({ $liked }) => ($liked ? 'red' : '#767676')}; 
+    stroke: ${({ $liked }) => ($liked ? 'red' : '#767676')};
     fill: ${({ $liked }) => ($liked ? 'red' : 'none')};
   }
 `;
@@ -276,14 +267,7 @@ const PostCard = ({ post, onDelete }) => {
     <>
       <Card>
         <CardHeader>
-          <Avatar
-            src={getImageUrl(post.author?.image)}
-            alt={post.author?.username}
-            onClick={handleGoProfile}
-            onError={(e) => {
-              e.target.src = DEFAULT_PROFILE_IMAGE;
-            }}
-          />
+          <Avatar src={post.author?.image} alt={post.author?.username} size="40px" onClick={handleGoProfile} />
           <UserInfo onClick={handleGoProfile}>
             <Username>{post.author?.username}</Username>
             <AccountId>@{post.author?.accountname}</AccountId>

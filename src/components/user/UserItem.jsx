@@ -2,24 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { followUser, unfollowUser } from '../../api/user';
-import { getImageUrl } from '../../utils/format';
 import { useAuth } from '../../context/AuthContext';
+import Avatar from '../common/Avatar';
 
 const Item = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-`;
-
-const Avatar = styled.img`
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  cursor: pointer;
-  background-color: ${({ theme }) => theme.colors.gray100};
 `;
 
 const Info = styled.div`
@@ -56,18 +46,18 @@ const FollowButton = styled.button`
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
   transition: ${({ theme }) => theme.transitions.base};
 
-  ${({ $following, theme }) => $following
-    ? `
+  ${({ $following, theme }) =>
+    $following
+      ? `
       background-color: ${theme.colors.white};
       color: ${theme.colors.gray400};
       border: 1px solid ${theme.colors.gray200};
     `
-    : `
+      : `
       background-color: ${theme.colors.primary};
       color: ${theme.colors.white};
       border: 1px solid ${theme.colors.primary};
-    `
-  }
+    `}
 `;
 
 const SearchKeyword = styled.span`
@@ -105,20 +95,13 @@ const UserItem = ({ userData, keyword = '' }) => {
     if (!keyword || !text) return text;
     const parts = text.split(new RegExp(`(${keyword})`, 'gi'));
     return parts.map((part, i) =>
-      part.toLowerCase() === keyword.toLowerCase()
-        ? <SearchKeyword key={i}>{part}</SearchKeyword>
-        : part
+      part.toLowerCase() === keyword.toLowerCase() ? <SearchKeyword key={i}>{part}</SearchKeyword> : part,
     );
   };
 
   return (
     <Item>
-      <Avatar
-        src={getImageUrl(userData.image)}
-        alt={userData.username}
-        onClick={handleGoProfile}
-        onError={(e) => { e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png'; }}
-      />
+      <Avatar src={userData.image} alt={userData.username} size="50px" onClick={handleGoProfile} />
       <Info onClick={handleGoProfile}>
         <Username>{renderHighlight(userData.username)}</Username>
         <AccountId>@{renderHighlight(userData.accountname)}</AccountId>

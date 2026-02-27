@@ -16,6 +16,7 @@ import AlertModal from '../../components/common/AlertModal';
 import PostCard from '../../components/post/PostCard';
 import Spinner from '../../components/common/Spinner';
 import Header from '../../components/common/Header';
+import Avatar from '../../components/common/Avatar';
 import ListIconSvg from '../../assets/icons/icon-post-list-on.svg?react';
 import AlbumIconSvg from '../../assets/icons/icon-post-album-on.svg?react';
 import ImageLayersIconSvg from '../../assets/icons/iccon-img-layers.svg?react';
@@ -59,16 +60,6 @@ const StatNumber = styled.span`
 const StatLabel = styled.span`
   font-size: ${({ theme }) => theme.fonts.size.xs};
   color: ${({ theme }) => theme.colors.gray400};
-`;
-
-const Avatar = styled.img`
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  background-color: ${({ theme }) => theme.colors.gray100};
-  border: 2px solid ${({ theme }) => theme.colors.border};
 `;
 
 const UserDetails = styled.div`
@@ -587,13 +578,7 @@ const Profile = () => {
               <StatLabel>followers</StatLabel>
             </StatItem>
 
-            <Avatar
-              src={getImageUrl(profile.image)}
-              alt={profile.username}
-              onError={(e) => {
-                e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png';
-              }}
-            />
+            <Avatar src={profile.image} alt={profile.username} size="80px" border />
 
             <StatItem onClick={() => navigate(`/profile/${accountname}/following`)}>
               <StatNumber>{profile.followingCount}</StatNumber>
@@ -634,23 +619,23 @@ const Profile = () => {
             <Divider />
             <Section>
               <ProductSectionHeader>
-              <SectionTitle>판매 중인 상품</SectionTitle>
-              <ProductNavButtons>
-                <ProductNavButton
-                  type="button"
-                  aria-label="scroll products left"
-                  onClick={() => scrollProductList(-1)}
-                >
-                  {'<'}
-                </ProductNavButton>
-                <ProductNavButton
-                  type="button"
-                  aria-label="scroll products right"
-                  onClick={() => scrollProductList(1)}
-                >
-                  {'>'}
-                </ProductNavButton>
-              </ProductNavButtons>
+                <SectionTitle>판매 중인 상품</SectionTitle>
+                <ProductNavButtons>
+                  <ProductNavButton
+                    type="button"
+                    aria-label="scroll products left"
+                    onClick={() => scrollProductList(-1)}
+                  >
+                    {'<'}
+                  </ProductNavButton>
+                  <ProductNavButton
+                    type="button"
+                    aria-label="scroll products right"
+                    onClick={() => scrollProductList(1)}
+                  >
+                    {'>'}
+                  </ProductNavButton>
+                </ProductNavButtons>
               </ProductSectionHeader>
               <ProductList ref={productListRef}>
                 {products.map((product) => (
@@ -807,5 +792,3 @@ const Profile = () => {
 };
 
 export default Profile;
-
-

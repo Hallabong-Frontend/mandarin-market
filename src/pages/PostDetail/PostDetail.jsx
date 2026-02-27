@@ -10,6 +10,7 @@ import BottomModal from '../../components/common/BottomModal';
 import AlertModal from '../../components/common/AlertModal';
 import Spinner from '../../components/common/Spinner';
 import Header from '../../components/common/Header';
+import Avatar from '../../components/common/Avatar';
 import MoreDotsIconSvg from '../../assets/icons/icon-more-vertical.svg?react';
 
 const Wrapper = styled.div`
@@ -33,16 +34,6 @@ const CommentItem = styled.li`
   display: flex;
   gap: 12px;
   align-items: flex-start;
-`;
-
-const CommentAvatar = styled.img`
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  cursor: pointer;
-  background-color: ${({ theme }) => theme.colors.gray100};
 `;
 
 const CommentContent = styled.div`
@@ -95,15 +86,6 @@ const CommentInput = styled.div`
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
-`;
-
-const CommentAvatar2 = styled.img`
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  background-color: ${({ theme }) => theme.colors.gray100};
 `;
 
 const CommentTextInput = styled.input`
@@ -235,13 +217,11 @@ const PostDetail = () => {
         <CommentList>
           {comments.map((comment) => (
             <CommentItem key={comment.id}>
-              <CommentAvatar
-                src={getImageUrl(comment.author?.image)}
+              <Avatar
+                src={comment.author?.image}
                 alt={comment.author?.username}
+                size="36px"
                 onClick={() => navigate(`/profile/${comment.author?.accountname}`)}
-                onError={(e) => {
-                  e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png';
-                }}
               />
               <CommentContent>
                 <CommentMeta>
@@ -259,13 +239,7 @@ const PostDetail = () => {
       </Wrapper>
 
       <CommentInput>
-        <CommentAvatar2
-          src={getImageUrl(user?.image)}
-          alt={user?.username}
-          onError={(e) => {
-            e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png';
-          }}
-        />
+        <Avatar src={user?.image} alt={user?.username} size="36px" />
         <CommentTextInput
           value={commentText}
           onChange={(e) => setCommentText(e.target.value)}

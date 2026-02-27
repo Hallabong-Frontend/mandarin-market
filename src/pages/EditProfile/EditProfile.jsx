@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { validateAccountname, getImageUrl } from '../../utils/format';
 import Header from '../../components/common/Header';
 import AuthInput from '../../components/common/AuthInput';
+import Avatar from '../../components/common/Avatar';
 import ImageIconSvg from '../../assets/icons/icon-image.svg?react';
 
 const Wrapper = styled.div`
@@ -27,15 +28,6 @@ const AvatarContainer = styled.div`
   position: relative;
   width: 88px;
   height: 88px;
-`;
-
-const Avatar = styled.img`
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  object-fit: cover;
-  background-color: ${({ theme }) => theme.colors.gray100};
-  border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const AvatarEditBtn = styled.button`
@@ -184,13 +176,7 @@ const EditProfile = () => {
       <Content>
         <AvatarWrapper>
           <AvatarContainer>
-            <Avatar
-              src={previewImage}
-              alt="프로필 이미지"
-              onError={(e) => {
-                e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png';
-              }}
-            />
+            <Avatar src={previewImage} alt="프로필 이미지" size="88px" border />
             <AvatarEditBtn type="button" onClick={() => fileRef.current?.click()}>
               <ImageIcon />
             </AvatarEditBtn>

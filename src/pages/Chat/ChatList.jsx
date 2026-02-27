@@ -7,7 +7,7 @@ import Header from '../../components/common/Header';
 import Spinner from '../../components/common/Spinner';
 import { useAuth } from '../../context/AuthContext';
 import { subscribeToChats } from '../../firebase/chat';
-import { getImageUrl, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
+import Avatar from '../../components/common/Avatar';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -31,14 +31,6 @@ const ChatItemEl = styled.div`
 const AvatarWrapper = styled.div`
   position: relative;
   flex-shrink: 0;
-`;
-
-const Avatar = styled.img`
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover;
-  background-color: ${({ theme }) => theme.colors.gray100};
 `;
 
 const UnreadDot = styled.div`
@@ -149,10 +141,7 @@ const ChatList = () => {
             return (
               <ChatItemEl key={chat.id} onClick={() => navigate(`/chat/${chat.id}`)}>
                 <AvatarWrapper>
-                  <Avatar
-                    src={getImageUrl(other.image) || DEFAULT_PROFILE_IMAGE}
-                    alt={other.username}
-                  />
+                  <Avatar src={other.image} alt={other.username} />
                   {isUnread(chat) && <UnreadDot />}
                 </AvatarWrapper>
                 <ChatInfo>

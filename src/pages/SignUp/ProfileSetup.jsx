@@ -3,9 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { register, uploadImage, checkAccountValid, login } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
-import { validateAccountname, getImageUrl } from '../../utils/format';
+import { validateAccountname } from '../../utils/format';
 import AuthInput from '../../components/common/AuthInput';
 import SubmitButton from '../../components/common/SubmitButton';
+import Avatar from '../../components/common/Avatar';
 import ImageIconSvg from '../../assets/icons/icon-image.svg?react';
 
 const Wrapper = styled.div`
@@ -38,15 +39,6 @@ const AvatarContainer = styled.div`
   position: relative;
   width: 100px;
   height: 100px;
-`;
-
-const Avatar = styled.img`
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  object-fit: cover;
-  background-color: ${({ theme }) => theme.colors.gray100};
-  border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const AvatarEditBtn = styled.button`
@@ -229,13 +221,7 @@ const ProfileSetup = () => {
 
       <AvatarWrapper>
         <AvatarContainer>
-          <Avatar
-            src={previewImage}
-            alt="프로필 이미지"
-            onError={(e) => {
-              e.target.src = 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png';
-            }}
-          />
+          <Avatar src={previewImage} alt="프로필 이미지" size="100px" border />
           <AvatarEditBtn type="button" onClick={() => fileRef.current?.click()}>
             <ImageIcon />
           </AvatarEditBtn>
