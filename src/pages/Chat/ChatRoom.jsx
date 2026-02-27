@@ -18,6 +18,7 @@ import {
   deleteChat,
 } from '../../firebase/chat';
 import { getImageUrl, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
+import Avatar from '../../components/common/Avatar';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -348,7 +349,9 @@ const ChatRoom = () => {
     setContextMenu({
       show: true,
       anchorRect: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
-      messageId: msg.id, isMine, text: msg.text,
+      messageId: msg.id,
+      isMine,
+      text: msg.text,
       type: 'message',
     });
   };
@@ -397,7 +400,9 @@ const ChatRoom = () => {
     setContextMenu({
       show: true,
       anchorRect: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
-      messageId: null, isMine: false, text: '',
+      messageId: null,
+      isMine: false,
+      text: '',
       type: 'input',
     });
   };
@@ -468,18 +473,12 @@ const ChatRoom = () => {
                           onChange={(e) => setEditText(e.target.value)}
                           onKeyDown={(e) => handleEditSubmit(e, msg)}
                         />
-                        <EditConfirmBtn
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => confirmEdit(msg)}
-                        >
+                        <EditConfirmBtn onMouseDown={(e) => e.preventDefault()} onClick={() => confirmEdit(msg)}>
                           완료
                         </EditConfirmBtn>
                       </EditWrapper>
                     ) : (
-                      <Bubble
-                        $isMine={isMine}
-                        onContextMenu={(e) => handleContextMenu(e, msg, isMine)}
-                      >
+                      <Bubble $isMine={isMine} onContextMenu={(e) => handleContextMenu(e, msg, isMine)}>
                         {msg.text}
                       </Bubble>
                     )}
@@ -549,22 +548,22 @@ const ChatRoom = () => {
       />
 
       {contextMenu.show && (
-        <ContextMenu
-          ref={contextMenuRef}
-          style={{ top: 0, left: 0 }}
-          onClick={(e) => e.stopPropagation()}
-        >
+        <ContextMenu ref={contextMenuRef} style={{ top: 0, left: 0 }} onClick={(e) => e.stopPropagation()}>
           {contextMenu.type === 'input' ? (
             <ContextMenuItem onClick={handlePaste}>붙여넣기</ContextMenuItem>
           ) : contextMenu.isMine ? (
             <>
               <ContextMenuItem onClick={handleEditStart}>수정</ContextMenuItem>
-              <ContextMenuItem $danger onClick={handleDelete}>삭제</ContextMenuItem>
+              <ContextMenuItem $danger onClick={handleDelete}>
+                삭제
+              </ContextMenuItem>
             </>
           ) : (
             <>
               <ContextMenuItem onClick={handleCopy}>복사</ContextMenuItem>
-              <ContextMenuItem $danger onClick={handleReport}>신고</ContextMenuItem>
+              <ContextMenuItem $danger onClick={handleReport}>
+                신고
+              </ContextMenuItem>
             </>
           )}
         </ContextMenu>
