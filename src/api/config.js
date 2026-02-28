@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const BASE_URL = 'https://dev.wenivops.co.kr/services/mandarin';
+import { BASE_URL, IMAGE_BASE_URL } from '../constants/url';
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -36,5 +35,5 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-export const IMAGE_BASE_URL = BASE_URL;
 export default axiosInstance;
+export { IMAGE_BASE_URL };

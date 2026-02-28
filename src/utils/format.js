@@ -1,10 +1,12 @@
-// 가격 포맷 (숫자 → 원단위)
+import { IMAGE_BASE_URL } from '../constants/url';
+
+// 가격 포맷 (숫자 -> 원단위)
 export const formatPrice = (price) => {
   if (!price && price !== 0) return '';
   return Number(price).toLocaleString('ko-KR');
 };
 
-// 가격 입력 정수화 (문자 → 숫자)
+// 가격 입력 정수화 (문자 -> 숫자)
 export const parsePrice = (value) => {
   return value.replace(/[^0-9]/g, '');
 };
@@ -32,9 +34,7 @@ export const formatDate = (dateString) => {
   return `${year}년 ${month}월 ${day}일`;
 };
 
-const IMAGE_BASE_URL = 'https://dev.wenivops.co.kr/services/mandarin';
-
-// 이미지 URL 처리 (상대경로 → 절대경로)
+// 이미지 URL 처리 (상대경로 -> 절대경로)
 export const getImageUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
