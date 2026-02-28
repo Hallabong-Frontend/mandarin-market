@@ -14,6 +14,8 @@ import {
   writeBatch,
   serverTimestamp,
   where,
+  arrayUnion,
+  arrayRemove,
 } from 'firebase/firestore';
 import { uploadImage } from '../api/auth';
 import { getImageUrl } from '../utils/format';
@@ -159,6 +161,30 @@ export const deleteMessage = async (chatId, messageId) => {
 export const saveChatTheme = async (chatId, accountname, theme) => {
   await updateDoc(doc(db, 'chats', chatId), {
     [`themes.${accountname}`]: theme,
+  });
+};
+
+// 스티커 메시지 전송
+export const sendStickerMessage = async (chatId, senderId, stickerKey) => {
+  await addDoc(collection(db, 'chats', chatId, 'messages'), {
+    senderId,
+    text: '',
+    imageUrl: null,
+    stickerKey,
+    createdAt: serverTimestamp(),
+  });
+  await updateDoc(doc(db, 'chats', chatId), {
+    lastMessage: '스티커를 보냈습니다.',
+    lastSenderId: senderId,
+    lastMessageAt: serverTimestamp(),
+  });
+};
+
+// 메시지 리액션 토글 (heart, thumbs_up, star)
+export const toggleReaction = async (chatId, messageId, accountname, reactionType, hasReacted) => {
+  const msgRef = doc(db, 'chats', chatId, 'messages', messageId);
+  await updateDoc(msgRef, {
+    [`reactions.${reactionType}`]: hasReacted ? arrayRemove(accountname) : arrayUnion(accountname),
   });
 };
 

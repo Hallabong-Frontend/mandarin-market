@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import styled from 'styled-components';
@@ -7,12 +7,19 @@ import BottomModal from '../../components/common/BottomModal';
 import Header from '../../components/common/Header';
 import ImageIcon from '../../assets/icons/icon-image.svg?react';
 import HeartIcon from '../../assets/icons/icon-heart.svg?react';
+import EmojiIcon from '../../assets/icons/icon-emoji.svg?react';
+import EmojiPicker, { STICKER_MAP } from '../../components/chat/EmojiPicker';
+import heartFillSrc from '../../assets/emoji/icon_heart_fill.png';
+import thumbsUpSrc from '../../assets/emoji/icon_thumbs_up_fill.png';
+import starSrc from '../../assets/emoji/icon_star.png';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase/config';
 import {
   subscribeToMessages,
   sendTextMessage,
   sendImageMessage,
+  sendStickerMessage,
+  toggleReaction,
   markAsRead,
   editMessage,
   deleteMessage,
@@ -20,9 +27,15 @@ import {
   saveChatTheme,
 } from '../../firebase/chat';
 import { uploadImage } from '../../api/auth';
-import { getImageUrl, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
+import { getImageUrl } from '../../utils/format';
 import Avatar from '../../components/common/Avatar';
 import ChatThemePanel, { BG_COLORS, BUBBLE_COLORS } from './ChatThemePanel';
+
+const REACTION_TYPES = [
+  { key: 'heart', src: heartFillSrc },
+  { key: 'thumbs_up', src: thumbsUpSrc },
+  { key: 'star', src: starSrc },
+];
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -106,6 +119,12 @@ const ChatImage = styled.img`
   object-fit: cover;
 `;
 
+const StickerImg = styled.img`
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+`;
+
 const InputArea = styled.div`
   position: fixed;
   bottom: 0;
@@ -133,6 +152,20 @@ const ImageInputBtn = styled.button`
   justify-content: center;
   flex-shrink: 0;
   opacity: ${({ disabled }) => (disabled ? 0.4 : 1)};
+`;
+
+const EmojiBtn = styled.button`
+  width: 36px;
+  height: 36px;
+  background-color: ${({ $active, theme }) => ($active ? theme.colors.gray300 : theme.colors.gray200)};
+  border: none;
+  outline: none;
+  border-radius: ${({ theme }) => theme.borderRadius.round};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.1s;
 `;
 
 const TextInput = styled.input`
@@ -182,6 +215,38 @@ const ContextMenuItem = styled.li`
   }
 `;
 
+const ReactionRow = styled.li`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const ReactionBtn = styled.button`
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: ${({ $active, theme }) => ($active ? theme.colors.gray200 : 'transparent')};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.1s;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.gray100};
+  }
+
+  img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+  }
+`;
+
 const EditWrapper = styled.div`
   position: relative;
   max-width: 60%;
@@ -222,6 +287,35 @@ const HeartBubble = styled.div`
       fill: #ffffff;
       stroke: #ffffff;
     }
+  }
+`;
+
+const ReactionBar = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: ${({ $isMine }) => ($isMine ? '4px 8px 0 0' : '4px 0 0 40px')};
+`;
+
+const ReactionPill = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.round};
+  padding: 2px 6px;
+  box-shadow: ${({ theme }) => theme.shadows.base};
+
+  img {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+  }
+
+  span {
+    font-size: 11px;
+    color: ${({ theme }) => theme.colors.gray500};
   }
 `;
 
@@ -280,6 +374,7 @@ const ChatRoom = () => {
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [contextMenu, setContextMenu] = useState({
     show: false,
     anchorRect: null,
@@ -287,6 +382,7 @@ const ChatRoom = () => {
     isMine: false,
     text: '',
     type: 'message',
+    reactions: {},
   });
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
@@ -349,6 +445,13 @@ const ChatRoom = () => {
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);
   }, [contextMenu.show]);
+
+  useEffect(() => {
+    if (!showEmojiPicker) return;
+    const handleClick = () => setShowEmojiPicker(false);
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [showEmojiPicker]);
 
   useLayoutEffect(() => {
     if (!contextMenu.show || !contextMenuRef.current || !contextMenu.anchorRect) return;
@@ -418,6 +521,17 @@ const ChatRoom = () => {
     }
   };
 
+  const handleStickerSend = async (stickerKey) => {
+    setShowEmojiPicker(false);
+    if (isSending) return;
+    setIsSending(true);
+    try {
+      await sendStickerMessage(chatId, user.accountname, stickerKey);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   const handleContextMenu = (e, msg, isMine) => {
     e.preventDefault();
     const rect = e.currentTarget.getBoundingClientRect();
@@ -428,6 +542,7 @@ const ChatRoom = () => {
       isMine,
       text: msg.text,
       type: 'message',
+      reactions: msg.reactions || {},
     });
   };
 
@@ -469,6 +584,13 @@ const ChatRoom = () => {
     });
   };
 
+  const handleReaction = async (reactionType) => {
+    const { messageId, reactions } = contextMenu;
+    const hasReacted = reactions[reactionType]?.includes(user.accountname) || false;
+    setContextMenu((prev) => ({ ...prev, show: false }));
+    await toggleReaction(chatId, messageId, user.accountname, reactionType, hasReacted);
+  };
+
   const handleReport = () => {
     setContextMenu((prev) => ({ ...prev, show: false }));
     setShowReportAlert(true);
@@ -488,6 +610,7 @@ const ChatRoom = () => {
       isMine: false,
       text: '',
       type: 'input',
+      reactions: {},
     });
   };
 
@@ -561,6 +684,8 @@ const ChatRoom = () => {
               nextMsg.senderId !== msg.senderId ||
               nextTime !== currentTime;
 
+            const hasAnyReaction = REACTION_TYPES.some(({ key }) => (msg.reactions?.[key]?.length || 0) > 0);
+
             return (
               <div key={msg.id}>
                 {showDateDivider && (
@@ -579,7 +704,13 @@ const ChatRoom = () => {
                         onClick={() => navigate(`/profile/${msg.senderId}`)}
                       />
                     )}
-                    {msg.imageUrl ? (
+                    {msg.stickerKey ? (
+                      <StickerImg
+                        src={STICKER_MAP[msg.stickerKey]}
+                        alt="스티커"
+                        onContextMenu={(e) => handleContextMenu(e, msg, isMine)}
+                      />
+                    ) : msg.imageUrl ? (
                       <ChatImage src={msg.imageUrl} alt="채팅 이미지" />
                     ) : editingId === msg.id ? (
                       <EditWrapper>
@@ -606,12 +737,26 @@ const ChatRoom = () => {
                     )}
                     {showTime && <ChatTime>{currentTime}</ChatTime>}
                   </MessageRow>
+
                   {likedMessages.has(msg.id) && (
                     <HeartReaction $isMine={isMine}>
                       <HeartBubble>
                         <HeartIcon />
                       </HeartBubble>
                     </HeartReaction>
+                  )}
+
+                  {hasAnyReaction && (
+                    <ReactionBar $isMine={isMine}>
+                      {REACTION_TYPES.filter(({ key }) => (msg.reactions?.[key]?.length || 0) > 0).map(
+                        ({ key, src }) => (
+                          <ReactionPill key={key}>
+                            <img src={src} alt={key} />
+                            <span>{msg.reactions[key].length}</span>
+                          </ReactionPill>
+                        ),
+                      )}
+                    </ReactionBar>
                   )}
                 </MessageWrapper>
               </div>
@@ -621,16 +766,29 @@ const ChatRoom = () => {
         </MessageList>
       </Wrapper>
 
+      <EmojiPicker isOpen={showEmojiPicker} onSelect={handleStickerSend} />
+
       <InputArea>
         <ImageInputBtn onClick={() => fileRef.current?.click()} disabled={isSending}>
           <ImageIcon width="22" height="22" />
         </ImageInputBtn>
         <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
+        <EmojiBtn
+          $active={showEmojiPicker}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowEmojiPicker((prev) => !prev);
+          }}
+          disabled={isSending}
+        >
+          <EmojiIcon width="22" height="22" color="white" />
+        </EmojiBtn>
         <TextInput
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
           onContextMenu={handleInputContextMenu}
+          onFocus={() => setShowEmojiPicker(false)}
           placeholder="메시지 입력하기..."
         />
         <SendButton onClick={handleSend} disabled={!inputText.trim() || isSending}>
@@ -703,19 +861,33 @@ const ChatRoom = () => {
         <ContextMenu ref={contextMenuRef} style={{ top: 0, left: 0 }} onClick={(e) => e.stopPropagation()}>
           {contextMenu.type === 'input' ? (
             <ContextMenuItem onClick={handlePaste}>붙여넣기</ContextMenuItem>
-          ) : contextMenu.isMine ? (
-            <>
-              <ContextMenuItem onClick={handleEditStart}>수정</ContextMenuItem>
-              <ContextMenuItem $danger onClick={handleDelete}>
-                삭제
-              </ContextMenuItem>
-            </>
           ) : (
             <>
-              <ContextMenuItem onClick={handleCopy}>복사</ContextMenuItem>
-              <ContextMenuItem $danger onClick={handleReport}>
-                신고
-              </ContextMenuItem>
+              <ReactionRow>
+                {REACTION_TYPES.map(({ key, src }) => {
+                  const hasReacted = contextMenu.reactions?.[key]?.includes(user.accountname) || false;
+                  return (
+                    <ReactionBtn key={key} $active={hasReacted} onClick={() => handleReaction(key)}>
+                      <img src={src} alt={key} />
+                    </ReactionBtn>
+                  );
+                })}
+              </ReactionRow>
+              {contextMenu.isMine ? (
+                <>
+                  {contextMenu.text && <ContextMenuItem onClick={handleEditStart}>수정</ContextMenuItem>}
+                  <ContextMenuItem $danger onClick={handleDelete}>
+                    삭제
+                  </ContextMenuItem>
+                </>
+              ) : (
+                <>
+                  {contextMenu.text && <ContextMenuItem onClick={handleCopy}>복사</ContextMenuItem>}
+                  <ContextMenuItem $danger onClick={handleReport}>
+                    신고
+                  </ContextMenuItem>
+                </>
+              )}
             </>
           )}
         </ContextMenu>
