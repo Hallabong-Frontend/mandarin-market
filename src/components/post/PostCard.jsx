@@ -86,6 +86,7 @@ const PostImage = styled.img`
   scroll-snap-align: start;
   border-radius: ${({ theme }) => theme.borderRadius.base};
   background-color: ${({ theme }) => theme.colors.gray100};
+  cursor: pointer;
 `;
 
 const PaginationDots = styled.div`
@@ -287,6 +288,7 @@ const PostCard = ({ post, onDelete }) => {
                   key={i}
                   src={getImageUrl(img.trim())}
                   alt={`게시글 이미지 ${i + 1}`}
+                  onClick={() => navigate(`/post/${post.id}`)}
                   onError={(e) => {
                     e.target.style.display = 'none';
                   }}
