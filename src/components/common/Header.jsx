@@ -121,7 +121,7 @@ const SearchInput = styled.input`
   }
 `;
 
-// type: 'back-only' | 'back-search' | 'back-more' | 'back-title' | 'back-title-more' | 'back-title-upload' | 'back-title-save' | 'back-title-text' | 'logo-search' | 'search-input'
+// type: 'back-only' | 'back-search' | 'back-more' | 'back-title' | 'back-title-more' | 'back-title-upload' | 'back-title-save' | 'back-title-text' | 'logo-search' | 'search-input' | 'back-search-more'
 const Header = ({
   type = 'back-title',
   title = '',
@@ -250,6 +250,16 @@ const Header = ({
             {rightText}
           </TextButton>
         )}
+        {type === 'back-search-more' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <RightButton onClick={onSearch} aria-label="검색">
+              <SearchIcon />
+            </RightButton>
+            <RightButton onClick={onMore} aria-label="더보기">
+              <MoreIcon />
+            </RightButton>
+          </div>
+        )}
         {![
           'back-search',
           'back-more',
@@ -257,6 +267,7 @@ const Header = ({
           'back-title-upload',
           'back-title-save',
           'back-title-text',
+          'back-search-more',
         ].includes(type) && <div style={{ width: 32 }} />}
       </HeaderWrapper>
       <HeaderSpacer />

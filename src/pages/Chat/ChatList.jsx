@@ -126,6 +126,9 @@ const ChatList = () => {
   const touchStartX = useRef(null);
   const didSwipe = useRef(false);
 
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+
   useEffect(() => {
     if (!user?.accountname) return;
     const unsubscribe = subscribeToChats(user.accountname, (data) => {
@@ -159,8 +162,13 @@ const ChatList = () => {
     if (touchStartX.current === null) return;
     const dx = e.clientX - touchStartX.current;
     touchStartX.current = null;
-    if (dx < -50) { setSwipedChatId(chatId); didSwipe.current = true; }
-    else if (dx > 20) { setSwipedChatId(null); didSwipe.current = true; }
+    if (dx < -50) {
+      setSwipedChatId(chatId);
+      didSwipe.current = true;
+    } else if (dx > 20) {
+      setSwipedChatId(null);
+      didSwipe.current = true;
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -172,17 +180,47 @@ const ChatList = () => {
 
   const modalItems = [{ label: '설정', onClick: () => {} }];
 
+  const filteredChats = chats.filter((chat) => {
+    if (!searchKeyword) return true;
+    const other = getOtherParticipant(chat);
+    return other.username?.toLowerCase().includes(searchKeyword.toLowerCase());
+  });
+
   return (
     <>
       <Wrapper>
-        <Header type="back-more" onMore={() => setShowModal(true)} alwaysVisible />
+        {isSearching ? (
+          <Header
+            type="search-input"
+            keyword={searchKeyword}
+            onKeywordChange={(e) => setSearchKeyword(e.target.value)}
+            searchPlaceholder="사용자 이름 검색"
+            alwaysVisible
+            onBack={() => {
+              setIsSearching(false);
+              setSearchKeyword('');
+            }}
+          />
+        ) : (
+          <Header
+            type="back-search-more"
+            onSearch={() => setIsSearching(true)}
+            onMore={() => setShowModal(true)}
+            alwaysVisible
+          />
+        )}
 
         {isLoading ? (
           <Spinner padding="40vh 0" />
-        ) : chats.length === 0 ? (
-          <EmptyState text="채팅 내역이 없습니다." padding="60px 0" fontSize="sm" color="gray300" />
+        ) : filteredChats.length === 0 ? (
+          <EmptyState
+            text={searchKeyword ? '검색 결과가 없습니다.' : '채팅 내역이 없습니다.'}
+            padding="60px 0"
+            fontSize="sm"
+            color="gray300"
+          />
         ) : (
-          chats.map((chat) => {
+          filteredChats.map((chat) => {
             const other = getOtherParticipant(chat);
             const isSwiped = swipedChatId === chat.id;
             return (
@@ -201,8 +239,14 @@ const ChatList = () => {
                   onPointerDown={handlePointerDown}
                   onPointerUp={handlePointerUp(chat.id)}
                   onClick={() => {
-                    if (didSwipe.current) { didSwipe.current = false; return; }
-                    if (isSwiped) { setSwipedChatId(null); return; }
+                    if (didSwipe.current) {
+                      didSwipe.current = false;
+                      return;
+                    }
+                    if (isSwiped) {
+                      setSwipedChatId(null);
+                      return;
+                    }
                     navigate(`/chat/${chat.id}`);
                   }}
                 >
