@@ -1,8 +1,8 @@
 import styled, { keyframes } from 'styled-components';
-import img1 from '../../assets/emoji/img1.png';
-import img2 from '../../assets/emoji/img2.png';
-import img3 from '../../assets/emoji/img3.png';
-import img4 from '../../assets/emoji/img4.png';
+import img1 from '../../assets/emoji/soulgom.png';
+import img2 from '../../assets/emoji/binky.png';
+import img3 from '../../assets/emoji/garry.png';
+import img4 from '../../assets/emoji/licat.png';
 
 export const STICKERS = [
   { key: 'img1', src: img1 },
