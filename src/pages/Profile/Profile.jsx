@@ -150,6 +150,8 @@ const SectionTitle = styled.h3`
   font-weight: ${({ theme }) => theme.fonts.weight.bold};
   font-family: 'GangwonEducationTteontteon';
   color: ${({ theme }) => theme.colors.black};
+  margin-top: 10px;
+  line-height: 1;
 `;
 
 const ProductSectionHeader = styled.div`
