@@ -16,7 +16,7 @@ import {
   IconActionBtn,
   FollowButton,
   EditButton,
-} from '../../pages/Profile/Profile.styles';
+} from '../../pages/Profile/Profile';
 
 const ProfileInfo = ({ profile, isMyProfile, following, handleFollow, handleChat }) => {
   const navigate = useNavigate();

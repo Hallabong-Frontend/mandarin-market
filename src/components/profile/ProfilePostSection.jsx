@@ -12,7 +12,7 @@ import {
   AlbumLayersIcon,
   ListIcon,
   AlbumIcon,
-} from '../../pages/Profile/Profile.styles';
+} from '../../pages/Profile/Profile';
 
 const ProfilePostSection = ({ posts, viewMode, setViewMode, setPosts }) => {
   const navigate = useNavigate();

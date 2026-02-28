@@ -13,7 +13,7 @@ import {
   ProductImage,
   ProductName,
   ProductPrice,
-} from '../../pages/Profile/Profile.styles';
+} from '../../pages/Profile/Profile';
 
 const ProfileProductList = ({ products, productListRef, handleProductClick, scrollProductList }) => {
   if (!products || products.length === 0) return null;
