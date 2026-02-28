@@ -6,6 +6,7 @@ import AlertModal from '../../components/common/AlertModal';
 import BottomModal from '../../components/common/BottomModal';
 import Header from '../../components/common/Header';
 import ImageIcon from '../../assets/icons/icon-image.svg?react';
+import HeartIcon from '../../assets/icons/icon-heart.svg?react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase/config';
 import {
@@ -196,6 +197,34 @@ const EditInput = styled.input`
   box-sizing: border-box;
 `;
 
+const HeartReaction = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: ${({ $isMine }) => ($isMine ? 'flex-end' : 'flex-start')};
+  padding: ${({ $isMine }) => ($isMine ? '4px 8px 0 0' : '4px 0 0 40px')};
+`;
+
+const HeartBubble = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background-color: #e53935;
+  border: none;
+  border-radius: 50%;
+  box-shadow: ${({ theme }) => theme.shadows.base};
+
+  svg {
+    width: 10px;
+    height: 10px;
+    path {
+      fill: #ffffff;
+      stroke: #ffffff;
+    }
+  }
+`;
+
 const EditConfirmBtn = styled.button`
   position: absolute;
   right: 8px;
@@ -271,6 +300,7 @@ const ChatRoom = () => {
   const [bgImage, setBgImage] = useState(null);
   const [isBgImageUploading, setIsBgImageUploading] = useState(false);
   const themeInitialized = useRef(false);
+  const [likedMessages, setLikedMessages] = useState(new Set());
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'chats', chatId), (snap) => {
@@ -421,6 +451,15 @@ const ChatRoom = () => {
     setContextMenu((prev) => ({ ...prev, show: false }));
   };
 
+  const handleDoubleClick = (msgId) => {
+    setLikedMessages((prev) => {
+      const next = new Set(prev);
+      if (next.has(msgId)) next.delete(msgId);
+      else next.add(msgId);
+      return next;
+    });
+  };
+
   const handleReport = () => {
     setContextMenu((prev) => ({ ...prev, show: false }));
     setShowReportAlert(true);
@@ -551,12 +590,20 @@ const ChatRoom = () => {
                         $bubbleColor={bubbleColor}
                         $otherBubbleColor={otherBubbleColor}
                         onContextMenu={(e) => handleContextMenu(e, msg, isMine)}
+                        onDoubleClick={() => handleDoubleClick(msg.id)}
                       >
                         {msg.text}
                       </Bubble>
                     )}
                     {showTime && <ChatTime>{currentTime}</ChatTime>}
                   </MessageRow>
+                  {likedMessages.has(msg.id) && (
+                    <HeartReaction $isMine={isMine}>
+                      <HeartBubble>
+                        <HeartIcon />
+                      </HeartBubble>
+                    </HeartReaction>
+                  )}
                 </MessageWrapper>
               </div>
             );
