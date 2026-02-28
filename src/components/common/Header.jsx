@@ -5,6 +5,10 @@ import SubmitButton from './SubmitButton';
 import BackIconSvg from '../../assets/icons/icon-arrow-left.svg?react';
 import MoreIconSvg from '../../assets/icons/icon-more-vertical.svg?react';
 import SearchIconSvg from '../../assets/icons/icon-search.svg?react';
+import HeartIconSvg from '../../assets/icons/icon-heart.svg?react';
+import { useAuth } from '../../context/AuthContext';
+import { getUserPosts } from '../../api/user';
+import { getImageUrl, formatTimeAgo } from '../../utils/format';
 
 const BackIcon = styled(BackIconSvg)`
   width: 22px;
@@ -12,6 +16,120 @@ const BackIcon = styled(BackIconSvg)`
   path {
     stroke: ${({ theme }) => theme.colors.black};
   }
+`;
+
+const HeartIcon = styled(HeartIconSvg)`
+  width: 22px;
+  height: 22px;
+  path {
+    stroke: ${({ theme }) => theme.colors.black};
+  }
+`;
+
+const NotificationOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background-color: ${({ theme }) => theme.colors.white};
+  z-index: ${({ theme }) => theme.zIndex.overlay};
+  display: flex;
+  justify-content: center;
+`;
+
+const NotificationSheet = styled.div`
+  width: 100%;
+  max-width: 390px;
+  min-height: 100vh;
+  background-color: ${({ theme }) => theme.colors.white};
+  padding: 20px 16px 24px;
+  overflow-y: auto;
+`;
+
+const NotificationTopBar = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+`;
+
+const NotificationTitle = styled.h4`
+  font-size: ${({ theme }) => theme.fonts.size.md};
+  font-weight: ${({ theme }) => theme.fonts.weight.bold};
+  color: ${({ theme }) => theme.colors.black};
+  margin: 0;
+`;
+
+const NotificationCloseBtn = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: ${({ theme }) => theme.borderRadius.circle};
+  color: ${({ theme }) => theme.colors.gray400};
+  font-size: 18px;
+`;
+
+const NotificationEmpty = styled.p`
+  text-align: center;
+  margin-top: 60px;
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  color: ${({ theme }) => theme.colors.gray400};
+`;
+
+const NotifItem = styled.button`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  text-align: left;
+  cursor: pointer;
+  &:hover {
+    opacity: 0.75;
+  }
+`;
+
+const NotifPostImg = styled.img`
+  width: 46px;
+  height: 46px;
+  border-radius: ${({ theme }) => theme.borderRadius.base};
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: ${({ theme }) => theme.colors.gray100};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const NotifPostImgPlaceholder = styled.div`
+  width: 46px;
+  height: 46px;
+  border-radius: ${({ theme }) => theme.borderRadius.base};
+  background-color: ${({ theme }) => theme.colors.gray100};
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const NotifContent = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const NotifText = styled.p`
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  color: ${({ theme }) => theme.colors.black};
+  line-height: 1.4;
+  word-break: keep-all;
+`;
+
+const NotifBold = styled.span`
+  font-weight: ${({ theme }) => theme.fonts.weight.bold};
+  color: ${({ theme }) => theme.colors.primary};
+`;
+
+const NotifTime = styled.p`
+  font-size: ${({ theme }) => theme.fonts.size.xs};
+  color: ${({ theme }) => theme.colors.gray400};
+  margin-top: 2px;
 `;
 
 const MoreIcon = () => <MoreIconSvg width="24" height="24" />;
@@ -131,8 +249,12 @@ const Header = ({
   searchPlaceholder = '계정을 검색해보세요',
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [hidden, setHidden] = useState(false);
   const lastScrollY = useRef(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifPosts, setNotifPosts] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -157,16 +279,103 @@ const Header = ({
     else navigate(-1);
   };
 
+  const handleOpenNotifications = async () => {
+    setShowNotifications(true);
+    if (!user?.accountname) return;
+
+    setNotifLoading(true);
+    try {
+      const data = await getUserPosts(user.accountname);
+      const allPosts = data.post || [];
+      const posts = allPosts.filter((p) => p.heartCount > 0 || p.commentCount > 0);
+      setNotifPosts(posts);
+    } catch (err) {
+      console.error('[알림] API 오류:', err);
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
   if (type === 'logo-search') {
     return (
       <>
         <HeaderWrapper $hidden={hidden}>
           <LogoText>{logo}</LogoText>
-          <RightButton onClick={onSearch} aria-label="검색">
-            <SearchIcon />
-          </RightButton>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <RightButton onClick={handleOpenNotifications} aria-label="알림">
+              <HeartIcon />
+            </RightButton>
+            <RightButton onClick={onSearch} aria-label="검색">
+              <SearchIcon />
+            </RightButton>
+          </div>
         </HeaderWrapper>
         <HeaderSpacer />
+
+        {showNotifications && (
+          <NotificationOverlay onClick={() => setShowNotifications(false)}>
+            <NotificationSheet onClick={(e) => e.stopPropagation()}>
+              <NotificationTopBar>
+                <NotificationTitle>알림</NotificationTitle>
+                <NotificationCloseBtn
+                  type="button"
+                  aria-label="알림 닫기"
+                  onClick={() => setShowNotifications(false)}
+                >
+                  ×
+                </NotificationCloseBtn>
+              </NotificationTopBar>
+
+              {notifLoading ? (
+                <NotificationEmpty>불러오는 중...</NotificationEmpty>
+              ) : notifPosts.length === 0 ? (
+                <NotificationEmpty>새로운 알림이 없습니다.</NotificationEmpty>
+              ) : (
+                notifPosts.map((post) => {
+                  const firstImage = post.image
+                    ? post.image.split(',')[0].trim()
+                    : null;
+                  const preview = post.content
+                    ? post.content.length > 20
+                      ? post.content.slice(0, 20) + '...'
+                      : post.content
+                    : '게시물';
+                  return (
+                    <NotifItem key={post.id} onClick={() => { setShowNotifications(false); navigate(`/post/${post.id}`); }}>
+                      {firstImage ? (
+                        <NotifPostImg
+                          src={getImageUrl(firstImage)}
+                          alt="게시물 이미지"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <NotifPostImgPlaceholder>
+                          <HeartIcon style={{ width: 20, height: 20, opacity: 0.3 }} />
+                        </NotifPostImgPlaceholder>
+                      )}
+                      <NotifContent>
+                        <NotifText>
+                          &ldquo;{preview}&rdquo; 게시물에{' '}
+                          {post.heartCount > 0 && (
+                            <NotifBold>좋아요 {post.heartCount}개</NotifBold>
+                          )}
+                          {post.heartCount > 0 && post.commentCount > 0 && ', '}
+                          {post.commentCount > 0 && (
+                            <NotifBold>댓글 {post.commentCount}개</NotifBold>
+                          )}
+                          가 달렸어요.
+                        </NotifText>
+                        <NotifTime>{formatTimeAgo(post.updatedAt)}</NotifTime>
+                      </NotifContent>
+                    </NotifItem>
+                  );
+                })
+              )}
+            </NotificationSheet>
+          </NotificationOverlay>
+        )}
       </>
     );
   }
