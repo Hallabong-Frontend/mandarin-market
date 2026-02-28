@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import styled from 'styled-components';
 import FullPagePanel from '../../components/common/FullPagePanel';
 
@@ -73,7 +74,63 @@ const SwatchItem = styled.div`
   align-items: center;
 `;
 
-const ChatThemePanel = ({ isOpen, onClose, bgColor, bubbleColor, otherBubbleColor, onBgColorChange, onBubbleColorChange, onOtherBubbleColorChange }) => {
+const BgImageRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const BgImagePreview = styled.img`
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: ${({ theme }) => theme.borderRadius.base};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  flex-shrink: 0;
+`;
+
+const BgImagePlaceholder = styled.div`
+  width: 72px;
+  height: 72px;
+  border-radius: ${({ theme }) => theme.borderRadius.base};
+  border: 1px dashed ${({ theme }) => theme.colors.border};
+  background-color: ${({ theme }) => theme.colors.gray100};
+  flex-shrink: 0;
+`;
+
+const BgImageBtns = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const BgImageBtn = styled.button`
+  padding: 8px 16px;
+  border-radius: ${({ theme }) => theme.borderRadius.base};
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  font-weight: ${({ theme }) => theme.fonts.weight.medium};
+  border: 1px solid ${({ $danger, theme }) => ($danger ? theme.colors.error : theme.colors.primary)};
+  color: ${({ $danger, theme }) => ($danger ? theme.colors.error : theme.colors.primary)};
+  background: transparent;
+  cursor: pointer;
+  opacity: ${({ disabled }) => (disabled ? 0.5 : 1)};
+`;
+
+const ChatThemePanel = ({
+  isOpen,
+  onClose,
+  bgColor,
+  bubbleColor,
+  otherBubbleColor,
+  bgImage,
+  isBgImageUploading,
+  onBgColorChange,
+  onBubbleColorChange,
+  onOtherBubbleColorChange,
+  onBgImageChange,
+}) => {
+  const fileRef = useRef(null);
+
   return (
     <FullPagePanel isOpen={isOpen} onClose={onClose} title="테마 설정">
       <ColorSection>
@@ -91,6 +148,41 @@ const ChatThemePanel = ({ isOpen, onClose, bgColor, bubbleColor, otherBubbleColo
             </SwatchItem>
           ))}
         </ColorGrid>
+      </ColorSection>
+
+      <ColorSection>
+        <ColorSectionTitle>배경 이미지</ColorSectionTitle>
+        <BgImageRow>
+          {bgImage ? (
+            <BgImagePreview src={bgImage} alt="배경 이미지" />
+          ) : (
+            <BgImagePlaceholder />
+          )}
+          <BgImageBtns>
+            <BgImageBtn
+              disabled={isBgImageUploading}
+              onClick={() => fileRef.current?.click()}
+            >
+              {isBgImageUploading ? '업로드 중...' : '이미지 선택'}
+            </BgImageBtn>
+            {bgImage && (
+              <BgImageBtn $danger onClick={() => onBgImageChange(null)}>
+                이미지 초기화
+              </BgImageBtn>
+            )}
+          </BgImageBtns>
+        </BgImageRow>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onBgImageChange(file);
+            e.target.value = '';
+          }}
+        />
       </ColorSection>
 
       <ColorSection>
