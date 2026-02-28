@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { updateMyProfile, uploadImage, checkAccountValid } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 import { validateAccountname, getImageUrl } from '../../utils/format';
+import useForm from '../../hooks/useForm';
 import Header from '../../components/common/Header';
 import AuthInput from '../../components/common/AuthInput';
 import Avatar from '../../components/common/Avatar';
@@ -67,12 +68,6 @@ const EditProfile = () => {
   const { user, updateUser } = useAuth();
   const fileRef = useRef(null);
 
-  const [form, setForm] = useState({
-    username: user?.username || '',
-    accountname: user?.accountname || '',
-    intro: user?.intro || '',
-  });
-  const [errors, setErrors] = useState({});
   const [accountValid, setAccountValid] = useState(true);
   const [previewImage, setPreviewImage] = useState(
     getImageUrl(user?.image) || 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png',
@@ -80,54 +75,84 @@ const EditProfile = () => {
   const [imageFile, setImageFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const isChanged =
-    form.username !== user?.username ||
-    form.accountname !== user?.accountname ||
-    form.intro !== user?.intro ||
-    imageFile;
+  const {
+    values: form,
+    errors,
+    setFieldError,
+    handleChange,
+    handleBlur,
+    validateField,
+    isValid,
+  } = useForm({
+    initialValues: {
+      username: user?.username || '',
+      accountname: user?.accountname || '',
+      intro: user?.intro || '',
+    },
+    validators: {
+      username: (value) => {
+        if (!value) return '';
+        if (value.length < 2 || value.length > 10) {
+          return '사용자 이름은 2~10자 이내여야 합니다.';
+        }
+        return '';
+      },
+      accountname: (value) => {
+        if (!value || value === user?.accountname) return '';
+        if (!validateAccountname(value)) {
+          return '영문, 숫자, 밑줄, 마침표만 사용 가능합니다.';
+        }
+        return '';
+      },
+    },
+    getIsChanged: (values) =>
+      values.username !== user?.username ||
+      values.accountname !== user?.accountname ||
+      values.intro !== user?.intro ||
+      !!imageFile,
+    getIsValid: ({ values, errors }) =>
+      values.username.length >= 2 &&
+      values.username.length <= 10 &&
+      (values.accountname === user?.accountname || accountValid) &&
+      !errors.username &&
+      !errors.accountname &&
+      (values.username !== user?.username ||
+        values.accountname !== user?.accountname ||
+        values.intro !== user?.intro ||
+        !!imageFile),
+  });
 
-  const isValid =
-    form.username.length >= 2 &&
-    form.username.length <= 10 &&
-    (form.accountname === user?.accountname || accountValid) &&
-    !errors.username &&
-    !errors.accountname &&
-    isChanged;
-
-  const handleChange = (e) => {
+  const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-    if (name === 'accountname' && value !== user?.accountname) setAccountValid(false);
-  };
+    handleChange(e);
+    if (name !== 'accountname') return;
 
-  const handleUsernameBlur = () => {
-    if (!form.username) return;
-    if (form.username.length < 2 || form.username.length > 10) {
-      setErrors({ ...errors, username: '사용자 이름은 2~10자 이내여야 합니다.' });
-    } else {
-      setErrors({ ...errors, username: '' });
+    if (value === user?.accountname) {
+      setAccountValid(true);
+      setFieldError('accountname', '');
+      return;
     }
+    setAccountValid(false);
   };
 
   const handleAccountBlur = async () => {
     if (!form.accountname || form.accountname === user?.accountname) return;
 
-    if (!validateAccountname(form.accountname)) {
-      setErrors({ ...errors, accountname: '영문, 숫자, 밑줄, 마침표만 사용 가능합니다.' });
+    if (!validateField('accountname')) {
       return;
     }
 
     try {
       const data = await checkAccountValid(form.accountname);
       if (data.message === '사용 가능한 계정ID 입니다.') {
-        setErrors({ ...errors, accountname: '' });
+        setFieldError('accountname', '');
         setAccountValid(true);
       } else {
-        setErrors({ ...errors, accountname: data.message });
+        setFieldError('accountname', data.message);
         setAccountValid(false);
       }
     } catch (err) {
-      setErrors({ ...errors, accountname: err.response?.data?.message || '이미 사용 중인 계정ID입니다.' });
+      setFieldError('accountname', err.response?.data?.message || '이미 사용 중인 계정ID입니다.');
       setAccountValid(false);
     }
   };
@@ -197,8 +222,8 @@ const EditProfile = () => {
             id="username"
             name="username"
             value={form.username}
-            onChange={handleChange}
-            onBlur={handleUsernameBlur}
+            onChange={handleFormChange}
+            onBlur={() => handleBlur('username')}
             errorText={errors.username}
             placeholder="2~10자 이내여야 합니다."
           />
@@ -210,7 +235,7 @@ const EditProfile = () => {
               id="accountname"
               name="accountname"
               value={form.accountname}
-              onChange={handleChange}
+              onChange={handleFormChange}
               onBlur={handleAccountBlur}
               errorText={errors.accountname}
               placeholder="영문, 숫자, 특수문자(.,_)만 사용 가능합니다."
@@ -226,7 +251,7 @@ const EditProfile = () => {
             id="intro"
             name="intro"
             value={form.intro}
-            onChange={handleChange}
+            onChange={handleFormChange}
             placeholder="자신과 판매할 상품에 대해 소개해 주세요!"
           />
         </Form>

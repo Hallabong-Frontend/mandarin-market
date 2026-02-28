@@ -5,6 +5,7 @@ import { createProduct, updateProduct, getProduct } from '../../api/product';
 import { uploadImage } from '../../api/auth';
 import { generateProductInfo, parseProductInfo } from '../../api/ai';
 import { getImageUrl, formatPrice, parsePrice } from '../../utils/format';
+import useForm from '../../hooks/useForm';
 import UploadIconSvg from '../../assets/icons/icon-upload.svg?react';
 import Header from '../../components/common/Header';
 import AlertModal from '../../components/common/AlertModal';
@@ -126,12 +127,6 @@ const ProductRegister = ({ isEdit = false }) => {
   const { productId } = useParams();
   const fileRef = useRef(null);
 
-  const [form, setForm] = useState({
-    itemName: '',
-    price: '',
-    link: '',
-  });
-  const [errors, setErrors] = useState({});
   const [previewImage, setPreviewImage] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [existingImageUrl, setExistingImageUrl] = useState('');
@@ -140,6 +135,41 @@ const ProductRegister = ({ isEdit = false }) => {
   const [aiGenerated, setAiGenerated] = useState(false);
   const [aiDescription, setAiDescription] = useState('');
   const [showOverwriteModal, setShowOverwriteModal] = useState(false);
+
+  const {
+    values: form,
+    setValues,
+    errors,
+    setFieldError,
+    handleChange,
+    handleBlur,
+    isValid,
+  } = useForm({
+    initialValues: {
+      itemName: '',
+      price: '',
+      link: '',
+    },
+    formatters: {
+      price: parsePrice,
+    },
+    validators: {
+      itemName: (value) => {
+        if (!value) return '';
+        if (value.length < 2 || value.length > 15) {
+          return '상품명은 2~15자 이내여야 합니다.';
+        }
+        return '';
+      },
+    },
+    getIsValid: ({ values, errors }) =>
+      !!previewImage &&
+      values.itemName.length >= 2 &&
+      values.itemName.length <= 15 &&
+      !!values.price &&
+      !!values.link &&
+      !errors.itemName,
+  });
 
   useEffect(() => {
     if (isEdit && productId) {
@@ -156,7 +186,7 @@ const ProductRegister = ({ isEdit = false }) => {
             separatorIndex !== -1
               ? product.itemName.slice(separatorIndex + AI_DESC_SEPARATOR.length)
               : '';
-          setForm({
+          setValues({
             itemName: parsedName,
             price: String(product.price),
             link: product.link,
@@ -173,44 +203,17 @@ const ProductRegister = ({ isEdit = false }) => {
       };
       loadProduct();
     }
-  }, [isEdit, productId]);
-
-  const isValid =
-    previewImage &&
-    form.itemName.length >= 2 &&
-    form.itemName.length <= 15 &&
-    form.price &&
-    form.link &&
-    !errors.itemName;
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === 'price') {
-      const numericValue = parsePrice(value);
-      setForm({ ...form, price: numericValue });
-    } else {
-      setForm({ ...form, [name]: value });
-    }
-  };
-
-  const handleNameBlur = () => {
-    if (!form.itemName) return;
-    if (form.itemName.length < 2 || form.itemName.length > 15) {
-      setErrors({ ...errors, itemName: '상품명은 2~15자 이내여야 합니다.' });
-    } else {
-      setErrors({ ...errors, itemName: '' });
-    }
-  };
+  }, [isEdit, productId, setValues]);
 
   const doAiGenerate = async () => {
     setIsAiLoading(true);
     try {
       const raw = await generateProductInfo(previewImage || null);
       const { itemName, description } = parseProductInfo(raw);
-      setForm((prev) => ({ ...prev, itemName }));
+      setValues((prev) => ({ ...prev, itemName }));
       setAiDescription(description);
       setAiGenerated(true);
-      setErrors((prev) => ({ ...prev, itemName: '' }));
+      setFieldError('itemName', '');
     } catch (err) {
       console.error(err);
       alert('AI 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
@@ -330,7 +333,7 @@ const ProductRegister = ({ isEdit = false }) => {
               name="itemName"
               value={form.itemName}
               onChange={handleChange}
-              onBlur={handleNameBlur}
+              onBlur={() => handleBlur('itemName')}
               placeholder="상품명을 입력해주세요"
               errorText={errors.itemName}
             />
