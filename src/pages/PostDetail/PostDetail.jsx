@@ -19,12 +19,6 @@ const Wrapper = styled.div`
   padding-bottom: 80px;
 `;
 
-const Divider = styled.div`
-  height: 1px;
-  background-color: ${({ theme }) => theme.colors.border};
-  margin: 0 16px;
-`;
-
 const CommentList = styled.ul`
   padding: 8px 0;
 `;
@@ -211,8 +205,6 @@ const PostDetail = () => {
         <Header />
 
         <PostCard post={post} onDelete={() => navigate(-1)} />
-
-        <Divider />
 
         <CommentList>
           {comments.map((comment) => (
