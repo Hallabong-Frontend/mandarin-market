@@ -247,6 +247,7 @@ const Header = ({
   keyword = '',
   onKeywordChange,
   searchPlaceholder = '계정을 검색해보세요',
+  alwaysVisible = false,
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -405,7 +406,7 @@ const Header = ({
 
   return (
     <>
-    <HeaderWrapper $hidden={hidden}>
+    <HeaderWrapper $hidden={alwaysVisible ? false : hidden}>
       <BackButton onClick={handleBack} aria-label="뒤로가기">
         <BackIcon />
       </BackButton>
