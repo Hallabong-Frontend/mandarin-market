@@ -86,6 +86,32 @@ export const createGroupChat = async (myInfo, selectedUsers, groupTitle, groupIm
   return chatRef.id;
 };
 
+// 채팅방에 새로운 대화 상대 초대
+export const inviteUsersToChat = async (chatId, newUsers) => {
+  const chatRef = doc(db, 'chats', chatId);
+  const snapshot = await getDoc(chatRef);
+  if (!snapshot.exists()) return;
+
+  const data = snapshot.data();
+  const updatedParticipants = [...data.participants];
+  const updatedInfo = { ...data.participantInfo };
+
+  newUsers.forEach((u) => {
+    if (!updatedParticipants.includes(u.accountname)) {
+      updatedParticipants.push(u.accountname);
+    }
+    updatedInfo[u.accountname] = {
+      username: u.username,
+      image: u.image || '',
+    };
+  });
+
+  await updateDoc(chatRef, {
+    participants: updatedParticipants,
+    participantInfo: updatedInfo,
+  });
+};
+
 // 텍스트 메시지 전송
 export const sendTextMessage = async (chatId, senderId, text) => {
   await addDoc(collection(db, 'chats', chatId, 'messages'), {

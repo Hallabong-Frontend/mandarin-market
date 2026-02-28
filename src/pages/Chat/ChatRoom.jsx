@@ -30,6 +30,7 @@ import { uploadImage } from '../../api/auth';
 import { getImageUrl } from '../../utils/format';
 import Avatar from '../../components/common/Avatar';
 import ChatThemePanel, { BG_COLORS, BUBBLE_COLORS } from './ChatThemePanel';
+import InviteUserModal from '../../components/chat/InviteUserModal';
 
 const REACTION_TYPES = [
   { key: 'heart', src: heartFillSrc },
@@ -377,6 +378,7 @@ const ChatRoom = () => {
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [contextMenu, setContextMenu] = useState({
     show: false,
@@ -643,6 +645,17 @@ const ChatRoom = () => {
         setShowBgPanel(true);
       },
     },
+    ...(chatInfo?.isGroupChat
+      ? [
+          {
+            label: '초대하기',
+            onClick: () => {
+              setShowModal(false);
+              setShowInviteModal(true);
+            },
+          },
+        ]
+      : []),
     {
       label: '채팅방 나가기',
       danger: true,
@@ -845,6 +858,13 @@ const ChatRoom = () => {
           saveChatTheme(chatId, user.accountname, { bgColor, bubbleColor, otherBubbleColor: color, bgImage });
         }}
         onBgImageChange={handleBgImageChange}
+      />
+
+      <InviteUserModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        chatId={chatId}
+        existingParticipants={chatInfo?.participants || []}
       />
 
       {contextMenu.show && (
