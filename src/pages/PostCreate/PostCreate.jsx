@@ -215,11 +215,16 @@ const PostCreate = ({ isEdit = false }) => {
 
       if (isEdit) {
         await updatePost(postId, content, imageString);
+        navigate(`/post/${postId}`);
       } else {
-        await createPost(content, imageString);
+        const data = await createPost(content, imageString);
+        const createdPostId = data?.post?.id;
+        if (createdPostId) {
+          navigate(`/post/${createdPostId}`);
+        } else {
+          navigate('/feed');
+        }
       }
-
-      navigate(-1);
     } catch (err) {
       console.error(err);
     } finally {

@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getUserPosts } from '../../api/user';
 import { getImageUrl, formatTimeAgo } from '../../utils/format';
 import HeartIconSvg from '../../assets/icons/icon-heart.svg?react';
+import FullPagePanel from './FullPagePanel';
 
 const HeartIcon = styled(HeartIconSvg)`
   width: 22px;
@@ -12,46 +13,6 @@ const HeartIcon = styled(HeartIconSvg)`
   path {
     stroke: ${({ theme }) => theme.colors.black};
   }
-`;
-
-const NotificationOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background-color: ${({ theme }) => theme.colors.white};
-  z-index: ${({ theme }) => theme.zIndex.overlay};
-  display: flex;
-  justify-content: center;
-`;
-
-const NotificationSheet = styled.div`
-  width: 100%;
-  max-width: 390px;
-  min-height: 100vh;
-  background-color: ${({ theme }) => theme.colors.white};
-  padding: 20px 16px 24px;
-  overflow-y: auto;
-`;
-
-const NotificationTopBar = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-`;
-
-const NotificationTitle = styled.h4`
-  font-size: ${({ theme }) => theme.fonts.size.md};
-  font-weight: ${({ theme }) => theme.fonts.weight.bold};
-  color: ${({ theme }) => theme.colors.black};
-  margin: 0;
-`;
-
-const NotificationCloseBtn = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: ${({ theme }) => theme.borderRadius.circle};
-  color: ${({ theme }) => theme.colors.gray400};
-  font-size: 18px;
 `;
 
 const NotificationEmpty = styled.p`
@@ -139,21 +100,11 @@ const NotificationPanel = ({ isOpen, onClose }) => {
       .finally(() => setLoading(false));
   }, [isOpen, user?.accountname]);
 
-  if (!isOpen) return null;
-
   return (
-    <NotificationOverlay onClick={onClose}>
-      <NotificationSheet onClick={(e) => e.stopPropagation()}>
-        <NotificationTopBar>
-          <NotificationTitle>알림</NotificationTitle>
-          <NotificationCloseBtn type="button" aria-label="알림 닫기" onClick={onClose}>
-            ×
-          </NotificationCloseBtn>
-        </NotificationTopBar>
-
-        {loading ? (
-          <NotificationEmpty>불러오는 중...</NotificationEmpty>
-        ) : posts.length === 0 ? (
+    <FullPagePanel isOpen={isOpen} onClose={onClose} title="알림">
+      {loading ? (
+        <NotificationEmpty>불러오는 중...</NotificationEmpty>
+      ) : posts.length === 0 ? (
           <NotificationEmpty>새로운 알림이 없습니다.</NotificationEmpty>
         ) : (
           posts.map((post) => {
@@ -197,9 +148,8 @@ const NotificationPanel = ({ isOpen, onClose }) => {
               </NotifItem>
             );
           })
-        )}
-      </NotificationSheet>
-    </NotificationOverlay>
+      )}
+    </FullPagePanel>
   );
 };
 

@@ -239,6 +239,10 @@ const PostCard = ({ post, onDelete }) => {
     navigate(`/profile/${post.author?.accountname}`);
   };
 
+  const handleGoDetail = () => {
+    navigate(`/post/${post.id}`);
+  };
+
   const handleImageScroll = () => {
     const wrapper = imageWrapperRef.current;
     if (!wrapper) return;
@@ -266,14 +270,32 @@ const PostCard = ({ post, onDelete }) => {
 
   return (
     <>
-      <Card>
+      <Card onClick={handleGoDetail}>
         <CardHeader>
-          <Avatar src={post.author?.image} alt={post.author?.username} size="40px" onClick={handleGoProfile} />
-          <UserInfo onClick={handleGoProfile}>
+          <Avatar
+            src={post.author?.image}
+            alt={post.author?.username}
+            size="40px"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleGoProfile();
+            }}
+          />
+          <UserInfo
+            onClick={(e) => {
+              e.stopPropagation();
+              handleGoProfile();
+            }}
+          >
             <Username>{post.author?.username}</Username>
             <AccountId>@{post.author?.accountname}</AccountId>
           </UserInfo>
-          <MoreButton onClick={handleMore} aria-label="더보기">
+          <MoreButton
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMore();
+            }}
+            aria-label="more options">
             <MoreDots />
           </MoreButton>
         </CardHeader>
@@ -288,7 +310,10 @@ const PostCard = ({ post, onDelete }) => {
                   key={i}
                   src={getImageUrl(img.trim())}
                   alt={`게시글 이미지 ${i + 1}`}
-                  onClick={() => navigate(`/post/${post.id}`)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleGoDetail();
+                  }}
                   onError={(e) => {
                     e.target.style.display = 'none';
                   }}
@@ -303,7 +328,10 @@ const PostCard = ({ post, onDelete }) => {
                     type="button"
                     $active={currentImageIndex === i}
                     aria-label={`go-to-image-${i + 1}`}
-                    onClick={() => handleDotClick(i)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDotClick(i);
+                    }}
                   />
                 ))}
               </PaginationDots>
@@ -312,11 +340,21 @@ const PostCard = ({ post, onDelete }) => {
         )}
 
         <ActionBar>
-          <ActionButton onClick={handleLike}>
+          <ActionButton
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLike();
+            }}
+          >
             <HeartIcon $liked={liked} />
             {likeCount > 0 && <span>{likeCount}</span>}
           </ActionButton>
-          <ActionButton onClick={() => navigate(`/post/${post.id}`)}>
+          <ActionButton
+            onClick={(e) => {
+              e.stopPropagation();
+              handleGoDetail();
+            }}
+          >
             <CommentIcon />
             {post.commentCount > 0 && <span>{post.commentCount}</span>}
           </ActionButton>

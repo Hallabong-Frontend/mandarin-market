@@ -1,9 +1,4 @@
 import {
-  SettingsOverlay,
-  SettingsSheet,
-  SettingsTopBar,
-  SettingsTitle,
-  SettingsCloseIconBtn,
   SettingRow,
   SettingLabel,
   ThemeToggle,
@@ -15,6 +10,7 @@ import {
   PrivacyKey,
   PrivacyValue,
 } from '../../pages/Profile/Profile.styles';
+import FullPagePanel from '../common/FullPagePanel';
 
 const ProfileSettingsModal = ({
   showSettingsModal,
@@ -26,18 +22,12 @@ const ProfileSettingsModal = ({
   privacyEmail,
   me,
 }) => {
-  if (!showSettingsModal) return null;
-
   return (
-    <SettingsOverlay onClick={() => setShowSettingsModal(false)}>
-      <SettingsSheet onClick={(e) => e.stopPropagation()}>
-        <SettingsTopBar>
-          <SettingsTitle>설정 및 개인정보</SettingsTitle>
-          <SettingsCloseIconBtn type="button" aria-label="설정 닫기" onClick={() => setShowSettingsModal(false)}>
-            ×
-          </SettingsCloseIconBtn>
-        </SettingsTopBar>
-
+    <FullPagePanel
+      isOpen={showSettingsModal}
+      onClose={() => setShowSettingsModal(false)}
+      title="설정 및 개인정보"
+    >
         <SettingRow>
           <SettingLabel>다크모드</SettingLabel>
           <ThemeToggle
@@ -73,8 +63,7 @@ const ProfileSettingsModal = ({
             </PrivacyItem>
           </PrivacyDetails>
         )}
-      </SettingsSheet>
-    </SettingsOverlay>
+    </FullPagePanel>
   );
 };
 
