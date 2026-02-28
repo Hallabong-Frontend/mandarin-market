@@ -38,8 +38,17 @@ const MessageList = styled.div`
 
 const DateDivider = styled.div`
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: 8px;
   margin: 8px 0 4px;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: ${({ theme }) => theme.colors.border};
+  }
 `;
 
 const DateDividerText = styled.span`
