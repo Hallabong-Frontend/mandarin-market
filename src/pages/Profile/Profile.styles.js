@@ -203,45 +203,6 @@ export const ProductPrice = styled.p`
   margin-top: 2px;
 `;
 
-export const SettingsOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background-color: ${({ theme }) => theme.colors.white};
-  z-index: ${({ theme }) => theme.zIndex.overlay};
-  display: flex;
-  justify-content: center;
-`;
-
-export const SettingsSheet = styled.div`
-  width: 100%;
-  max-width: 390px;
-  min-height: 100vh;
-  background-color: ${({ theme }) => theme.colors.white};
-  padding: 20px 16px 24px;
-`;
-
-export const SettingsTitle = styled.h4`
-  font-size: ${({ theme }) => theme.fonts.size.md};
-  font-weight: ${({ theme }) => theme.fonts.weight.bold};
-  color: ${({ theme }) => theme.colors.black};
-  margin: 0;
-`;
-
-export const SettingsTopBar = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-`;
-
-export const SettingsCloseIconBtn = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: ${({ theme }) => theme.borderRadius.circle};
-  color: ${({ theme }) => theme.colors.gray400};
-  font-size: 18px;
-`;
-
 export const SettingRow = styled.div`
   display: flex;
   align-items: center;
