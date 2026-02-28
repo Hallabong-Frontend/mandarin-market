@@ -31,6 +31,9 @@ const ChatItemEl = styled.div`
   background-color: ${({ theme }) => theme.colors.white};
   transform: ${({ $swiped }) => ($swiped ? 'translateX(-80px)' : 'translateX(0)')};
   transition: transform 0.2s ease;
+  touch-action: pan-y;
+  position: relative;
+  z-index: 1;
 
   &:hover {
     background-color: ${({ theme }) => theme.colors.gray100};
@@ -47,6 +50,10 @@ const DeleteButton = styled.button`
   color: ${({ theme }) => theme.colors.white};
   font-size: ${({ theme }) => theme.fonts.size.sm};
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
+  border: none;
+  outline: none;
+  transform: ${({ $swiped }) => ($swiped ? 'translateX(0)' : 'translateX(100%)')};
+  transition: transform 0.2s ease;
 `;
 
 const AvatarWrapper = styled.div`
@@ -181,6 +188,7 @@ const ChatList = () => {
             return (
               <ChatItemContainer key={chat.id}>
                 <DeleteButton
+                  $swiped={isSwiped}
                   onClick={(e) => {
                     e.stopPropagation();
                     setDeletingChatId(chat.id);

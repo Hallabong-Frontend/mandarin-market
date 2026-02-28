@@ -316,7 +316,7 @@ const ProductRegister = ({ isEdit = false }) => {
         >
           {isAiLoading ? (
             <>
-              <SpinnerRing size="14px" />
+              <SpinnerRing $size="14px" />
               AI 생성 중...
             </>
           ) : aiGenerated ? (
