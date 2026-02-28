@@ -81,7 +81,7 @@ const Bubble = styled.div`
   padding: 10px 14px;
   border-radius: ${({ $isMine }) => ($isMine ? '16px 0 16px 16px' : '0 16px 16px 16px')};
   background-color: ${({ $isMine, $bubbleColor, theme }) =>
-    $isMine ? ($bubbleColor || theme.colors.primary) : theme.colors.white};
+    $isMine ? $bubbleColor || theme.colors.primary : theme.colors.white};
   color: ${({ $isMine, theme }) => ($isMine ? theme.colors.white : theme.colors.black)};
   font-size: ${({ theme }) => theme.fonts.size.base};
   line-height: 1.5;
@@ -466,6 +466,7 @@ const ChatRoom = () => {
           title={otherParticipant?.username || ''}
           titleLeft
           onMore={() => setShowModal(true)}
+          alwaysVisible
         />
 
         <MessageList>
@@ -517,7 +518,11 @@ const ChatRoom = () => {
                         </EditConfirmBtn>
                       </EditWrapper>
                     ) : (
-                      <Bubble $isMine={isMine} $bubbleColor={bubbleColor} onContextMenu={(e) => handleContextMenu(e, msg, isMine)}>
+                      <Bubble
+                        $isMine={isMine}
+                        $bubbleColor={bubbleColor}
+                        onContextMenu={(e) => handleContextMenu(e, msg, isMine)}
+                      >
                         {msg.text}
                       </Bubble>
                     )}
