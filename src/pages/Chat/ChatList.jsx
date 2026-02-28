@@ -101,6 +101,11 @@ const ChatLastMsg = styled.p`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+`;
+
+const SearchKeyword = styled.span`
+  color: ${({ theme }) => theme.colors.primary};
 `;
 
 // Firestore Timestamp → "HH:MM" 또는 "M.D" 포맷
@@ -186,6 +191,14 @@ const ChatList = () => {
     return other.username?.toLowerCase().includes(searchKeyword.toLowerCase());
   });
 
+  const renderHighlight = (text) => {
+    if (!searchKeyword || !text) return text;
+    const parts = text.split(new RegExp(`(${searchKeyword})`, 'gi'));
+    return parts.map((part, i) =>
+      part.toLowerCase() === searchKeyword.toLowerCase() ? <SearchKeyword key={i}>{part}</SearchKeyword> : part,
+    );
+  };
+
   return (
     <>
       <Wrapper>
@@ -256,7 +269,7 @@ const ChatList = () => {
                   </AvatarWrapper>
                   <ChatInfo>
                     <ChatTop>
-                      <ChatUsername>{other.username}</ChatUsername>
+                      <ChatUsername>{renderHighlight(other.username)}</ChatUsername>
                       <ChatTime>{formatChatTime(chat.lastMessageAt)}</ChatTime>
                     </ChatTop>
                     <ChatLastMsg>{chat.lastMessage || '채팅을 시작해보세요.'}</ChatLastMsg>
