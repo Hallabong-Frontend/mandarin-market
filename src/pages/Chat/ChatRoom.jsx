@@ -16,13 +16,15 @@ import {
   editMessage,
   deleteMessage,
   deleteChat,
+  saveChatTheme,
 } from '../../firebase/chat';
 import { getImageUrl, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 import Avatar from '../../components/common/Avatar';
+import ChatThemePanel, { BG_COLORS, BUBBLE_COLORS } from './ChatThemePanel';
 
 const Wrapper = styled.div`
   min-height: 100vh;
-  background-color: ${({ theme }) => theme.colors.gray100};
+  background-color: ${({ $bgColor }) => $bgColor || '#F2F2F2'};
   display: flex;
   flex-direction: column;
   padding-bottom: 72px;
@@ -78,7 +80,8 @@ const Bubble = styled.div`
   max-width: 60%;
   padding: 10px 14px;
   border-radius: ${({ $isMine }) => ($isMine ? '16px 0 16px 16px' : '0 16px 16px 16px')};
-  background-color: ${({ $isMine, theme }) => ($isMine ? theme.colors.primary : theme.colors.white)};
+  background-color: ${({ $isMine, $bubbleColor, theme }) =>
+    $isMine ? ($bubbleColor || theme.colors.primary) : theme.colors.white};
   color: ${({ $isMine, theme }) => ($isMine ? theme.colors.white : theme.colors.black)};
   font-size: ${({ theme }) => theme.fonts.size.base};
   line-height: 1.5;
@@ -255,6 +258,10 @@ const ChatRoom = () => {
   const [showDeleteChatAlert, setShowDeleteChatAlert] = useState(false);
   const [showDeleteMsgAlert, setShowDeleteMsgAlert] = useState(false);
   const [showReportAlert, setShowReportAlert] = useState(false);
+  const [showBgPanel, setShowBgPanel] = useState(false);
+  const [bgColor, setBgColor] = useState(BG_COLORS[0].value);
+  const [bubbleColor, setBubbleColor] = useState(BUBBLE_COLORS[0].value);
+  const themeInitialized = useRef(false);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'chats', chatId), (snap) => {
@@ -262,6 +269,14 @@ const ChatRoom = () => {
     });
     return () => unsub();
   }, [chatId]);
+
+  useEffect(() => {
+    if (!chatInfo || !user?.accountname || themeInitialized.current) return;
+    const saved = chatInfo.themes?.[user.accountname];
+    if (saved?.bgColor) setBgColor(saved.bgColor);
+    if (saved?.bubbleColor) setBubbleColor(saved.bubbleColor);
+    themeInitialized.current = true;
+  }, [chatInfo, user?.accountname]);
 
   useEffect(() => {
     const unsub = subscribeToMessages(chatId, setMessages);
@@ -430,6 +445,13 @@ const ChatRoom = () => {
 
   const modalItems = [
     {
+      label: '배경 설정',
+      onClick: () => {
+        setShowModal(false);
+        setShowBgPanel(true);
+      },
+    },
+    {
       label: '채팅방 나가기',
       danger: true,
       onClick: () => setShowDeleteChatAlert(true),
@@ -438,7 +460,7 @@ const ChatRoom = () => {
 
   return (
     <>
-      <Wrapper>
+      <Wrapper $bgColor={bgColor}>
         <Header
           type="back-title-more"
           title={otherParticipant?.username || ''}
@@ -495,7 +517,7 @@ const ChatRoom = () => {
                         </EditConfirmBtn>
                       </EditWrapper>
                     ) : (
-                      <Bubble $isMine={isMine} onContextMenu={(e) => handleContextMenu(e, msg, isMine)}>
+                      <Bubble $isMine={isMine} $bubbleColor={bubbleColor} onContextMenu={(e) => handleContextMenu(e, msg, isMine)}>
                         {msg.text}
                       </Bubble>
                     )}
@@ -562,6 +584,21 @@ const ChatRoom = () => {
         danger
         onCancel={() => setShowReportAlert(false)}
         onConfirm={() => setShowReportAlert(false)}
+      />
+
+      <ChatThemePanel
+        isOpen={showBgPanel}
+        onClose={() => setShowBgPanel(false)}
+        bgColor={bgColor}
+        bubbleColor={bubbleColor}
+        onBgColorChange={(color) => {
+          setBgColor(color);
+          saveChatTheme(chatId, user.accountname, { bgColor: color, bubbleColor });
+        }}
+        onBubbleColorChange={(color) => {
+          setBubbleColor(color);
+          saveChatTheme(chatId, user.accountname, { bgColor, bubbleColor: color });
+        }}
       />
 
       {contextMenu.show && (

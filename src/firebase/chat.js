@@ -123,6 +123,13 @@ export const deleteMessage = async (chatId, messageId) => {
   await deleteDoc(doc(db, 'chats', chatId, 'messages', messageId));
 };
 
+// 채팅방 테마 저장 (사용자별)
+export const saveChatTheme = async (chatId, accountname, theme) => {
+  await updateDoc(doc(db, 'chats', chatId), {
+    [`themes.${accountname}`]: theme,
+  });
+};
+
 // 채팅방 메시지 실시간 구독 (createdAt 오름차순)
 export const subscribeToMessages = (chatId, callback) => {
   const q = query(
