@@ -18,13 +18,18 @@ import {
   deleteChat,
   saveChatTheme,
 } from '../../firebase/chat';
+import { uploadImage } from '../../api/auth';
 import { getImageUrl, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 import Avatar from '../../components/common/Avatar';
 import ChatThemePanel, { BG_COLORS, BUBBLE_COLORS } from './ChatThemePanel';
 
 const Wrapper = styled.div`
   min-height: 100vh;
-  background-color: ${({ $bgColor }) => $bgColor || '#F2F2F2'};
+  background-color: ${({ $bgColor, $bgImage }) => ($bgImage ? 'transparent' : $bgColor || '#F2F2F2')};
+  background-image: ${({ $bgImage }) => ($bgImage ? `url(${$bgImage})` : 'none')};
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   display: flex;
   flex-direction: column;
   padding-bottom: 72px;
@@ -80,9 +85,10 @@ const Bubble = styled.div`
   max-width: 60%;
   padding: 10px 14px;
   border-radius: ${({ $isMine }) => ($isMine ? '16px 0 16px 16px' : '0 16px 16px 16px')};
-  background-color: ${({ $isMine, $bubbleColor, theme }) =>
-    $isMine ? $bubbleColor || theme.colors.primary : theme.colors.white};
-  color: ${({ $isMine, theme }) => ($isMine ? theme.colors.white : theme.colors.black)};
+  background-color: ${({ $isMine, $bubbleColor, $otherBubbleColor, theme }) =>
+    $isMine ? $bubbleColor || theme.colors.primary : $otherBubbleColor || theme.colors.white};
+  color: ${({ $isMine, $otherBubbleColor, theme }) =>
+    $isMine || $otherBubbleColor ? theme.colors.white : theme.colors.black};
   font-size: ${({ theme }) => theme.fonts.size.base};
   line-height: 1.5;
   word-break: break-word;
@@ -261,6 +267,9 @@ const ChatRoom = () => {
   const [showBgPanel, setShowBgPanel] = useState(false);
   const [bgColor, setBgColor] = useState(BG_COLORS[0].value);
   const [bubbleColor, setBubbleColor] = useState(BUBBLE_COLORS[0].value);
+  const [otherBubbleColor, setOtherBubbleColor] = useState(null);
+  const [bgImage, setBgImage] = useState(null);
+  const [isBgImageUploading, setIsBgImageUploading] = useState(false);
   const themeInitialized = useRef(false);
 
   useEffect(() => {
@@ -275,6 +284,8 @@ const ChatRoom = () => {
     const saved = chatInfo.themes?.[user.accountname];
     if (saved?.bgColor) setBgColor(saved.bgColor);
     if (saved?.bubbleColor) setBubbleColor(saved.bubbleColor);
+    if (saved?.otherBubbleColor) setOtherBubbleColor(saved.otherBubbleColor);
+    if (saved?.bgImage) setBgImage(saved.bgImage);
     themeInitialized.current = true;
   }, [chatInfo, user?.accountname]);
 
@@ -443,9 +454,26 @@ const ChatRoom = () => {
     setContextMenu((prev) => ({ ...prev, show: false }));
   };
 
+  const handleBgImageChange = async (file) => {
+    if (!file) {
+      setBgImage(null);
+      saveChatTheme(chatId, user.accountname, { bgColor, bubbleColor, otherBubbleColor, bgImage: null });
+      return;
+    }
+    setIsBgImageUploading(true);
+    try {
+      const info = await uploadImage(file);
+      const url = getImageUrl(info.filename);
+      setBgImage(url);
+      saveChatTheme(chatId, user.accountname, { bgColor, bubbleColor, otherBubbleColor, bgImage: url });
+    } finally {
+      setIsBgImageUploading(false);
+    }
+  };
+
   const modalItems = [
     {
-      label: '배경 설정',
+      label: '테마 설정',
       onClick: () => {
         setShowModal(false);
         setShowBgPanel(true);
@@ -460,7 +488,7 @@ const ChatRoom = () => {
 
   return (
     <>
-      <Wrapper $bgColor={bgColor}>
+      <Wrapper $bgColor={bgColor} $bgImage={bgImage}>
         <Header
           type="back-title-more"
           title={otherParticipant?.username || ''}
@@ -521,6 +549,7 @@ const ChatRoom = () => {
                       <Bubble
                         $isMine={isMine}
                         $bubbleColor={bubbleColor}
+                        $otherBubbleColor={otherBubbleColor}
                         onContextMenu={(e) => handleContextMenu(e, msg, isMine)}
                       >
                         {msg.text}
@@ -596,14 +625,22 @@ const ChatRoom = () => {
         onClose={() => setShowBgPanel(false)}
         bgColor={bgColor}
         bubbleColor={bubbleColor}
+        otherBubbleColor={otherBubbleColor}
+        bgImage={bgImage}
+        isBgImageUploading={isBgImageUploading}
         onBgColorChange={(color) => {
           setBgColor(color);
-          saveChatTheme(chatId, user.accountname, { bgColor: color, bubbleColor });
+          saveChatTheme(chatId, user.accountname, { bgColor: color, bubbleColor, otherBubbleColor, bgImage });
         }}
         onBubbleColorChange={(color) => {
           setBubbleColor(color);
-          saveChatTheme(chatId, user.accountname, { bgColor, bubbleColor: color });
+          saveChatTheme(chatId, user.accountname, { bgColor, bubbleColor: color, otherBubbleColor, bgImage });
         }}
+        onOtherBubbleColorChange={(color) => {
+          setOtherBubbleColor(color);
+          saveChatTheme(chatId, user.accountname, { bgColor, bubbleColor, otherBubbleColor: color, bgImage });
+        }}
+        onBgImageChange={handleBgImageChange}
       />
 
       {contextMenu.show && (

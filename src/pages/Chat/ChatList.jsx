@@ -10,6 +10,8 @@ import { subscribeToChats, deleteChat } from '../../firebase/chat';
 import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
 import AlertModal from '../../components/common/AlertModal';
+import PinIcon from '../../assets/icons/icon-pin.svg?react';
+import PinFilledIcon from '../../assets/icons/icon-pin-filled.svg?react';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -29,7 +31,8 @@ const ChatItemEl = styled.div`
   padding: 14px 16px;
   cursor: pointer;
   background-color: ${({ theme }) => theme.colors.white};
-  transform: ${({ $swiped }) => ($swiped ? 'translateX(-80px)' : 'translateX(0)')};
+  transform: ${({ $leftSwiped, $rightSwiped }) =>
+    $leftSwiped ? 'translateX(-216px)' : $rightSwiped ? 'translateX(72px)' : 'translateX(0)'};
   transition: transform 0.2s ease;
   touch-action: pan-y;
   position: relative;
@@ -40,20 +43,65 @@ const ChatItemEl = styled.div`
   }
 `;
 
-const DeleteButton = styled.button`
+const RightActions = styled.div`
   position: absolute;
   right: 0;
   top: 0;
   height: 100%;
-  width: 80px;
-  background-color: ${({ theme }) => theme.colors.error};
+  width: 216px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  overflow: hidden;
+  transform: ${({ $swiped }) => ($swiped ? 'translateX(0)' : 'translateX(100%)')};
+  transition: transform 0.2s ease;
+`;
+
+const ActionBtn = styled.button`
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
   color: ${({ theme }) => theme.colors.white};
   font-size: ${({ theme }) => theme.fonts.size.sm};
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
+  background-color: ${({ $bg, theme }) =>
+    $bg === 'error'
+      ? theme.colors.error
+      : $bg === 'primary'
+      ? theme.colors.primary
+      : theme.colors.gray400};
+  cursor: pointer;
+`;
+
+const PinButtonWrap = styled.div`
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: ${({ $swiped }) => ($swiped ? 'translateX(0)' : 'translateX(-100%)')};
+  transition: transform 0.2s ease;
+  background-color: ${({ theme }) => theme.colors.primary};
+`;
+
+const PinButton = styled.button`
+  background: none;
   border: none;
   outline: none;
-  transform: ${({ $swiped }) => ($swiped ? 'translateX(0)' : 'translateX(100%)')};
-  transition: transform 0.2s ease;
+  color: ${({ theme }) => theme.colors.white};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
 `;
 
 const AvatarWrapper = styled.div`
@@ -84,10 +132,23 @@ const ChatTop = styled.div`
   margin-bottom: 4px;
 `;
 
+const ChatUsernameRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
 const ChatUsername = styled.p`
   font-size: ${({ theme }) => theme.fonts.size.base};
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
   color: ${({ theme }) => theme.colors.black};
+`;
+
+const PinIconInline = styled(PinFilledIcon)`
+  width: 12px;
+  height: 12px;
+  color: ${({ theme }) => theme.colors.primary};
+  flex-shrink: 0;
 `;
 
 const ChatTime = styled.span`
@@ -120,6 +181,24 @@ const formatChatTime = (timestamp) => {
   return `${date.getMonth() + 1}.${date.getDate()}`;
 };
 
+const alertConfig = {
+  delete: {
+    title: '채팅방 삭제',
+    description: '채팅방을 삭제하면 대화 내용이 모두 사라집니다.',
+    confirmText: '삭제',
+  },
+  block: {
+    title: '사용자 차단',
+    description: '차단하면 해당 사용자와의 채팅이 목록에서 숨겨집니다.',
+    confirmText: '차단',
+  },
+  report: {
+    title: '채팅 신고',
+    description: '신고된 내용은 관리자가 검토합니다.',
+    confirmText: '신고',
+  },
+};
+
 const ChatList = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -127,7 +206,22 @@ const ChatList = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [swipedChatId, setSwipedChatId] = useState(null);
-  const [deletingChatId, setDeletingChatId] = useState(null);
+  const [pinSwipedChatId, setPinSwipedChatId] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null); // { type, chatId }
+  const [pinnedChatIds, setPinnedChatIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('pinnedChats')) || [];
+    } catch {
+      return [];
+    }
+  });
+  const [blockedChatIds, setBlockedChatIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('blockedChats')) || [];
+    } catch {
+      return [];
+    }
+  });
   const touchStartX = useRef(null);
   const didSwipe = useRef(false);
 
@@ -149,7 +243,7 @@ const ChatList = () => {
     return chat.participantInfo?.[otherAccountname] || { username: otherAccountname, image: '' };
   };
 
-  // 안읽은 메시지 여부: 마지막 발신자가 나이고, 내 readAt이 lastMessageAt보다 이전이면 unread
+  // 안읽은 메시지 여부
   const isUnread = (chat) => {
     if (!chat.lastMessage || chat.lastSenderId === user.accountname) return false;
     const myReadAt = chat.readAt?.[user.accountname];
@@ -169,23 +263,64 @@ const ChatList = () => {
     touchStartX.current = null;
     if (dx < -50) {
       setSwipedChatId(chatId);
+      setPinSwipedChatId(null);
       didSwipe.current = true;
-    } else if (dx > 20) {
+    } else if (dx > 50) {
+      setPinSwipedChatId(chatId);
       setSwipedChatId(null);
+      didSwipe.current = true;
+    } else if (Math.abs(dx) > 10) {
+      setSwipedChatId(null);
+      setPinSwipedChatId(null);
       didSwipe.current = true;
     }
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!deletingChatId) return;
-    await deleteChat(deletingChatId);
-    setDeletingChatId(null);
+  const togglePin = (chatId) => {
+    setPinnedChatIds((prev) => {
+      const next = prev.includes(chatId) ? prev.filter((id) => id !== chatId) : [...prev, chatId];
+      localStorage.setItem('pinnedChats', JSON.stringify(next));
+      return next;
+    });
+    setPinSwipedChatId(null);
+  };
+
+  const handleAlertConfirm = async () => {
+    if (!pendingAction) return;
+    const { type, chatId } = pendingAction;
+
+    if (type === 'delete') {
+      await deleteChat(chatId);
+      setPinnedChatIds((prev) => {
+        const next = prev.filter((id) => id !== chatId);
+        localStorage.setItem('pinnedChats', JSON.stringify(next));
+        return next;
+      });
+    } else if (type === 'block') {
+      setBlockedChatIds((prev) => {
+        const next = [...prev, chatId];
+        localStorage.setItem('blockedChats', JSON.stringify(next));
+        return next;
+      });
+    }
+    // report: 로컬 처리만 (백엔드 사용자 신고 API 없음)
+
+    setPendingAction(null);
     setSwipedChatId(null);
   };
 
+  const displayChats = chats
+    .filter((chat) => !blockedChatIds.includes(chat.id))
+    .sort((a, b) => {
+      const aPinned = pinnedChatIds.includes(a.id) ? 1 : 0;
+      const bPinned = pinnedChatIds.includes(b.id) ? 1 : 0;
+      if (aPinned !== bPinned) return bPinned - aPinned;
+      return (b.lastMessageAt?.toMillis() || 0) - (a.lastMessageAt?.toMillis() || 0);
+    });
+
   const modalItems = [{ label: '설정', onClick: () => {} }];
 
-  const filteredChats = chats.filter((chat) => {
+  const filteredChats = displayChats.filter((chat) => {
     if (!searchKeyword) return true;
     const other = getOtherParticipant(chat);
     return other.username?.toLowerCase().includes(searchKeyword.toLowerCase());
@@ -235,20 +370,55 @@ const ChatList = () => {
         ) : (
           filteredChats.map((chat) => {
             const other = getOtherParticipant(chat);
-            const isSwiped = swipedChatId === chat.id;
+            const isLeftSwiped = swipedChatId === chat.id;
+            const isRightSwiped = pinSwipedChatId === chat.id;
+            const isPinned = pinnedChatIds.includes(chat.id);
             return (
               <ChatItemContainer key={chat.id}>
-                <DeleteButton
-                  $swiped={isSwiped}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeletingChatId(chat.id);
-                  }}
-                >
-                  삭제
-                </DeleteButton>
+                <PinButtonWrap $swiped={isRightSwiped}>
+                  <PinButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePin(chat.id);
+                    }}
+                  >
+                    {isPinned ? <PinFilledIcon /> : <PinIcon />}
+                  </PinButton>
+                </PinButtonWrap>
+
+                <RightActions $swiped={isLeftSwiped}>
+                  <ActionBtn
+                    $bg="gray"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPendingAction({ type: 'report', chatId: chat.id });
+                    }}
+                  >
+                    신고
+                  </ActionBtn>
+                  <ActionBtn
+                    $bg="primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPendingAction({ type: 'block', chatId: chat.id });
+                    }}
+                  >
+                    차단
+                  </ActionBtn>
+                  <ActionBtn
+                    $bg="error"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPendingAction({ type: 'delete', chatId: chat.id });
+                    }}
+                  >
+                    삭제
+                  </ActionBtn>
+                </RightActions>
+
                 <ChatItemEl
-                  $swiped={isSwiped}
+                  $leftSwiped={isLeftSwiped}
+                  $rightSwiped={isRightSwiped}
                   onPointerDown={handlePointerDown}
                   onPointerUp={handlePointerUp(chat.id)}
                   onClick={() => {
@@ -256,8 +426,12 @@ const ChatList = () => {
                       didSwipe.current = false;
                       return;
                     }
-                    if (isSwiped) {
+                    if (isLeftSwiped) {
                       setSwipedChatId(null);
+                      return;
+                    }
+                    if (isRightSwiped) {
+                      setPinSwipedChatId(null);
                       return;
                     }
                     navigate(`/chat/${chat.id}`);
@@ -269,7 +443,10 @@ const ChatList = () => {
                   </AvatarWrapper>
                   <ChatInfo>
                     <ChatTop>
-                      <ChatUsername>{renderHighlight(other.username)}</ChatUsername>
+                      <ChatUsernameRow>
+                        <ChatUsername>{renderHighlight(other.username)}</ChatUsername>
+                        {isPinned && <PinIconInline />}
+                      </ChatUsernameRow>
                       <ChatTime>{formatChatTime(chat.lastMessageAt)}</ChatTime>
                     </ChatTop>
                     <ChatLastMsg>{chat.lastMessage || '채팅을 시작해보세요.'}</ChatLastMsg>
@@ -286,13 +463,13 @@ const ChatList = () => {
       <BottomModal isOpen={showModal} onClose={() => setShowModal(false)} items={modalItems} />
 
       <AlertModal
-        isOpen={!!deletingChatId}
-        title="채팅방 삭제"
-        description="채팅방을 삭제하면 대화 내용이 모두 사라집니다."
-        confirmText="삭제"
+        isOpen={!!pendingAction}
+        title={alertConfig[pendingAction?.type]?.title}
+        description={alertConfig[pendingAction?.type]?.description}
+        confirmText={alertConfig[pendingAction?.type]?.confirmText}
         danger
-        onCancel={() => setDeletingChatId(null)}
-        onConfirm={handleDeleteConfirm}
+        onCancel={() => setPendingAction(null)}
+        onConfirm={handleAlertConfirm}
       />
     </>
   );
