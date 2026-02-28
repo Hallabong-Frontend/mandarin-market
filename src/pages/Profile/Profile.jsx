@@ -22,8 +22,7 @@ import AlbumIconSvg from '../../assets/icons/icon-post-album-on.svg?react';
 import ImageLayersIconSvg from '../../assets/icons/iccon-img-layers.svg?react';
 import ChatIcon from '../../assets/icons/icon-message-circle.svg?react';
 import ShareIcon from '../../assets/icons/icon-share.svg?react';
-
-const AI_DESC_SEPARATOR = '||AI_DESC||';
+import { AI_DESC_SEPARATOR } from '../../constants/common';
 
 const Wrapper = styled.div`
   padding-bottom: 70px;

@@ -10,6 +10,7 @@ import Header from '../../components/common/Header';
 import AlertModal from '../../components/common/AlertModal';
 import AuthInput from '../../components/common/AuthInput';
 import { SpinnerRing } from '../../components/common/Spinner';
+import { AI_DESC_SEPARATOR } from '../../constants/common';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -119,8 +120,6 @@ const AiDescLabel = styled.p`
 `;
 
 const UploadIcon = () => <UploadIconSvg width="32" height="32" />;
-
-const AI_DESC_SEPARATOR = '||AI_DESC||';
 
 const ProductRegister = ({ isEdit = false }) => {
   const navigate = useNavigate();
