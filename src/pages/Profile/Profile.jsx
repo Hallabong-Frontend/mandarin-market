@@ -22,8 +22,9 @@ import AlbumIconSvg from '../../assets/icons/icon-post-album-on.svg?react';
 import ImageLayersIconSvg from '../../assets/icons/iccon-img-layers.svg?react';
 import ChatIcon from '../../assets/icons/icon-message-circle.svg?react';
 import ShareIcon from '../../assets/icons/icon-share.svg?react';
-
-const AI_DESC_SEPARATOR = '||AI_DESC||';
+import SwiperLeftIconSvg from '../../assets/icons/icon-swiper-1.svg?react';
+import SwiperRightIconSvg from '../../assets/icons/icon-swiper-2.svg?react';
+import { AI_DESC_SEPARATOR } from '../../constants/common';
 
 const Wrapper = styled.div`
   padding-bottom: 70px;
@@ -173,17 +174,23 @@ const ProductNavButtons = styled.div`
 `;
 
 const ProductNavButton = styled.button`
+  position: relative;
   width: 24px;
   height: 24px;
+  padding: 0;
   border-radius: 999px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   background-color: ${({ theme }) => theme.colors.white};
   color: ${({ theme }) => theme.colors.gray500};
-  font-size: 12px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  & > svg {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 5px;
+    height: 8px;
+  }
 `;
 
 const ProductList = styled.div`
@@ -626,14 +633,14 @@ const Profile = () => {
                     aria-label="scroll products left"
                     onClick={() => scrollProductList(-1)}
                   >
-                    {'<'}
+                    <SwiperLeftIconSvg />
                   </ProductNavButton>
                   <ProductNavButton
                     type="button"
                     aria-label="scroll products right"
                     onClick={() => scrollProductList(1)}
                   >
-                    {'>'}
+                    <SwiperRightIconSvg />
                   </ProductNavButton>
                 </ProductNavButtons>
               </ProductSectionHeader>

@@ -318,7 +318,8 @@ const ChatRoom = () => {
   const otherParticipant = (() => {
     if (!chatInfo || !user?.accountname) return null;
     const otherAccountname = chatInfo.participants?.find((p) => p !== user.accountname);
-    return chatInfo.participantInfo?.[otherAccountname] || { username: '', image: '' };
+    const info = chatInfo.participantInfo?.[otherAccountname] || { username: '', image: '' };
+    return { ...info, accountname: otherAccountname };
   })();
 
   const handleSend = async () => {
@@ -471,7 +472,14 @@ const ChatRoom = () => {
 
                 <MessageWrapper $isMine={isMine}>
                   <MessageRow $isMine={isMine}>
-                    {!isMine && <Avatar src={otherParticipant?.image} alt="상대방" size="32px" />}
+                    {!isMine && (
+                      <Avatar
+                        src={otherParticipant?.image}
+                        alt="상대방"
+                        size="32px"
+                        onClick={() => navigate(`/profile/${otherParticipant?.accountname}`)}
+                      />
+                    )}
                     {msg.imageUrl ? (
                       <ChatImage src={msg.imageUrl} alt="채팅 이미지" />
                     ) : editingId === msg.id ? (
