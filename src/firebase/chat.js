@@ -69,9 +69,11 @@ export const createGroupChat = async (myInfo, selectedUsers, groupTitle, groupIm
     };
   });
 
+  const participantUsernames = [myInfo.username, ...selectedUsers.map((u) => u.username)];
+
   await setDoc(chatRef, {
     isGroupChat: true,
-    groupTitle: groupTitle || participants.join(', '),
+    groupTitle: groupTitle || participantUsernames.join(', '),
     groupImage: groupImage || '',
     participants,
     participantInfo,
