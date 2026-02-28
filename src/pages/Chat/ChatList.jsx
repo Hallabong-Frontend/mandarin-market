@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import BottomTabNav from '../../components/common/BottomTabNav';
@@ -6,14 +6,20 @@ import BottomModal from '../../components/common/BottomModal';
 import Header from '../../components/common/Header';
 import Spinner from '../../components/common/Spinner';
 import { useAuth } from '../../context/AuthContext';
-import { subscribeToChats } from '../../firebase/chat';
+import { subscribeToChats, deleteChat } from '../../firebase/chat';
 import Avatar from '../../components/common/Avatar';
 import EmptyState from '../../components/common/EmptyState';
+import AlertModal from '../../components/common/AlertModal';
 
 const Wrapper = styled.div`
   min-height: 100vh;
   background-color: ${({ theme }) => theme.colors.white};
   padding-bottom: 70px;
+`;
+
+const ChatItemContainer = styled.div`
+  position: relative;
+  overflow: hidden;
 `;
 
 const ChatItemEl = styled.div`
@@ -22,11 +28,25 @@ const ChatItemEl = styled.div`
   gap: 12px;
   padding: 14px 16px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  background-color: ${({ theme }) => theme.colors.white};
+  transform: ${({ $swiped }) => ($swiped ? 'translateX(-80px)' : 'translateX(0)')};
+  transition: transform 0.2s ease;
 
   &:hover {
     background-color: ${({ theme }) => theme.colors.gray100};
   }
+`;
+
+const DeleteButton = styled.button`
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 80px;
+  background-color: ${({ theme }) => theme.colors.error};
+  color: ${({ theme }) => theme.colors.white};
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  font-weight: ${({ theme }) => theme.fonts.weight.medium};
 `;
 
 const AvatarWrapper = styled.div`
@@ -94,6 +114,10 @@ const ChatList = () => {
   const [chats, setChats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [swipedChatId, setSwipedChatId] = useState(null);
+  const [deletingChatId, setDeletingChatId] = useState(null);
+  const touchStartX = useRef(null);
+  const didSwipe = useRef(false);
 
   useEffect(() => {
     if (!user?.accountname) return;
@@ -118,6 +142,27 @@ const ChatList = () => {
     return (chat.lastMessageAt?.toMillis() || 0) > myReadAt.toMillis();
   };
 
+  const handlePointerDown = (e) => {
+    touchStartX.current = e.clientX;
+    didSwipe.current = false;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerUp = (chatId) => (e) => {
+    if (touchStartX.current === null) return;
+    const dx = e.clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (dx < -50) { setSwipedChatId(chatId); didSwipe.current = true; }
+    else if (dx > 20) { setSwipedChatId(null); didSwipe.current = true; }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingChatId) return;
+    await deleteChat(deletingChatId);
+    setDeletingChatId(null);
+    setSwipedChatId(null);
+  };
+
   const modalItems = [{ label: '설정', onClick: () => {} }];
 
   return (
@@ -132,20 +177,40 @@ const ChatList = () => {
         ) : (
           chats.map((chat) => {
             const other = getOtherParticipant(chat);
+            const isSwiped = swipedChatId === chat.id;
             return (
-              <ChatItemEl key={chat.id} onClick={() => navigate(`/chat/${chat.id}`)}>
-                <AvatarWrapper>
-                  <Avatar src={other.image} alt={other.username} />
-                  {isUnread(chat) && <UnreadDot />}
-                </AvatarWrapper>
-                <ChatInfo>
-                  <ChatTop>
-                    <ChatUsername>{other.username}</ChatUsername>
-                    <ChatTime>{formatChatTime(chat.lastMessageAt)}</ChatTime>
-                  </ChatTop>
-                  <ChatLastMsg>{chat.lastMessage || '채팅을 시작해보세요.'}</ChatLastMsg>
-                </ChatInfo>
-              </ChatItemEl>
+              <ChatItemContainer key={chat.id}>
+                <DeleteButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingChatId(chat.id);
+                  }}
+                >
+                  삭제
+                </DeleteButton>
+                <ChatItemEl
+                  $swiped={isSwiped}
+                  onPointerDown={handlePointerDown}
+                  onPointerUp={handlePointerUp(chat.id)}
+                  onClick={() => {
+                    if (didSwipe.current) { didSwipe.current = false; return; }
+                    if (isSwiped) { setSwipedChatId(null); return; }
+                    navigate(`/chat/${chat.id}`);
+                  }}
+                >
+                  <AvatarWrapper>
+                    <Avatar src={other.image} alt={other.username} />
+                    {isUnread(chat) && <UnreadDot />}
+                  </AvatarWrapper>
+                  <ChatInfo>
+                    <ChatTop>
+                      <ChatUsername>{other.username}</ChatUsername>
+                      <ChatTime>{formatChatTime(chat.lastMessageAt)}</ChatTime>
+                    </ChatTop>
+                    <ChatLastMsg>{chat.lastMessage || '채팅을 시작해보세요.'}</ChatLastMsg>
+                  </ChatInfo>
+                </ChatItemEl>
+              </ChatItemContainer>
             );
           })
         )}
@@ -154,6 +219,16 @@ const ChatList = () => {
       <BottomTabNav />
 
       <BottomModal isOpen={showModal} onClose={() => setShowModal(false)} items={modalItems} />
+
+      <AlertModal
+        isOpen={!!deletingChatId}
+        title="채팅방 삭제"
+        description="채팅방을 삭제하면 대화 내용이 모두 사라집니다."
+        confirmText="삭제"
+        danger
+        onCancel={() => setDeletingChatId(null)}
+        onConfirm={handleDeleteConfirm}
+      />
     </>
   );
 };
