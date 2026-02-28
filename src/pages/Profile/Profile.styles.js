@@ -127,6 +127,7 @@ export const Section = styled.section`
 export const SectionTitle = styled.h3`
   font-size: ${({ theme }) => theme.fonts.size.base};
   font-weight: ${({ theme }) => theme.fonts.weight.bold};
+  font-family: 'GangwonEducationTteontteon';
   color: ${({ theme }) => theme.colors.black};
 `;
 

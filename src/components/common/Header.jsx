@@ -70,6 +70,7 @@ const Title = styled.h1`
 const LogoText = styled.h1`
   font-size: ${({ theme }) => theme.fonts.size.lg};
   font-weight: ${({ theme }) => theme.fonts.weight.bold};
+  font-family: 'GangwonEducationTteontteon' !important;
   color: ${({ theme }) => theme.colors.black};
   flex: 1;
 `;

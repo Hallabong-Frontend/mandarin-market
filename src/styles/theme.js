@@ -1,6 +1,6 @@
 const baseTheme = {
   fonts: {
-    family: "'Noto Sans KR', sans-serif",
+    family: "'HealthsetGothic'",
     size: {
       xs: '10px',
       sm: '12px',
