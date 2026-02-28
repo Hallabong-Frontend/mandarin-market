@@ -73,6 +73,11 @@ const LogoText = styled.h1`
   font-family: 'GangwonEducationTteontteon' !important;
   color: ${({ theme }) => theme.colors.black};
   flex: 1;
+  margin-top: 10px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  line-height: 1;
 `;
 
 const RightButton = styled.button`
@@ -177,7 +182,7 @@ const Header = ({
       <>
         <HeaderWrapper $hidden={hidden}>
           <LogoText>{logo}</LogoText>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', height: '32px' }}>
             <RightButton onClick={() => setShowNotifications(true)} aria-label="알림">
               <HeartIcon />
             </RightButton>
