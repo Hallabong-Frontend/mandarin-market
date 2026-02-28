@@ -9,7 +9,7 @@ import ImageIcon from '../../assets/icons/icon-image.svg?react';
 import HeartIcon from '../../assets/icons/icon-heart.svg?react';
 import EmojiIcon from '../../assets/icons/icon-emoji.svg?react';
 import EmojiPicker, { STICKER_MAP } from '../../components/chat/EmojiPicker';
-import heartFillSrc from '../../assets/emoji/icon_heart_fill.png';
+import heartFillSrc from '../../assets/emoji/icon_heart_fill.svg';
 import thumbsUpSrc from '../../assets/emoji/icon_thumbs_up_fill.png';
 import starSrc from '../../assets/emoji/icon_star.png';
 import { useAuth } from '../../context/AuthContext';
@@ -293,7 +293,9 @@ const HeartBubble = styled.div`
 const ReactionBar = styled.div`
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
+  max-width: 60%;
   padding: ${({ $isMine }) => ($isMine ? '4px 8px 0 0' : '4px 0 0 40px')};
 `;
 
@@ -305,7 +307,8 @@ const ReactionPill = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.borderRadius.round};
   padding: 2px 6px;
-  box-shadow: ${({ theme }) => theme.shadows.base};
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
 
   img {
     width: 14px;
@@ -398,7 +401,6 @@ const ChatRoom = () => {
   const [isBgImageUploading, setIsBgImageUploading] = useState(false);
   const themeInitialized = useRef(false);
   const isInitialLoad = useRef(true);
-  const [likedMessages, setLikedMessages] = useState(new Set());
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'chats', chatId), (snap) => {
@@ -575,15 +577,6 @@ const ChatRoom = () => {
     setContextMenu((prev) => ({ ...prev, show: false }));
   };
 
-  const handleDoubleClick = (msgId) => {
-    setLikedMessages((prev) => {
-      const next = new Set(prev);
-      if (next.has(msgId)) next.delete(msgId);
-      else next.add(msgId);
-      return next;
-    });
-  };
-
   const handleReaction = async (reactionType) => {
     const { messageId, reactions } = contextMenu;
     const hasReacted = reactions[reactionType]?.includes(user.accountname) || false;
@@ -730,7 +723,6 @@ const ChatRoom = () => {
                         $bubbleColor={bubbleColor}
                         $otherBubbleColor={otherBubbleColor}
                         onContextMenu={(e) => handleContextMenu(e, msg, isMine)}
-                        onDoubleClick={() => handleDoubleClick(msg.id)}
                       >
                         {msg.text}
                       </Bubble>
@@ -738,23 +730,21 @@ const ChatRoom = () => {
                     {showTime && <ChatTime>{currentTime}</ChatTime>}
                   </MessageRow>
 
-                  {likedMessages.has(msg.id) && (
-                    <HeartReaction $isMine={isMine}>
-                      <HeartBubble>
-                        <HeartIcon />
-                      </HeartBubble>
-                    </HeartReaction>
-                  )}
-
                   {hasAnyReaction && (
                     <ReactionBar $isMine={isMine}>
                       {REACTION_TYPES.filter(({ key }) => (msg.reactions?.[key]?.length || 0) > 0).map(
-                        ({ key, src }) => (
-                          <ReactionPill key={key}>
-                            <img src={src} alt={key} />
-                            <span>{msg.reactions[key].length}</span>
-                          </ReactionPill>
-                        ),
+                        ({ key, src }) => {
+                          const hasReacted = msg.reactions[key]?.includes(user.accountname) || false;
+                          return (
+                            <ReactionPill
+                              key={key}
+                              onClick={() => toggleReaction(chatId, msg.id, user.accountname, key, hasReacted)}
+                            >
+                              <img src={src} alt={key} />
+                              <span>{msg.reactions[key].length}</span>
+                            </ReactionPill>
+                          );
+                        },
                       )}
                     </ReactionBar>
                   )}
