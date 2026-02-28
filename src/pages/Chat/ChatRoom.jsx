@@ -298,8 +298,10 @@ const ChatRoom = () => {
   const [bubbleColor, setBubbleColor] = useState(BUBBLE_COLORS[0].value);
   const [otherBubbleColor, setOtherBubbleColor] = useState(null);
   const [bgImage, setBgImage] = useState(null);
+  const [themeReady, setThemeReady] = useState(false);
   const [isBgImageUploading, setIsBgImageUploading] = useState(false);
   const themeInitialized = useRef(false);
+  const isInitialLoad = useRef(true);
   const [likedMessages, setLikedMessages] = useState(new Set());
 
   useEffect(() => {
@@ -317,6 +319,7 @@ const ChatRoom = () => {
     if (saved?.otherBubbleColor) setOtherBubbleColor(saved.otherBubbleColor);
     if (saved?.bgImage) setBgImage(saved.bgImage);
     themeInitialized.current = true;
+    setThemeReady(true);
   }, [chatInfo, user?.accountname]);
 
   useEffect(() => {
@@ -330,8 +333,14 @@ const ChatRoom = () => {
     }
   }, [chatId, user?.accountname]);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  useLayoutEffect(() => {
+    if (messages.length === 0) return;
+    if (isInitialLoad.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+      isInitialLoad.current = false;
+    } else {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -536,7 +545,7 @@ const ChatRoom = () => {
           alwaysVisible
         />
 
-        <MessageList>
+        <MessageList style={{ visibility: themeReady ? 'visible' : 'hidden' }}>
           {messages.map((msg, index) => {
             const isMine = msg.senderId === user?.accountname;
             const currentDateKey = getMsgDateKey(msg.createdAt);
