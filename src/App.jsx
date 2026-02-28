@@ -1,3 +1,4 @@
+import NotFound from './pages/NotFound/NotFound';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Spinner from './components/common/Spinner';
@@ -42,36 +43,156 @@ const App = () => {
       <Route path="/" element={<Splash />} />
 
       {/* 공개 라우트 */}
-      <Route path="/login" element={<PublicRoute><LoginMain /></PublicRoute>} />
-      <Route path="/login/email" element={<PublicRoute><LoginEmail /></PublicRoute>} />
-      <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
-      <Route path="/signup/profile" element={<PublicRoute><ProfileSetup /></PublicRoute>} />
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <LoginMain />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/login/email"
+        element={
+          <PublicRoute>
+            <LoginEmail />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <PublicRoute>
+            <SignUp />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/signup/profile"
+        element={
+          <PublicRoute>
+            <ProfileSetup />
+          </PublicRoute>
+        }
+      />
 
       {/* 인증 필요 라우트 */}
-      <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />
-      <Route path="/search" element={<PrivateRoute><Search /></PrivateRoute>} />
+      <Route
+        path="/feed"
+        element={
+          <PrivateRoute>
+            <Feed />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/search"
+        element={
+          <PrivateRoute>
+            <Search />
+          </PrivateRoute>
+        }
+      />
 
       {/* 프로필 */}
-      <Route path="/profile/edit" element={<PrivateRoute><EditProfile /></PrivateRoute>} />
-      <Route path="/profile/:accountname" element={<PrivateRoute><Profile /></PrivateRoute>} />
-      <Route path="/profile/:accountname/follower" element={<PrivateRoute><FollowList type="follower" /></PrivateRoute>} />
-      <Route path="/profile/:accountname/following" element={<PrivateRoute><FollowList type="following" /></PrivateRoute>} />
+      <Route
+        path="/profile/edit"
+        element={
+          <PrivateRoute>
+            <EditProfile />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/profile/:accountname"
+        element={
+          <PrivateRoute>
+            <Profile />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/profile/:accountname/follower"
+        element={
+          <PrivateRoute>
+            <FollowList type="follower" />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/profile/:accountname/following"
+        element={
+          <PrivateRoute>
+            <FollowList type="following" />
+          </PrivateRoute>
+        }
+      />
 
       {/* 상품 */}
-      <Route path="/product/register" element={<PrivateRoute><ProductRegister /></PrivateRoute>} />
-      <Route path="/product/edit/:productId" element={<PrivateRoute><ProductRegister isEdit /></PrivateRoute>} />
+      <Route
+        path="/product/register"
+        element={
+          <PrivateRoute>
+            <ProductRegister />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/product/edit/:productId"
+        element={
+          <PrivateRoute>
+            <ProductRegister isEdit />
+          </PrivateRoute>
+        }
+      />
 
       {/* 게시글 */}
-      <Route path="/post/create" element={<PrivateRoute><PostCreate /></PrivateRoute>} />
-      <Route path="/post/edit/:postId" element={<PrivateRoute><PostCreate isEdit /></PrivateRoute>} />
-      <Route path="/post/:postId" element={<PrivateRoute><PostDetail /></PrivateRoute>} />
+      <Route
+        path="/post/create"
+        element={
+          <PrivateRoute>
+            <PostCreate />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/post/edit/:postId"
+        element={
+          <PrivateRoute>
+            <PostCreate isEdit />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/post/:postId"
+        element={
+          <PrivateRoute>
+            <PostDetail />
+          </PrivateRoute>
+        }
+      />
 
       {/* 채팅 */}
-      <Route path="/chat" element={<PrivateRoute><ChatList /></PrivateRoute>} />
-      <Route path="/chat/:chatId" element={<PrivateRoute><ChatRoom /></PrivateRoute>} />
+      <Route
+        path="/chat"
+        element={
+          <PrivateRoute>
+            <ChatList />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/chat/:chatId"
+        element={
+          <PrivateRoute>
+            <ChatRoom />
+          </PrivateRoute>
+        }
+      />
 
       {/* 404 */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* 404 */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
