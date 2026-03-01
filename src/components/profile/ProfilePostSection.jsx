@@ -1,18 +1,81 @@
 import { useNavigate } from 'react-router-dom';
 import PostCard from '../post/PostCard';
 import { getImageUrl } from '../../utils/format';
-import {
-  Section,
-  PostToggle,
-  ToggleBtn,
-  AlbumGrid,
-  AlbumItemWrap,
-  AlbumItem,
-  AlbumLayersBadge,
-  AlbumLayersIcon,
-  ListIcon,
-  AlbumIcon,
-} from '../../pages/Profile/Profile';
+import styled from 'styled-components';
+import ImageLayersIconSvg from '../../assets/icons/iccon-img-layers.svg?react';
+import ListIconSvg from '../../assets/icons/icon-post-list-on.svg?react';
+import AlbumIconSvg from '../../assets/icons/icon-post-album-on.svg?react';
+
+const Section = styled.section`
+  padding: 16px;
+`;
+
+const PostToggle = styled.div`
+  display: flex;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  margin-bottom: 8px;
+`;
+
+const ToggleBtn = styled.button`
+  flex: 1;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  border-bottom: 2px solid ${({ $active, theme }) => ($active ? theme.colors.primary : 'transparent')};
+  transition: ${({ theme }) => theme.transitions.base};
+`;
+
+const AlbumGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+`;
+
+const AlbumItemWrap = styled.button`
+  position: relative;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+`;
+
+const AlbumItem = styled.img`
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background-color: ${({ theme }) => theme.colors.gray100};
+`;
+
+const AlbumLayersBadge = styled.div`
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  line-height: 0;
+`;
+
+const AlbumLayersIcon = styled(ImageLayersIconSvg)`
+  width: 16px;
+  height: 16px;
+`;
+
+const ListIcon = styled(ListIconSvg)`
+  width: 22px;
+  height: 22px;
+  path {
+    stroke: ${({ $viewMode }) => ($viewMode === 'list' ? '#F26E22' : '#FFC7A7')};
+    fill: ${({ $viewMode }) => ($viewMode === 'list' ? '#F26E22' : '#FFC7A7')};
+  }
+`;
+
+const AlbumIcon = styled(AlbumIconSvg)`
+  width: 22px;
+  height: 22px;
+  path {
+    stroke: ${({ $viewMode }) => ($viewMode === 'album' ? '#F26E22' : '#FFC7A7')};
+    fill: ${({ $viewMode }) => ($viewMode === 'album' ? '#F26E22' : '#FFC7A7')};
+  }
+`;
 
 const ProfilePostSection = ({ posts, viewMode, setViewMode, setPosts }) => {
   const navigate = useNavigate();
