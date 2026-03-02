@@ -6,7 +6,7 @@ import BottomModal from '../../components/common/BottomModal';
 import Header from '../../components/common/Header';
 import Spinner from '../../components/common/Spinner';
 import { useAuth } from '../../context/AuthContext';
-import { subscribeToChats, deleteChat } from '../../firebase/chat';
+import { subscribeToChats, leaveChat } from '../../firebase/chat';
 import EmptyState from '../../components/common/EmptyState';
 import AlertModal from '../../components/common/AlertModal';
 import GroupChatModal from '../../components/chat/GroupChatModal';
@@ -21,9 +21,9 @@ const Wrapper = styled.div`
 
 const alertConfig = {
   delete: {
-    title: '채팅방 삭제',
-    description: '채팅방을 삭제하면 대화 내용이 모두 사라집니다.',
-    confirmText: '삭제',
+    title: '채팅방 나가기',
+    description: '나간 후에는 채팅 목록에서 숨겨집니다.',
+    confirmText: '나가기',
   },
   block: {
     title: '사용자 차단',
@@ -100,7 +100,8 @@ const ChatList = () => {
     const { type, chatId } = pendingAction;
 
     if (type === 'delete') {
-      await deleteChat(chatId);
+      const chat = chats.find((c) => c.id === chatId);
+      await leaveChat(chatId, user.accountname, chat?.isGroupChat);
       setPinnedChatIds((prev) => {
         const next = prev.filter((id) => id !== chatId);
         localStorage.setItem('pinnedChats', JSON.stringify(next));

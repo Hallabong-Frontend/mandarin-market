@@ -16,7 +16,7 @@ import {
   markAsRead,
   editMessage,
   deleteMessage,
-  deleteChat,
+  leaveChat,
   saveChatTheme,
 } from '../../firebase/chat';
 import { uploadImage } from '../../api/auth';
@@ -305,12 +305,16 @@ const ChatRoom = () => {
       <AlertModal
         isOpen={showDeleteChatAlert}
         title="채팅방을 나가시겠습니까?"
-        description="채팅방의 모든 메시지가 삭제됩니다."
+        description={
+          chatInfo?.isGroupChat
+            ? '그룹 채팅방 구성원에서 제외되며, 더 이상 메시지를 받지 않습니다.'
+            : '나간 후에는 채팅 목록에서 숨겨집니다.'
+        }
         confirmText="나가기"
         danger
         onCancel={() => setShowDeleteChatAlert(false)}
         onConfirm={async () => {
-          await deleteChat(chatId);
+          await leaveChat(chatId, user.accountname, chatInfo?.isGroupChat);
           navigate('/chat');
         }}
       />

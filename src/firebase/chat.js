@@ -16,6 +16,7 @@ import {
   where,
   arrayUnion,
   arrayRemove,
+  deleteField,
 } from 'firebase/firestore';
 import { uploadImage } from '../api/auth';
 import { getImageUrl } from '../utils/format';
@@ -155,14 +156,33 @@ export const markAsRead = async (chatId, accountname) => {
 };
 
 // 내 채팅 목록 실시간 구독 (lastMessageAt 내림차순)
+// 1:1 채팅에서 나간 경우 hiddenFor에 포함되므로 클라이언트에서 필터링
 export const subscribeToChats = (accountname, callback) => {
   const q = query(collection(db, 'chats'), where('participants', 'array-contains', accountname));
   return onSnapshot(q, (snapshot) => {
     const chats = snapshot.docs
       .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((chat) => !chat.hiddenFor?.includes(accountname))
       .sort((a, b) => (b.lastMessageAt?.toMillis() || 0) - (a.lastMessageAt?.toMillis() || 0));
     callback(chats);
   });
+};
+
+// 채팅방 나가기
+// - 그룹 채팅: participants와 participantInfo에서 제거 (다른 구성원 데이터 유지)
+// - 1:1 채팅: hiddenFor에 추가 (상대방 데이터 유지, 나만 목록에서 숨김)
+export const leaveChat = async (chatId, accountname, isGroupChat) => {
+  const chatRef = doc(db, 'chats', chatId);
+  if (isGroupChat) {
+    await updateDoc(chatRef, {
+      participants: arrayRemove(accountname),
+      [`participantInfo.${accountname}`]: deleteField(),
+    });
+  } else {
+    await updateDoc(chatRef, {
+      hiddenFor: arrayUnion(accountname),
+    });
+  }
 };
 
 // 채팅방 및 하위 메시지 전체 삭제
