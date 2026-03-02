@@ -205,6 +205,20 @@ export const deleteMessage = async (chatId, messageId) => {
   await deleteDoc(doc(db, 'chats', chatId, 'messages', messageId));
 };
 
+// 상대방 별명 설정 (나만 보임, 빈 문자열이면 삭제)
+export const setNickname = async (chatId, myAccountname, targetAccountname, nickname) => {
+  const chatRef = doc(db, 'chats', chatId);
+  if ((nickname || '').trim()) {
+    await updateDoc(chatRef, {
+      [`nicknames.${myAccountname}.${targetAccountname}`]: nickname.trim(),
+    });
+  } else {
+    await updateDoc(chatRef, {
+      [`nicknames.${myAccountname}.${targetAccountname}`]: deleteField(),
+    });
+  }
+};
+
 // 채팅방 테마 저장 (사용자별)
 export const saveChatTheme = async (chatId, accountname, theme) => {
   await updateDoc(doc(db, 'chats', chatId), {

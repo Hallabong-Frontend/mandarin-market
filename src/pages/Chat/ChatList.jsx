@@ -76,7 +76,9 @@ const ChatList = () => {
 
   const getOtherParticipant = (chat) => {
     const otherAccountname = chat.participants?.find((p) => p !== user.accountname);
-    return chat.participantInfo?.[otherAccountname] || { username: otherAccountname, image: '' };
+    const info = chat.participantInfo?.[otherAccountname] || { username: otherAccountname, image: '' };
+    const nickname = chat.nicknames?.[user.accountname]?.[otherAccountname];
+    return { ...info, username: nickname || info.username };
   };
 
   const isUnread = (chat) => {

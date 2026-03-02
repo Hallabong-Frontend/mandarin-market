@@ -18,7 +18,9 @@ import {
   deleteMessage,
   leaveChat,
   saveChatTheme,
+  setNickname,
 } from '../../firebase/chat';
+import NicknameModal from '../../components/chat/NicknameModal';
 import { uploadImage } from '../../api/auth';
 import { getImageUrl } from '../../utils/format';
 import ChatThemePanel, { BG_COLORS, BUBBLE_COLORS } from './ChatThemePanel';
@@ -81,6 +83,7 @@ const ChatRoom = () => {
   const [showReportAlert, setShowReportAlert] = useState(false);
   const [showBgPanel, setShowBgPanel] = useState(false);
   const [showMembersPanel, setShowMembersPanel] = useState(false);
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [bgColor, setBgColor] = useState(BG_COLORS[0].value);
   const [bubbleColor, setBubbleColor] = useState(BUBBLE_COLORS[0].value);
   const [otherBubbleColor, setOtherBubbleColor] = useState(null);
@@ -254,7 +257,15 @@ const ChatRoom = () => {
             },
           },
         ]
-      : []),
+      : [
+          {
+            label: '별명 설정',
+            onClick: () => {
+              setShowModal(false);
+              setShowNicknameModal(true);
+            },
+          },
+        ]),
     {
       label: '채팅방 나가기',
       danger: true,
@@ -267,7 +278,13 @@ const ChatRoom = () => {
       <Wrapper $bgColor={bgColor} $bgImage={bgImage}>
         <Header
           type="back-title-more"
-          title={chatInfo?.isGroupChat ? chatInfo?.groupTitle : otherParticipant?.username || ''}
+          title={
+            chatInfo?.isGroupChat
+              ? chatInfo?.groupTitle
+              : chatInfo?.nicknames?.[user?.accountname]?.[otherParticipant?.accountname] ||
+                otherParticipant?.username ||
+                ''
+          }
           titleLeft
           onMore={() => setShowModal(true)}
           alwaysVisible
@@ -377,6 +394,16 @@ const ChatRoom = () => {
         onClose={() => setShowMembersPanel(false)}
         chatInfo={chatInfo}
         currentUser={user}
+        chatId={chatId}
+      />
+
+      <NicknameModal
+        key={showNicknameModal ? 'open' : 'closed'}
+        isOpen={showNicknameModal}
+        onClose={() => setShowNicknameModal(false)}
+        targetName={otherParticipant?.username || ''}
+        currentNickname={chatInfo?.nicknames?.[user?.accountname]?.[otherParticipant?.accountname] || ''}
+        onSave={(nickname) => setNickname(chatId, user.accountname, otherParticipant?.accountname, nickname)}
       />
 
       <ChatContextMenu

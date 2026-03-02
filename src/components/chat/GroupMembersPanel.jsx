@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { getChatId, getOrCreateChat } from '../../firebase/chat';
+import { getChatId, getOrCreateChat, setNickname } from '../../firebase/chat';
 import FullPagePanel from '../common/FullPagePanel';
 import Avatar from '../common/Avatar';
+import NicknameModal from './NicknameModal';
 
 const MemberList = styled.ul`
   display: flex;
@@ -45,6 +46,13 @@ const MeBadge = styled.span`
   padding: 2px 8px;
 `;
 
+const ActionButtons = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+`;
+
 const DmButton = styled.button`
   padding: 6px 14px;
   border-radius: ${({ theme }) => theme.borderRadius.round};
@@ -61,15 +69,27 @@ const DmButton = styled.button`
   }
 `;
 
+const NicknameBtn = styled.button`
+  padding: 4px 10px;
+  border-radius: ${({ theme }) => theme.borderRadius.round};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.colors.gray500};
+  font-size: ${({ theme }) => theme.fonts.size.xs};
+  cursor: pointer;
+  white-space: nowrap;
+  background: none;
+`;
+
 const CountLabel = styled.p`
   font-size: ${({ theme }) => theme.fonts.size.sm};
   color: ${({ theme }) => theme.colors.gray500};
   margin-bottom: 12px;
 `;
 
-const GroupMembersPanel = ({ isOpen, onClose, chatInfo, currentUser }) => {
+const GroupMembersPanel = ({ isOpen, onClose, chatInfo, currentUser, chatId }) => {
   const navigate = useNavigate();
   const [loadingAccountname, setLoadingAccountname] = useState(null);
+  const [nicknameTarget, setNicknameTarget] = useState(null);
 
   const participants = chatInfo?.participants || [];
   const participantInfo = chatInfo?.participantInfo || {};
@@ -79,10 +99,10 @@ const GroupMembersPanel = ({ isOpen, onClose, chatInfo, currentUser }) => {
     setLoadingAccountname(otherAccountname);
     try {
       const other = participantInfo[otherAccountname] || {};
-      const chatId = getChatId(currentUser.accountname, otherAccountname);
-      await getOrCreateChat(chatId, currentUser, { accountname: otherAccountname, ...other });
+      const dmChatId = getChatId(currentUser.accountname, otherAccountname);
+      await getOrCreateChat(dmChatId, currentUser, { accountname: otherAccountname, ...other });
       onClose();
-      navigate(`/chat/${chatId}`);
+      navigate(`/chat/${dmChatId}`);
     } catch (err) {
       console.error(err);
     } finally {
@@ -91,33 +111,53 @@ const GroupMembersPanel = ({ isOpen, onClose, chatInfo, currentUser }) => {
   };
 
   return (
-    <FullPagePanel isOpen={isOpen} onClose={onClose} title="대화 상대">
-      <CountLabel>참여자 {participants.length}명</CountLabel>
-      <MemberList>
-        {participants.map((accountname) => {
-          const info = participantInfo[accountname] || {};
-          const isMe = accountname === currentUser?.accountname;
-          const isLoading = loadingAccountname === accountname;
+    <>
+      <FullPagePanel isOpen={isOpen} onClose={onClose} title="대화 상대">
+        <CountLabel>참여자 {participants.length}명</CountLabel>
+        <MemberList>
+          {participants.map((accountname) => {
+            const info = participantInfo[accountname] || {};
+            const isMe = accountname === currentUser?.accountname;
+            const isLoading = loadingAccountname === accountname;
+            const nickname = chatInfo?.nicknames?.[currentUser?.accountname]?.[accountname];
+            const displayName = nickname || info.username || accountname;
 
-          return (
-            <MemberRow key={accountname}>
-              <Avatar src={info.image} size="44px" />
-              <MemberInfo>
-                <Username>{info.username || accountname}</Username>
-                <AccountId>@{accountname}</AccountId>
-              </MemberInfo>
-              {isMe ? (
-                <MeBadge>나</MeBadge>
-              ) : (
-                <DmButton disabled={!!loadingAccountname} onClick={() => handleDm(accountname)}>
-                  {isLoading ? '이동 중...' : '1:1 메시지'}
-                </DmButton>
-              )}
-            </MemberRow>
-          );
-        })}
-      </MemberList>
-    </FullPagePanel>
+            return (
+              <MemberRow key={accountname}>
+                <Avatar src={info.image} size="44px" />
+                <MemberInfo>
+                  <Username>{displayName}</Username>
+                  <AccountId>@{accountname}</AccountId>
+                </MemberInfo>
+                {isMe ? (
+                  <MeBadge>나</MeBadge>
+                ) : (
+                  <ActionButtons>
+                    <DmButton disabled={!!loadingAccountname} onClick={() => handleDm(accountname)}>
+                      {isLoading ? '이동 중...' : '1:1 메시지'}
+                    </DmButton>
+                    <NicknameBtn onClick={() => setNicknameTarget({ accountname, displayName: info.username || accountname, nickname })}>
+                      {nickname ? '별명 수정' : '별명 설정'}
+                    </NicknameBtn>
+                  </ActionButtons>
+                )}
+              </MemberRow>
+            );
+          })}
+        </MemberList>
+      </FullPagePanel>
+
+      <NicknameModal
+        key={nicknameTarget?.accountname || 'none'}
+        isOpen={!!nicknameTarget}
+        onClose={() => setNicknameTarget(null)}
+        targetName={nicknameTarget?.displayName || ''}
+        currentNickname={nicknameTarget?.nickname || ''}
+        onSave={(nickname) =>
+          setNickname(chatId, currentUser.accountname, nicknameTarget.accountname, nickname)
+        }
+      />
+    </>
   );
 };
 

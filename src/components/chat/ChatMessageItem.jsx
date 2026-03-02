@@ -212,7 +212,12 @@ const ChatMessageItem = ({
           )}
           {!isMine ? (
             <BubbleColumn>
-              {showName && <SenderName>{chatInfo?.participantInfo?.[msg.senderId]?.username}</SenderName>}
+              {showName && (
+                <SenderName>
+                  {chatInfo?.nicknames?.[user?.accountname]?.[msg.senderId] ||
+                    chatInfo?.participantInfo?.[msg.senderId]?.username}
+                </SenderName>
+              )}
               <BubbleRow>
                 {msg.stickerKey ? (
                   <StickerImg
