@@ -5,11 +5,7 @@ import { formatMsgTime, getMsgDateKey, formatMsgDate } from '../../utils/chatFor
 import { STICKER_MAP } from './EmojiPicker';
 import Avatar from '../common/Avatar';
 
-const REACTION_TYPES = [
-  { key: 'heart' },
-  { key: 'thumbs_up' },
-  { key: 'star' },
-];
+const REACTION_TYPES = [{ key: 'heart' }, { key: 'thumbs_up' }, { key: 'star' }];
 
 const DateDivider = styled.div`
   display: flex;
@@ -43,14 +39,14 @@ const MessageWrapper = styled.div`
 
 const MessageRow = styled.div`
   display: flex;
-  align-items: flex-end;
+  align-items: ${({ $isMine }) => ($isMine ? 'flex-end' : 'flex-start')};
   gap: 8px;
   width: 100%;
   flex-direction: ${({ $isMine }) => ($isMine ? 'row-reverse' : 'row')};
 `;
 
 const Bubble = styled.div`
-  max-width: 60%;
+  max-width: ${({ $isMine }) => ($isMine ? '60%' : '100%')};
   padding: 10px 14px;
   border-radius: ${({ $isMine }) => ($isMine ? '16px 0 16px 16px' : '0 16px 16px 16px')};
   background-color: ${({ $isMine, $bubbleColor, $otherBubbleColor, theme }) =>
@@ -109,6 +105,26 @@ const EditConfirmBtn = styled.button`
   cursor: pointer;
 `;
 
+const BubbleColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  max-width: 60%;
+`;
+
+const BubbleRow = styled.div`
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+`;
+
+const SenderName = styled.span`
+  font-size: ${({ theme }) => theme.fonts.size.xs};
+  color: ${({ theme }) => theme.colors.gray500};
+  padding-left: 2px;
+`;
+
 const ReactionBar = styled.div`
   display: flex;
   align-items: center;
@@ -165,13 +181,14 @@ const ChatMessageItem = ({
   const showDateDivider = !prevMsg || currentDateKey !== prevDateKey;
 
   const currentTime = formatMsgTime(msg.createdAt);
+  const prevTime = prevMsg ? formatMsgTime(prevMsg.createdAt) : '';
   const nextDateKey = nextMsg ? getMsgDateKey(nextMsg.createdAt) : '';
   const nextTime = nextMsg ? formatMsgTime(nextMsg.createdAt) : '';
   const showTime =
-    !nextMsg ||
-    nextDateKey !== currentDateKey ||
-    nextMsg.senderId !== msg.senderId ||
-    nextTime !== currentTime;
+    !nextMsg || nextDateKey !== currentDateKey || nextMsg.senderId !== msg.senderId || nextTime !== currentTime;
+
+  const showName =
+    !prevMsg || prevMsg.senderId !== msg.senderId || prevDateKey !== currentDateKey || prevTime !== currentTime;
 
   const hasAnyReaction = REACTION_TYPES.some(({ key }) => (msg.reactions?.[key]?.length || 0) > 0);
 
@@ -193,7 +210,31 @@ const ChatMessageItem = ({
               onClick={() => navigate(`/profile/${msg.senderId}`)}
             />
           )}
-          {msg.stickerKey ? (
+          {!isMine ? (
+            <BubbleColumn>
+              {showName && <SenderName>{chatInfo?.participantInfo?.[msg.senderId]?.username}</SenderName>}
+              <BubbleRow>
+                {msg.stickerKey ? (
+                  <StickerImg
+                    src={STICKER_MAP[msg.stickerKey]}
+                    alt="스티커"
+                    onContextMenu={(e) => onContextMenu(e, msg, isMine)}
+                  />
+                ) : msg.imageUrl ? (
+                  <ChatImage src={msg.imageUrl} alt="채팅 이미지" />
+                ) : (
+                  <Bubble
+                    $isMine={isMine}
+                    $otherBubbleColor={otherBubbleColor}
+                    onContextMenu={(e) => onContextMenu(e, msg, isMine)}
+                  >
+                    {msg.text}
+                  </Bubble>
+                )}
+                {showTime && <ChatTime>{currentTime}</ChatTime>}
+              </BubbleRow>
+            </BubbleColumn>
+          ) : msg.stickerKey ? (
             <StickerImg
               src={STICKER_MAP[msg.stickerKey]}
               alt="스티커"
@@ -227,7 +268,7 @@ const ChatMessageItem = ({
               {msg.text}
             </Bubble>
           )}
-          {showTime && <ChatTime>{currentTime}</ChatTime>}
+          {isMine && showTime && <ChatTime>{currentTime}</ChatTime>}
         </MessageRow>
 
         {hasAnyReaction && (
