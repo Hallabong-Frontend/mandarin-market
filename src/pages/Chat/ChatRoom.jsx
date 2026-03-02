@@ -23,6 +23,7 @@ import { uploadImage } from '../../api/auth';
 import { getImageUrl } from '../../utils/format';
 import ChatThemePanel, { BG_COLORS, BUBBLE_COLORS } from './ChatThemePanel';
 import InviteUserModal from '../../components/chat/InviteUserModal';
+import GroupMembersPanel from '../../components/chat/GroupMembersPanel';
 import ChatMessageItem from '../../components/chat/ChatMessageItem';
 import ChatInputBar from '../../components/chat/ChatInputBar';
 import ChatContextMenu from '../../components/chat/ChatContextMenu';
@@ -79,6 +80,7 @@ const ChatRoom = () => {
   const [showDeleteMsgAlert, setShowDeleteMsgAlert] = useState(false);
   const [showReportAlert, setShowReportAlert] = useState(false);
   const [showBgPanel, setShowBgPanel] = useState(false);
+  const [showMembersPanel, setShowMembersPanel] = useState(false);
   const [bgColor, setBgColor] = useState(BG_COLORS[0].value);
   const [bubbleColor, setBubbleColor] = useState(BUBBLE_COLORS[0].value);
   const [otherBubbleColor, setOtherBubbleColor] = useState(null);
@@ -238,6 +240,13 @@ const ChatRoom = () => {
     ...(chatInfo?.isGroupChat
       ? [
           {
+            label: '구성원 보기',
+            onClick: () => {
+              setShowModal(false);
+              setShowMembersPanel(true);
+            },
+          },
+          {
             label: '초대하기',
             onClick: () => {
               setShowModal(false);
@@ -357,6 +366,13 @@ const ChatRoom = () => {
         onClose={() => setShowInviteModal(false)}
         chatId={chatId}
         existingParticipants={chatInfo?.participants || []}
+      />
+
+      <GroupMembersPanel
+        isOpen={showMembersPanel}
+        onClose={() => setShowMembersPanel(false)}
+        chatInfo={chatInfo}
+        currentUser={user}
       />
 
       <ChatContextMenu
