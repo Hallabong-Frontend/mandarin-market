@@ -90,6 +90,36 @@ const AvatarWrapper = styled.div`
   flex-shrink: 0;
 `;
 
+const GroupAvatarWrap = styled.div`
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background-color: ${({ theme }) => theme.colors.gray200};
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 5px;
+  align-items: center;
+  align-content: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+`;
+
+const ExtraCountBadge = styled.div`
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: ${({ theme }) => theme.colors.gray400};
+  color: white;
+  font-size: 8px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+`;
+
 const UnreadDot = styled.div`
   position: absolute;
   top: 0;
@@ -224,7 +254,28 @@ const ChatListItem = ({
         onClick={onNavigate}
       >
         <AvatarWrapper>
-          <Avatar src={chatImage} alt={chatTitle} />
+          {chat.isGroupChat ? (
+            <GroupAvatarWrap>
+              {(() => {
+                const MAX = 4;
+                const participants = chat.participants || [];
+                const participantInfo = chat.participantInfo || {};
+                const total = participants.length;
+                const showItems = total <= MAX ? participants : participants.slice(0, MAX - 1);
+                const extraCount = total > MAX ? total - (MAX - 1) : 0;
+                return (
+                  <>
+                    {showItems.map((accountname) => (
+                      <Avatar key={accountname} src={participantInfo[accountname]?.image} size="18px" />
+                    ))}
+                    {extraCount > 0 && <ExtraCountBadge>+{extraCount}</ExtraCountBadge>}
+                  </>
+                );
+              })()}
+            </GroupAvatarWrap>
+          ) : (
+            <Avatar src={chatImage} alt={chatTitle} />
+          )}
           {isUnread && <UnreadDot />}
         </AvatarWrapper>
         <ChatInfo>
