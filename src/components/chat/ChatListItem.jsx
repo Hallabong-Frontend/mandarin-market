@@ -155,6 +155,14 @@ const ChatUsername = styled.p`
   color: ${({ theme }) => theme.colors.black};
 `;
 
+const MemberCountText = styled.span`
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  font-weight: ${({ theme }) => theme.fonts.weight.medium};
+  color: ${({ theme }) => theme.colors.gray500};
+  line-height: 1;
+  transform: translateY(1px);
+`;
+
 const PinIconInline = styled(PinFilledIcon)`
   width: 12px;
   height: 12px;
@@ -282,6 +290,7 @@ const ChatListItem = ({
           <ChatTop>
             <ChatUsernameRow>
               <ChatUsername>{renderHighlight(chatTitle, searchKeyword)}</ChatUsername>
+              {chat.isGroupChat && <MemberCountText>{chat.participants?.length || 0}</MemberCountText>}
               {isPinned && <PinIconInline />}
             </ChatUsernameRow>
             <ChatTime>{formatChatTime(chat.lastMessageAt)}</ChatTime>

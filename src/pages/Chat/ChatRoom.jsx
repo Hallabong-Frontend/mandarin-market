@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+﻿import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import styled from 'styled-components';
@@ -20,6 +20,7 @@ import {
   leaveChat,
   saveChatTheme,
   setNickname,
+  updateChatTitle,
 } from '../../firebase/chat';
 import NicknameModal from '../../components/chat/NicknameModal';
 import { uploadImage } from '../../api/auth';
@@ -91,9 +92,58 @@ const ScrollDownIcon = styled(ArrowLeftIconSvg)`
   width: 18px;
   height: 18px;
   transform: rotate(-90deg);
+
   path {
     stroke: ${({ theme }) => theme.colors.gray500};
   }
+`;
+
+const TopPanel = styled.div`
+  position: fixed;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 390px;
+  padding: 8px 12px;
+  background: ${({ theme }) => theme.colors.white};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  z-index: ${({ theme }) => theme.zIndex.header};
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const TopInput = styled.input`
+  flex: 1;
+  height: 32px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.base};
+  padding: 0 10px;
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+`;
+
+const TopBtn = styled.button`
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  color: ${({ theme }) => theme.colors.gray500};
+`;
+
+const TitleInline = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const MemberCountBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  font-weight: ${({ theme }) => theme.fonts.weight.medium};
+  color: ${({ theme }) => theme.colors.gray500};
+  line-height: normal;
+  vertical-align: middle;
+  transform: translateY(2px);
 `;
 
 const ChatRoom = () => {
@@ -118,19 +168,31 @@ const ChatRoom = () => {
   });
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
+
   const [showDeleteChatAlert, setShowDeleteChatAlert] = useState(false);
   const [showDeleteMsgAlert, setShowDeleteMsgAlert] = useState(false);
   const [showReportAlert, setShowReportAlert] = useState(false);
   const [showBgPanel, setShowBgPanel] = useState(false);
   const [showMembersPanel, setShowMembersPanel] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
+
   const [bgColor, setBgColor] = useState(BG_COLORS[0].value);
   const [bubbleColor, setBubbleColor] = useState(BUBBLE_COLORS[0].value);
   const [otherBubbleColor, setOtherBubbleColor] = useState(null);
   const [bgImage, setBgImage] = useState(null);
   const [themeReady, setThemeReady] = useState(false);
   const [isBgImageUploading, setIsBgImageUploading] = useState(false);
+
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
+
+  const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchMatchIds, setSearchMatchIds] = useState([]);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+
+  const [showRenamePanel, setShowRenamePanel] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+
   const themeInitialized = useRef(false);
   const isInitialLoad = useRef(true);
   const prevMsgsLength = useRef(0);
@@ -166,7 +228,7 @@ const ChatRoom = () => {
 
   useLayoutEffect(() => {
     if (messages.length === 0) return;
-    
+
     const isNewMessage = messages.length > prevMsgsLength.current;
 
     if (isInitialLoad.current) {
@@ -175,7 +237,7 @@ const ChatRoom = () => {
     } else if (isNewMessage) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-    
+
     prevMsgsLength.current = messages.length;
   }, [messages]);
 
@@ -202,6 +264,41 @@ const ChatRoom = () => {
     window.addEventListener('click', handleClick);
     return () => window.removeEventListener('click', handleClick);
   }, [contextMenu.show]);
+
+  useEffect(() => {
+    const keyword = searchKeyword.trim().toLowerCase();
+    if (!keyword) {
+      setSearchMatchIds([]);
+      setCurrentMatchIndex(0);
+      return;
+    }
+    const matched = messages
+      .filter((m) => (m.text || '').toLowerCase().includes(keyword))
+      .map((m) => m.id);
+    setSearchMatchIds(matched);
+    setCurrentMatchIndex(0);
+  }, [searchKeyword, messages]);
+
+  const scrollToMessageById = (messageId) => {
+    if (!messageId) return;
+    const el = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  const goToNextMatch = () => {
+    if (!searchMatchIds.length) return;
+    const next = (currentMatchIndex + 1) % searchMatchIds.length;
+    setCurrentMatchIndex(next);
+    scrollToMessageById(searchMatchIds[next]);
+  };
+
+  const goToPrevMatch = () => {
+    if (!searchMatchIds.length) return;
+    const prev = (currentMatchIndex - 1 + searchMatchIds.length) % searchMatchIds.length;
+    setCurrentMatchIndex(prev);
+    scrollToMessageById(searchMatchIds[prev]);
+  };
 
   useLayoutEffect(() => {
     if (!contextMenu.show || !contextMenuRef.current || !contextMenu.anchorRect) return;
@@ -268,6 +365,7 @@ const ChatRoom = () => {
   };
 
   const handleReaction = async (reactionType) => {
+    if (!user?.accountname) return;
     const { messageId, reactions } = contextMenu;
     const hasReacted = reactions[reactionType]?.includes(user.accountname) || false;
     setContextMenu((prev) => ({ ...prev, show: false }));
@@ -277,6 +375,33 @@ const ChatRoom = () => {
   const handleReport = () => {
     setContextMenu((prev) => ({ ...prev, show: false }));
     setShowReportAlert(true);
+  };
+
+  const handleOpenRename = () => {
+    if (!chatInfo?.isGroupChat) return;
+    setShowSearchPanel(false);
+    setRenameValue(chatInfo?.groupTitle || '');
+    setShowModal(false);
+    requestAnimationFrame(() => {
+      setShowRenamePanel(true);
+    });
+  };
+
+  const handleSaveRename = async () => {
+    const trimmed = renameValue.trim();
+    if (!trimmed) return;
+    if (trimmed === (chatInfo?.groupTitle || '').trim()) {
+      setShowRenamePanel(false);
+      return;
+    }
+    await updateChatTitle(chatId, trimmed);
+    setShowRenamePanel(false);
+  };
+
+  const handleOpenSearch = () => {
+    setShowModal(false);
+    setShowRenamePanel(false);
+    setShowSearchPanel(true);
   };
 
   const handleBgImageChange = async (file) => {
@@ -297,6 +422,14 @@ const ChatRoom = () => {
   };
 
   const modalItems = [
+    ...(chatInfo?.isGroupChat
+      ? [
+          {
+            label: '채팅방 이름 수정',
+            onClick: handleOpenRename,
+          },
+        ]
+      : []),
     {
       label: '테마 설정',
       onClick: () => {
@@ -337,24 +470,67 @@ const ChatRoom = () => {
     },
   ];
 
+  const chatTitle = chatInfo?.isGroupChat ? (
+    <TitleInline>
+      <span>{chatInfo?.groupTitle || ''}</span>
+      <MemberCountBadge>{chatInfo?.participants?.length || 0}</MemberCountBadge>
+    </TitleInline>
+  ) : (
+    chatInfo?.nicknames?.[user?.accountname]?.[otherParticipant?.accountname] || otherParticipant?.username || ''
+  );
+
+  const topPanelOffset = showSearchPanel || showRenamePanel ? 56 : 16;
+
   return (
     <>
       <Wrapper $bgColor={bgColor} $bgImage={bgImage}>
         <Header
-          type="back-title-more"
-          title={
-            chatInfo?.isGroupChat
-              ? chatInfo?.groupTitle
-              : chatInfo?.nicknames?.[user?.accountname]?.[otherParticipant?.accountname] ||
-                otherParticipant?.username ||
-                ''
-          }
+          type="back-search-more"
+          title={chatTitle}
           titleLeft
+          onSearch={handleOpenSearch}
           onMore={() => setShowModal(true)}
           alwaysVisible
         />
 
-        <MessageList style={{ visibility: themeReady ? 'visible' : 'hidden' }}>
+        {showSearchPanel && (
+          <TopPanel>
+            <TopInput
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              placeholder="메시지 검색"
+              autoFocus
+            />
+            <TopBtn onClick={goToPrevMatch}>이전</TopBtn>
+            <TopBtn onClick={goToNextMatch}>다음</TopBtn>
+            <TopBtn
+              onClick={() => {
+                setShowSearchPanel(false);
+                setSearchKeyword('');
+                setSearchMatchIds([]);
+                setCurrentMatchIndex(0);
+              }}
+            >
+              닫기
+            </TopBtn>
+          </TopPanel>
+        )}
+
+        {showRenamePanel && (
+          <TopPanel>
+            <TopInput
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              placeholder="채팅방 이름"
+              maxLength={30}
+              autoFocus
+            />
+            <TopBtn onClick={handleSaveRename}>저장</TopBtn>
+            <TopBtn onClick={() => setShowRenamePanel(false)}>취소</TopBtn>
+          </TopPanel>
+        )}
+
+        <MessageList style={{ visibility: themeReady ? 'visible' : 'hidden', paddingTop: topPanelOffset }}>
           {messages.map((msg, index) => (
             <ChatMessageItem
               key={msg.id}
@@ -373,6 +549,7 @@ const ChatRoom = () => {
               user={user}
               reactionSrcMap={REACTION_SRC_MAP}
               chatId={chatId}
+              isSearchActive={searchMatchIds[currentMatchIndex] === msg.id}
             />
           ))}
           <div ref={bottomRef} />
@@ -411,7 +588,7 @@ const ChatRoom = () => {
       <AlertModal
         isOpen={showDeleteMsgAlert}
         title="메시지를 삭제할까요?"
-        description="삭제된 메시지는 복구할 수 없습니다."
+        description="삭제한 메시지는 복구할 수 없습니다."
         confirmText="삭제"
         danger
         onCancel={() => setShowDeleteMsgAlert(false)}
