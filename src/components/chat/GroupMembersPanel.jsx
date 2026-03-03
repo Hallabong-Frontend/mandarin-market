@@ -26,10 +26,12 @@ const MemberInfo = styled.div`
   gap: 2px;
 `;
 
-const Username = styled.p`
+const Username = styled.button.attrs({ type: 'button' })`
   font-size: ${({ theme }) => theme.fonts.size.base};
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
   color: ${({ theme }) => theme.colors.black};
+  text-align: left;
+  cursor: pointer;
 `;
 
 const AccountId = styled.p`
@@ -110,6 +112,12 @@ const GroupMembersPanel = ({ isOpen, onClose, chatInfo, currentUser, chatId }) =
     }
   };
 
+  const handleProfileOpen = (accountname) => {
+    if (!accountname) return;
+    onClose();
+    navigate(`/profile/${accountname}`);
+  };
+
   return (
     <>
       <FullPagePanel isOpen={isOpen} onClose={onClose} title="대화 상대">
@@ -126,7 +134,7 @@ const GroupMembersPanel = ({ isOpen, onClose, chatInfo, currentUser, chatId }) =
               <MemberRow key={accountname}>
                 <Avatar src={info.image} size="44px" />
                 <MemberInfo>
-                  <Username>{displayName}</Username>
+                  <Username onClick={() => handleProfileOpen(accountname)}>{displayName}</Username>
                   <AccountId>@{accountname}</AccountId>
                 </MemberInfo>
                 {isMe ? (

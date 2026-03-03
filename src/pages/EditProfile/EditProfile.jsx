@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { updateMyProfile, uploadImage, checkAccountValid } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 import { validateAccountname, getImageUrl } from '../../utils/format';
+import { syncParticipantProfileInChats, syncSharedProfileMessagesInChats } from '../../firebase/chat';
 import useForm from '../../hooks/useForm';
 import Header from '../../components/common/Header';
 import AuthInput from '../../components/common/AuthInput';
@@ -183,6 +184,16 @@ const EditProfile = () => {
         accountname: form.accountname,
         intro: form.intro,
         image: imageUrl,
+      });
+
+      await syncParticipantProfileInChats(data.user.accountname, {
+        username: data.user.username,
+        image: data.user.image,
+      });
+      await syncSharedProfileMessagesInChats(data.user.accountname, {
+        username: data.user.username,
+        image: data.user.image,
+        intro: data.user.intro || '',
       });
 
       updateUser(data.user);

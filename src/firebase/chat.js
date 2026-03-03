@@ -9,6 +9,7 @@ import {
   addDoc,
   query,
   orderBy,
+  limit,
   updateDoc,
   deleteDoc,
   writeBatch,
@@ -199,20 +200,46 @@ export const subscribeToChats = (accountname, callback) => {
   });
 };
 
-// 시스템 메시지 전송
-export const sendSystemMessage = async (chatId, text, metadata = null) => {
-  await addDoc(collection(db, 'chats', chatId, 'messages'), {
-    senderId: 'system',
-    text,
-    metadata,
-    imageUrl: null,
-    createdAt: serverTimestamp(),
+export const syncParticipantProfileInChats = async (accountname, profile) => {
+  if (!accountname) return;
+  const chatsQuery = query(collection(db, 'chats'), where('participants', 'array-contains', accountname));
+  const snapshot = await getDocs(chatsQuery);
+  if (snapshot.empty) return;
+
+  const batch = writeBatch(db);
+  snapshot.docs.forEach((chatDoc) => {
+    batch.update(chatDoc.ref, {
+      [`participantInfo.${accountname}.username`]: profile?.username || '',
+      [`participantInfo.${accountname}.image`]: profile?.image || '',
+    });
   });
-  await updateDoc(doc(db, 'chats', chatId), {
-    lastMessage: text,
-    lastSenderId: 'system',
-    lastMessageAt: serverTimestamp(),
-  });
+  await batch.commit();
+};
+
+export const syncSharedProfileMessagesInChats = async (accountname, profile) => {
+  if (!accountname) return;
+  const chatsQuery = query(collection(db, 'chats'), where('participants', 'array-contains', accountname));
+  const chatsSnapshot = await getDocs(chatsQuery);
+  if (chatsSnapshot.empty) return;
+
+  for (const chatDoc of chatsSnapshot.docs) {
+    const messagesQuery = query(
+      collection(db, 'chats', chatDoc.id, 'messages'),
+      where('profileShare.accountname', '==', accountname),
+    );
+    const messagesSnapshot = await getDocs(messagesQuery);
+    if (messagesSnapshot.empty) continue;
+
+    const batch = writeBatch(db);
+    messagesSnapshot.docs.forEach((msgDoc) => {
+      batch.update(msgDoc.ref, {
+        'profileShare.username': profile?.username || '',
+        'profileShare.image': profile?.image || '',
+        'profileShare.intro': profile?.intro || '',
+      });
+    });
+    await batch.commit();
+  }
 };
 
 // 채팅방 나가기
@@ -255,11 +282,53 @@ export const deleteChat = async (chatId) => {
 // 메시지 수정
 export const editMessage = async (chatId, messageId, newText) => {
   await updateDoc(doc(db, 'chats', chatId, 'messages', messageId), { text: newText });
+
+  const latestQuery = query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'desc'), limit(1));
+  const latestSnapshot = await getDocs(latestQuery);
+  if (latestSnapshot.empty) return;
+
+  const latest = latestSnapshot.docs[0].data();
+  let preview = latest.text || '';
+
+  if (latest.stickerKey) preview = '스티커를 보냈습니다.';
+  else if (latest.imageUrl) preview = '사진을 보냈습니다.';
+  else if (latest.profileShare) preview = '프로필을 공유했어요.';
+
+  await updateDoc(doc(db, 'chats', chatId), {
+    lastMessage: preview,
+    lastSenderId: latest.senderId || '',
+    lastMessageAt: latest.createdAt || serverTimestamp(),
+  });
 };
 
 // 메시지 삭제
 export const deleteMessage = async (chatId, messageId) => {
   await deleteDoc(doc(db, 'chats', chatId, 'messages', messageId));
+
+  const latestQuery = query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'desc'), limit(1));
+  const latestSnapshot = await getDocs(latestQuery);
+
+  if (latestSnapshot.empty) {
+    await updateDoc(doc(db, 'chats', chatId), {
+      lastMessage: '',
+      lastSenderId: '',
+      lastMessageAt: deleteField(),
+    });
+    return;
+  }
+
+  const latest = latestSnapshot.docs[0].data();
+  let preview = latest.text || '';
+
+  if (latest.stickerKey) preview = '스티커를 보냈습니다.';
+  else if (latest.imageUrl) preview = '사진을 보냈습니다.';
+  else if (latest.profileShare) preview = '프로필을 공유했어요.';
+
+  await updateDoc(doc(db, 'chats', chatId), {
+    lastMessage: preview,
+    lastSenderId: latest.senderId || '',
+    lastMessageAt: latest.createdAt || serverTimestamp(),
+  });
 };
 
 // 상대방 별명 설정 (나만 보임, 빈 문자열이면 삭제)

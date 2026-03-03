@@ -119,10 +119,12 @@ const BubbleRow = styled.div`
   gap: 4px;
 `;
 
-const SenderName = styled.span`
+const SenderName = styled.button.attrs({ type: 'button' })`
   font-size: ${({ theme }) => theme.fonts.size.xs};
   color: ${({ theme }) => theme.colors.gray500};
   padding-left: 2px;
+  cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
+  pointer-events: ${({ $clickable }) => ($clickable ? 'auto' : 'none')};
 `;
 
 const SystemMessage = styled.div`
@@ -272,6 +274,7 @@ const ChatMessageItem = ({
 
   const hasAnyReaction = REACTION_TYPES.some(({ key }) => (msg.reactions?.[key]?.length || 0) > 0);
   const sharedProfile = msg.profileShare;
+  const canOpenSenderProfile = !!msg?.senderId;
 
   const handleOpenSharedProfile = () => {
     if (!sharedProfile?.accountname) return;
@@ -390,7 +393,13 @@ const ChatMessageItem = ({
           {!isMine ? (
             <BubbleColumn>
               {showName && (
-                <SenderName>
+                <SenderName
+                  $clickable={canOpenSenderProfile}
+                  onClick={() => {
+                    if (!canOpenSenderProfile) return;
+                    navigate(`/profile/${msg.senderId}`);
+                  }}
+                >
                   {chatInfo?.nicknames?.[user?.accountname]?.[msg.senderId] ||
                     chatInfo?.participantInfo?.[msg.senderId]?.username ||
                     '(알 수 없음)'}

@@ -65,6 +65,7 @@ const Title = styled.h1`
   color: ${({ theme }) => theme.colors.black};
   flex: 1;
   text-align: ${({ $titleLeft }) => ($titleLeft ? 'left' : 'center')};
+  cursor: ${({ $clickable }) => ($clickable ? 'pointer' : 'default')};
 `;
 
 const LogoText = styled.h1`
@@ -144,6 +145,7 @@ const Header = ({
   onUpload,
   saveDisabled = true,
   onSave,
+  onTitleClick,
   keyword = '',
   onKeywordChange,
   searchPlaceholder = '계정을 검색해보세요',
@@ -228,7 +230,11 @@ const Header = ({
           <BackIcon />
         </BackButton>
 
-        {title && <Title $titleLeft={titleLeft}>{title}</Title>}
+        {title && (
+          <Title $titleLeft={titleLeft} $clickable={!!onTitleClick} onClick={onTitleClick}>
+            {title}
+          </Title>
+        )}
         {!title && <div style={{ flex: 1 }} />}
 
         {type === 'back-search' && (
