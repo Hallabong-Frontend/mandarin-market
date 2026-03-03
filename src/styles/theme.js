@@ -1,6 +1,6 @@
 const baseTheme = {
   fonts: {
-    family: "'HealthsetGothic'",
+    family: "'GMarketSans'",
     size: {
       xs: '10px',
       sm: '12px',
