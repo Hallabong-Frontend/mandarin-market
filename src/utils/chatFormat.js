@@ -1,6 +1,5 @@
 export const formatChatTime = (timestamp) => {
-  if (!timestamp) return '';
-  const date = timestamp.toDate();
+  const date = timestamp?.toDate ? timestamp.toDate() : (timestamp instanceof Date ? timestamp : new Date());
   const now = new Date();
   const diffMs = now - date;
 
@@ -26,14 +25,12 @@ export const formatChatTime = (timestamp) => {
 };
 
 export const formatMsgTime = (timestamp) => {
-  if (!timestamp) return '';
-  const date = timestamp.toDate();
+  const date = timestamp?.toDate ? timestamp.toDate() : (timestamp instanceof Date ? timestamp : new Date());
   return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
 export const getMsgDateKey = (timestamp) => {
-  if (!timestamp) return '';
-  const date = timestamp.toDate();
+  const date = timestamp?.toDate ? timestamp.toDate() : (timestamp instanceof Date ? timestamp : new Date());
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
@@ -41,8 +38,7 @@ export const getMsgDateKey = (timestamp) => {
 };
 
 export const formatMsgDate = (timestamp) => {
-  if (!timestamp) return '';
-  const date = timestamp.toDate();
+  const date = timestamp?.toDate ? timestamp.toDate() : (timestamp instanceof Date ? timestamp : new Date());
   return date.toLocaleDateString('ko-KR', {
     year: 'numeric',
     month: 'long',

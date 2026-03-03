@@ -391,6 +391,6 @@ export const subscribeToMessages = (chatId, callback, joinTime) => {
   }
 
   return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+    callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: 'estimate' }) })));
   });
 };
