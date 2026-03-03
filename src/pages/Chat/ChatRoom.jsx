@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import AlertModal from '../../components/common/AlertModal';
 import BottomModal from '../../components/common/BottomModal';
 import Header from '../../components/common/Header';
+import ArrowLeftIconSvg from '../../assets/icons/icon-arrow-left.svg?react';
 import heartFillSrc from '../../assets/emoji/icon_heart_fill.svg';
 import thumbsUpSrc from '../../assets/emoji/icon_thumbs_up_fill.png';
 import starSrc from '../../assets/emoji/icon_star.png';
@@ -45,15 +46,54 @@ const Wrapper = styled.div`
   background-attachment: fixed;
   display: flex;
   flex-direction: column;
-  padding-bottom: 72px;
+  padding-bottom: 56px;
 `;
 
 const MessageList = styled.div`
   flex: 1;
-  padding: 16px;
+  padding: 16px 16px 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+`;
+
+const ScrollDownButtonArea = styled.div`
+  position: fixed;
+  bottom: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 390px;
+  padding: 0 16px;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+  z-index: ${({ theme }) => theme.zIndex.header};
+`;
+
+const ScrollDownButton = styled.button`
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background-color: ${({ theme }) => theme.colors.white};
+  color: ${({ theme }) => theme.colors.gray500};
+  box-shadow: ${({ theme }) => theme.shadows.sm};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  pointer-events: auto;
+`;
+
+const ScrollDownIcon = styled(ArrowLeftIconSvg)`
+  width: 18px;
+  height: 18px;
+  transform: rotate(-90deg);
+  path {
+    stroke: ${({ theme }) => theme.colors.gray500};
+  }
 `;
 
 const ChatRoom = () => {
@@ -90,6 +130,7 @@ const ChatRoom = () => {
   const [bgImage, setBgImage] = useState(null);
   const [themeReady, setThemeReady] = useState(false);
   const [isBgImageUploading, setIsBgImageUploading] = useState(false);
+  const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const themeInitialized = useRef(false);
   const isInitialLoad = useRef(true);
   const prevMsgsLength = useRef(0);
@@ -137,6 +178,23 @@ const ChatRoom = () => {
     
     prevMsgsLength.current = messages.length;
   }, [messages]);
+
+  useEffect(() => {
+    const updateScrollButton = () => {
+      if (!bottomRef.current) return;
+      const bottomTop = bottomRef.current.getBoundingClientRect().top;
+      const isNearBottom = bottomTop <= window.innerHeight - 72 + 24;
+      setShowScrollDownButton(!isNearBottom);
+    };
+
+    updateScrollButton();
+    window.addEventListener('scroll', updateScrollButton, { passive: true });
+    window.addEventListener('resize', updateScrollButton);
+    return () => {
+      window.removeEventListener('scroll', updateScrollButton);
+      window.removeEventListener('resize', updateScrollButton);
+    };
+  }, [messages, themeReady]);
 
   useEffect(() => {
     if (!contextMenu.show) return;
@@ -320,6 +378,14 @@ const ChatRoom = () => {
           <div ref={bottomRef} />
         </MessageList>
       </Wrapper>
+
+      {showScrollDownButton && (
+        <ScrollDownButtonArea>
+          <ScrollDownButton onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })}>
+            <ScrollDownIcon />
+          </ScrollDownButton>
+        </ScrollDownButtonArea>
+      )}
 
       <ChatInputBar chatId={chatId} senderAccountname={user?.accountname} />
 
