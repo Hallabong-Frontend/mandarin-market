@@ -92,6 +92,7 @@ const ChatRoom = () => {
   const [isBgImageUploading, setIsBgImageUploading] = useState(false);
   const themeInitialized = useRef(false);
   const isInitialLoad = useRef(true);
+  const prevMsgsLength = useRef(0);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'chats', chatId), (snap) => {
@@ -124,12 +125,17 @@ const ChatRoom = () => {
 
   useLayoutEffect(() => {
     if (messages.length === 0) return;
+    
+    const isNewMessage = messages.length > prevMsgsLength.current;
+
     if (isInitialLoad.current) {
       bottomRef.current?.scrollIntoView({ behavior: 'instant' });
       isInitialLoad.current = false;
-    } else {
+    } else if (isNewMessage) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
+    
+    prevMsgsLength.current = messages.length;
   }, [messages]);
 
   useEffect(() => {
