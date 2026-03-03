@@ -67,6 +67,7 @@ const Profile = () => {
       setProducts(productsData.product || []);
     } catch (err) {
       console.error(err);
+      navigate('/not-found', { replace: true });
     } finally {
       setIsLoading(false);
     }

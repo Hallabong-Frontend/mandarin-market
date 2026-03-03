@@ -238,7 +238,11 @@ const ChatRoom = () => {
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'chats', chatId), (snap) => {
-      if (snap.exists()) setChatInfo(snap.data());
+      if (snap.exists()) {
+        setChatInfo(snap.data());
+      } else {
+        navigate('/not-found', { replace: true });
+      }
     });
     return () => unsub();
   }, [chatId]);
