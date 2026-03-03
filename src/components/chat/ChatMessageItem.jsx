@@ -157,6 +157,17 @@ const ReactionPill = styled.div`
   }
 `;
 
+const MessageItemContainer = styled.div`
+  ${({ $isSearchActive, theme }) =>
+    $isSearchActive
+      ? `
+    outline: 2px solid ${theme.colors.primary};
+    outline-offset: 2px;
+    border-radius: ${theme.borderRadius.base};
+  `
+      : ''}
+`;
+
 const ChatMessageItem = ({
   msg,
   prevMsg,
@@ -173,6 +184,7 @@ const ChatMessageItem = ({
   user,
   reactionSrcMap,
   chatId,
+  isSearchActive = false,
 }) => {
   const navigate = useNavigate();
 
@@ -193,7 +205,7 @@ const ChatMessageItem = ({
   const hasAnyReaction = REACTION_TYPES.some(({ key }) => (msg.reactions?.[key]?.length || 0) > 0);
 
   return (
-    <div>
+    <MessageItemContainer data-message-id={msg.id} $isSearchActive={isSearchActive}>
       {showDateDivider && (
         <DateDivider>
           <DateDividerText>{formatMsgDate(msg.createdAt)}</DateDividerText>
@@ -294,7 +306,7 @@ const ChatMessageItem = ({
           </ReactionBar>
         )}
       </MessageWrapper>
-    </div>
+    </MessageItemContainer>
   );
 };
 

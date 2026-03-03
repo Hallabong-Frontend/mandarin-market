@@ -226,6 +226,12 @@ export const saveChatTheme = async (chatId, accountname, theme) => {
   });
 };
 
+export const updateChatTitle = async (chatId, title) => {
+  await updateDoc(doc(db, 'chats', chatId), {
+    groupTitle: (title || '').trim(),
+  });
+};
+
 // 스티커 메시지 전송
 export const sendStickerMessage = async (chatId, senderId, stickerKey) => {
   await addDoc(collection(db, 'chats', chatId, 'messages'), {
