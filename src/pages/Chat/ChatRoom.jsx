@@ -260,10 +260,9 @@ const ChatRoom = () => {
 
   useEffect(() => {
     if (!chatId || !user?.accountname) return;
-    const joinTime = chatInfo?.participantInfo?.[user.accountname]?.joinedAt;
-    const unsub = subscribeToMessages(chatId, setMessages, joinTime);
+    const unsub = subscribeToMessages(chatId, setMessages);
     return () => unsub();
-  }, [chatId, user?.accountname, !!chatInfo]);
+  }, [chatId, user?.accountname]);
 
   useEffect(() => {
     if (user?.accountname) {
@@ -596,7 +595,7 @@ const ChatRoom = () => {
           </TopPanel>
         )}
 
-        <MessageList style={{ visibility: themeReady ? 'visible' : 'hidden', paddingTop: topPanelOffset }}>
+        <MessageList style={{ paddingTop: topPanelOffset }}>
           {messages.map((msg, index) => (
             <ChatMessageItem
               key={msg.id}

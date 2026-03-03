@@ -1,4 +1,4 @@
-import { db } from './config';
+﻿import { db } from './config';
 import {
   collection,
   doc,
@@ -124,6 +124,21 @@ export const inviteUsersToChat = async (chatId, newUsers, inviterAccountname) =>
   await updateDoc(chatRef, {
     participants: updatedParticipants,
     participantInfo: updatedInfo,
+  });
+};
+
+const sendSystemMessage = async (chatId, text, metadata = null) => {
+  await addDoc(collection(db, 'chats', chatId, 'messages'), {
+    senderId: 'system',
+    text,
+    metadata,
+    createdAt: serverTimestamp(),
+  });
+
+  await updateDoc(doc(db, 'chats', chatId), {
+    lastMessage: text,
+    lastSenderId: 'system',
+    lastMessageAt: serverTimestamp(),
   });
 };
 

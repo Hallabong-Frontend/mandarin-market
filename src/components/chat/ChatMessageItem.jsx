@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+﻿import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { getChatId, getOrCreateChat, toggleReaction } from '../../firebase/chat';
 import { formatMsgTime, getMsgDateKey, formatMsgDate } from '../../utils/chatFormat';
@@ -306,52 +306,37 @@ const ChatMessageItem = ({
 
     if (metadata.type === 'leave' && metadata.target) {
       const { username, accountname } = metadata.target;
-      const parts = text.split(username);
       return (
         <>
-          {parts[0]}
           <UserNameLink onClick={() => navigate(`/profile/${accountname}`)}>{username}</UserNameLink>
-          {parts[1]}
+          님이 채팅방을 나갔습니다.
         </>
       );
     }
 
     if (metadata.type === 'invite' && metadata.inviter && metadata.invited) {
-      let result = [text];
-
-      // 초대자 처리
+      const nodes = [];
       const { username: invName, accountname: invAcc } = metadata.inviter;
-      result = result.flatMap((item) => {
-        if (typeof item !== 'string') return [item];
-        const parts = item.split(invName);
-        const newArr = [];
-        for (let i = 0; i < parts.length; i++) {
-          newArr.push(parts[i]);
-          if (i < parts.length - 1) {
-            newArr.push(<UserNameLink key={`inv-${i}`} onClick={() => navigate(`/profile/${invAcc}`)}>{invName}</UserNameLink>);
-          }
-        }
-        return newArr;
-      });
 
-      // 초대받은 사람들 처리
-      metadata.invited.forEach((target, targetIdx) => {
+      nodes.push(
+        <UserNameLink key="inviter" onClick={() => navigate(`/profile/${invAcc}`)}>
+          {invName}
+        </UserNameLink>,
+      );
+      nodes.push('님이 ');
+
+      metadata.invited.forEach((target, idx) => {
         const { username: tarName, accountname: tarAcc } = target;
-        result = result.flatMap((item) => {
-          if (typeof item !== 'string') return [item];
-          const parts = item.split(tarName);
-          const newArr = [];
-          for (let i = 0; i < parts.length; i++) {
-            newArr.push(parts[i]);
-            if (i < parts.length - 1) {
-              newArr.push(<UserNameLink key={`tar-${targetIdx}-${i}`} onClick={() => navigate(`/profile/${tarAcc}`)}>{tarName}</UserNameLink>);
-            }
-          }
-          return newArr;
-        });
+        nodes.push(
+          <UserNameLink key={`invited-${idx}`} onClick={() => navigate(`/profile/${tarAcc}`)}>
+            {tarName}
+          </UserNameLink>,
+        );
+        if (idx < metadata.invited.length - 1) nodes.push(', ');
       });
 
-      return result;
+      nodes.push('님을 초대했습니다.');
+      return nodes;
     }
 
     return text;
