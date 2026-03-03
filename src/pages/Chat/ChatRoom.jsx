@@ -88,6 +88,44 @@ const ScrollDownButton = styled.button`
   pointer-events: auto;
 `;
 
+const NewMessageAlert = styled.button`
+  position: fixed;
+  bottom: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.white};
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(242, 110, 34, 0.3);
+  z-index: ${({ theme }) => theme.zIndex.header};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  pointer-events: auto;
+  white-space: nowrap;
+  animation: slideUp 0.3s ease-out;
+
+  @keyframes slideUp {
+    from {
+      transform: translate(-50%, 15px);
+      opacity: 0;
+    }
+    to {
+      transform: translate(-50%, 0);
+      opacity: 1;
+    }
+  }
+
+  &:hover {
+    background-color: #d15d1b;
+  }
+`;
+
 const ScrollDownIcon = styled(ArrowLeftIconSvg)`
   width: 18px;
   height: 18px;
@@ -184,6 +222,7 @@ const ChatRoom = () => {
   const [isBgImageUploading, setIsBgImageUploading] = useState(false);
 
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
+  const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
 
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -230,16 +269,23 @@ const ChatRoom = () => {
     if (messages.length === 0) return;
 
     const isNewMessage = messages.length > prevMsgsLength.current;
+    const lastMessage = messages[messages.length - 1];
+    const isMine = lastMessage?.senderId === user?.accountname;
 
     if (isInitialLoad.current) {
       bottomRef.current?.scrollIntoView({ behavior: 'instant' });
       isInitialLoad.current = false;
     } else if (isNewMessage) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      if (!showScrollDownButton || isMine) {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        setShowNewMessageAlert(false);
+      } else {
+        setShowNewMessageAlert(true);
+      }
     }
 
     prevMsgsLength.current = messages.length;
-  }, [messages]);
+  }, [messages, user?.accountname, showScrollDownButton]);
 
   useEffect(() => {
     const updateScrollButton = () => {
@@ -247,6 +293,10 @@ const ChatRoom = () => {
       const bottomTop = bottomRef.current.getBoundingClientRect().top;
       const isNearBottom = bottomTop <= window.innerHeight - 72 + 24;
       setShowScrollDownButton(!isNearBottom);
+
+      if (isNearBottom) {
+        setShowNewMessageAlert(false);
+      }
     };
 
     updateScrollButton();
@@ -556,7 +606,18 @@ const ChatRoom = () => {
         </MessageList>
       </Wrapper>
 
-      {showScrollDownButton && (
+      {showNewMessageAlert && (
+        <NewMessageAlert
+          onClick={() => {
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+            setShowNewMessageAlert(false);
+          }}
+        >
+          새 메시지가 도착했습니다
+        </NewMessageAlert>
+      )}
+
+      {showScrollDownButton && !showNewMessageAlert && (
         <ScrollDownButtonArea>
           <ScrollDownButton onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })}>
             <ScrollDownIcon />
