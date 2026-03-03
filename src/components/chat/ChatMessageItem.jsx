@@ -127,6 +127,30 @@ const SenderName = styled.button.attrs({ type: 'button' })`
   pointer-events: ${({ $clickable }) => ($clickable ? 'auto' : 'none')};
 `;
 
+const SystemMessage = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 2px 0;
+`;
+
+const SystemMessageText = styled.span`
+  font-size: ${({ theme }) => theme.fonts.size.xs};
+  color: ${({ theme }) => theme.colors.gray500};
+  background-color: ${({ theme }) => theme.colors.gray100};
+  padding: 4px 12px;
+  border-radius: ${({ theme }) => theme.borderRadius.round};
+`;
+
+const UserNameLink = styled.span`
+  font-weight: ${({ theme }) => theme.fonts.weight.bold};
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
 const ReactionBar = styled.div`
   display: flex;
   align-items: center;
@@ -276,6 +300,78 @@ const ChatMessageItem = ({
     navigate(`/chat/${dmChatId}`);
   };
 
+  const renderSystemText = () => {
+    const { text, metadata } = msg;
+    if (!metadata) return text;
+
+    if (metadata.type === 'leave' && metadata.target) {
+      const { username, accountname } = metadata.target;
+      const parts = text.split(username);
+      return (
+        <>
+          {parts[0]}
+          <UserNameLink onClick={() => navigate(`/profile/${accountname}`)}>{username}</UserNameLink>
+          {parts[1]}
+        </>
+      );
+    }
+
+    if (metadata.type === 'invite' && metadata.inviter && metadata.invited) {
+      let result = [text];
+
+      // 초대자 처리
+      const { username: invName, accountname: invAcc } = metadata.inviter;
+      result = result.flatMap((item) => {
+        if (typeof item !== 'string') return [item];
+        const parts = item.split(invName);
+        const newArr = [];
+        for (let i = 0; i < parts.length; i++) {
+          newArr.push(parts[i]);
+          if (i < parts.length - 1) {
+            newArr.push(<UserNameLink key={`inv-${i}`} onClick={() => navigate(`/profile/${invAcc}`)}>{invName}</UserNameLink>);
+          }
+        }
+        return newArr;
+      });
+
+      // 초대받은 사람들 처리
+      metadata.invited.forEach((target, targetIdx) => {
+        const { username: tarName, accountname: tarAcc } = target;
+        result = result.flatMap((item) => {
+          if (typeof item !== 'string') return [item];
+          const parts = item.split(tarName);
+          const newArr = [];
+          for (let i = 0; i < parts.length; i++) {
+            newArr.push(parts[i]);
+            if (i < parts.length - 1) {
+              newArr.push(<UserNameLink key={`tar-${targetIdx}-${i}`} onClick={() => navigate(`/profile/${tarAcc}`)}>{tarName}</UserNameLink>);
+            }
+          }
+          return newArr;
+        });
+      });
+
+      return result;
+    }
+
+    return text;
+  };
+
+  if (msg.senderId === 'system') {
+    return (
+      <MessageItemContainer data-message-id={msg.id} $isSearchActive={isSearchActive}>
+        {showDateDivider && (
+          <DateDivider>
+            <DateDividerText>{formatMsgDate(msg.createdAt)}</DateDividerText>
+          </DateDivider>
+        )}
+        <SystemMessage>
+          <SystemMessageText>{renderSystemText()}</SystemMessageText>
+        </SystemMessage>
+      </MessageItemContainer>
+    );
+  }
+
   return (
     <MessageItemContainer data-message-id={msg.id} $isSearchActive={isSearchActive}>
       {showDateDivider && (
@@ -288,7 +384,7 @@ const ChatMessageItem = ({
         <MessageRow $isMine={isMine}>
           {!isMine && (
             <Avatar
-              src={chatInfo?.participantInfo?.[msg.senderId]?.image}
+              src={chatInfo?.participantInfo?.[msg.senderId]?.image || ''}
               alt="상대방"
               size="32px"
               onClick={() => navigate(`/profile/${msg.senderId}`)}
@@ -305,7 +401,8 @@ const ChatMessageItem = ({
                   }}
                 >
                   {chatInfo?.nicknames?.[user?.accountname]?.[msg.senderId] ||
-                    chatInfo?.participantInfo?.[msg.senderId]?.username}
+                    chatInfo?.participantInfo?.[msg.senderId]?.username ||
+                    '(알 수 없음)'}
                 </SenderName>
               )}
               <BubbleRow>

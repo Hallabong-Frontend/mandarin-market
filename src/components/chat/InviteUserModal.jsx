@@ -203,7 +203,7 @@ const InviteUserModal = ({ isOpen, onClose, chatId, existingParticipants = [] })
     if (selectedUsers.length === 0 || isInviting) return;
     setIsInviting(true);
     try {
-      await inviteUsersToChat(chatId, selectedUsers);
+      await inviteUsersToChat(chatId, selectedUsers, me.accountname);
       onClose();
       // Optional: show a toast or alert that users are invited
     } catch (err) {

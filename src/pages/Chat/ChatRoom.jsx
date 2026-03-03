@@ -259,9 +259,11 @@ const ChatRoom = () => {
   }, [chatInfo, user?.accountname]);
 
   useEffect(() => {
-    const unsub = subscribeToMessages(chatId, setMessages);
+    if (!chatInfo || !user?.accountname) return;
+    const joinTime = chatInfo.participantInfo?.[user.accountname]?.joinedAt;
+    const unsub = subscribeToMessages(chatId, setMessages, joinTime);
     return () => unsub();
-  }, [chatId]);
+  }, [chatId, chatInfo, user?.accountname]);
 
   useEffect(() => {
     if (user?.accountname) {

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import { likePost, unlikePost, deletePost, reportPost } from '../../api/post';
-import { getImageUrl, formatDate } from '../../utils/format';
+import { getImageUrl, formatDate, formatPrice } from '../../utils/format';
+import { POST_PRODUCT_SEPARATOR } from '../../constants/common';
 import Avatar from '../common/Avatar';
 import BottomModal from '../common/BottomModal';
 import AlertModal from '../common/AlertModal';
@@ -78,15 +79,81 @@ const PostImageWrapper = styled.div`
   }
 `;
 
-const PostImage = styled.img`
+const PostImageSlide = styled.div`
+  position: relative;
   width: 100%;
   height: 230px;
-  object-fit: cover;
   flex-shrink: 0;
   scroll-snap-align: start;
+`;
+
+const PostImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   border-radius: ${({ theme }) => theme.borderRadius.base};
   background-color: ${({ theme }) => theme.colors.gray100};
   cursor: pointer;
+  display: block;
+`;
+
+const ProductBadge = styled.span`
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: #fff;
+  font-size: 10px;
+  font-weight: ${({ theme }) => theme.fonts.weight.bold};
+  padding: 3px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+  pointer-events: none;
+`;
+
+const ProductOverlay = styled.a`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 28px 12px 10px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+  border-radius: 0 0 ${({ theme }) => theme.borderRadius.base} ${({ theme }) => theme.borderRadius.base};
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  text-decoration: none;
+  cursor: ${({ $hasLink }) => ($hasLink ? 'pointer' : 'default')};
+  pointer-events: ${({ $hasLink }) => ($hasLink ? 'auto' : 'none')};
+`;
+
+const ProductOverlayText = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const ProductOverlayArrow = styled.span`
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+  flex-shrink: 0;
+  margin-left: 8px;
+  margin-bottom: 1px;
+`;
+
+const ProductOverlayName = styled.p`
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  color: #fff;
+  font-weight: ${({ theme }) => theme.fonts.weight.medium};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const ProductOverlayPrice = styled.p`
+  font-size: 11px;
+  color: #ffd8b8;
+  font-weight: ${({ theme }) => theme.fonts.weight.medium};
+  margin-top: 2px;
 `;
 
 const PaginationDots = styled.div`
@@ -145,7 +212,9 @@ const TimeText = styled.span`
 
 const PostCard = ({ post, onDelete }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  const isDetailPage = location.pathname === `/post/${post.id}`;
   const [liked, setLiked] = useState(post.hearted);
   const [likeCount, setLikeCount] = useState(post.heartCount);
   const [showModal, setShowModal] = useState(false);
@@ -157,6 +226,14 @@ const PostCard = ({ post, onDelete }) => {
 
   const isMyPost = user?.accountname === post.author?.accountname;
   const images = post.image ? post.image.split(',').filter(Boolean).slice(0, 3) : [];
+
+  const sepIdx = (post.content || '').indexOf(POST_PRODUCT_SEPARATOR);
+  const displayContent = sepIdx === -1 ? post.content : post.content.slice(0, sepIdx);
+  const productMeta = (() => {
+    if (sepIdx === -1) return [];
+    try { return JSON.parse(post.content.slice(sepIdx + POST_PRODUCT_SEPARATOR.length)); }
+    catch { return []; }
+  })();
 
   useEffect(() => {
     setCurrentImageIndex(0);
@@ -270,7 +347,7 @@ const PostCard = ({ post, onDelete }) => {
 
   return (
     <>
-      <Card onClick={handleGoDetail}>
+      <Card onClick={isDetailPage ? undefined : handleGoDetail}>
         <CardHeader>
           <Avatar
             src={post.author?.image}
@@ -300,25 +377,47 @@ const PostCard = ({ post, onDelete }) => {
           </MoreButton>
         </CardHeader>
 
-        {post.content && <Content>{post.content}</Content>}
+        {displayContent && <Content>{displayContent}</Content>}
 
         {images.length > 0 && (
           <ImageContainer>
             <PostImageWrapper ref={imageWrapperRef} onScroll={handleImageScroll}>
-              {images.map((img, i) => (
-                <PostImage
-                  key={i}
-                  src={getImageUrl(img.trim())}
-                  alt={`게시글 이미지 ${i + 1}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleGoDetail();
-                  }}
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-              ))}
+              {images.map((img, i) => {
+                const productInfo = productMeta.find((p) => p.i === i);
+                return (
+                  <PostImageSlide key={i}>
+                    <PostImage
+                      src={getImageUrl(img.trim())}
+                      alt={productInfo ? productInfo.name : `게시글 이미지 ${i + 1}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isDetailPage) handleGoDetail();
+                      }}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                    {productInfo && (
+                      <>
+                        <ProductBadge>상품</ProductBadge>
+                        <ProductOverlay
+                          href={productInfo.link || undefined}
+                          target={productInfo.link ? '_blank' : undefined}
+                          rel={productInfo.link ? 'noopener noreferrer' : undefined}
+                          $hasLink={!!productInfo.link}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ProductOverlayText>
+                            <ProductOverlayName>{productInfo.name}</ProductOverlayName>
+                            <ProductOverlayPrice>{formatPrice(productInfo.price)}원</ProductOverlayPrice>
+                          </ProductOverlayText>
+                          {productInfo.link && <ProductOverlayArrow>↗</ProductOverlayArrow>}
+                        </ProductOverlay>
+                      </>
+                    )}
+                  </PostImageSlide>
+                );
+              })}
             </PostImageWrapper>
             {images.length > 1 && (
               <PaginationDots>
@@ -352,7 +451,7 @@ const PostCard = ({ post, onDelete }) => {
           <ActionButton
             onClick={(e) => {
               e.stopPropagation();
-              handleGoDetail();
+              if (!isDetailPage) handleGoDetail();
             }}
           >
             <CommentIcon />

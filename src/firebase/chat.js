@@ -61,6 +61,7 @@ export const createGroupChat = async (myInfo, selectedUsers, groupTitle, groupIm
     [myInfo.accountname]: {
       username: myInfo.username,
       image: myInfo.image || '',
+      joinedAt: serverTimestamp(),
     },
   };
 
@@ -68,6 +69,7 @@ export const createGroupChat = async (myInfo, selectedUsers, groupTitle, groupIm
     participantInfo[u.accountname] = {
       username: u.username,
       image: u.image || '',
+      joinedAt: serverTimestamp(),
     };
   });
 
@@ -91,7 +93,7 @@ export const createGroupChat = async (myInfo, selectedUsers, groupTitle, groupIm
 };
 
 // 채팅방에 새로운 대화 상대 초대
-export const inviteUsersToChat = async (chatId, newUsers) => {
+export const inviteUsersToChat = async (chatId, newUsers, inviterAccountname) => {
   const chatRef = doc(db, 'chats', chatId);
   const snapshot = await getDoc(chatRef);
   if (!snapshot.exists()) return;
@@ -107,7 +109,16 @@ export const inviteUsersToChat = async (chatId, newUsers) => {
     updatedInfo[u.accountname] = {
       username: u.username,
       image: u.image || '',
+      joinedAt: serverTimestamp(),
     };
+  });
+
+  const inviterName = data.participantInfo?.[inviterAccountname]?.username || inviterAccountname;
+  const newUsernames = newUsers.map((u) => u.username).join(', ');
+  await sendSystemMessage(chatId, `${inviterName}님이 ${newUsernames}님을 초대했습니다.`, {
+    type: 'invite',
+    inviter: { accountname: inviterAccountname, username: inviterName },
+    invited: newUsers.map((u) => ({ accountname: u.accountname, username: u.username })),
   });
 
   await updateDoc(chatRef, {
@@ -237,6 +248,16 @@ export const syncSharedProfileMessagesInChats = async (accountname, profile) => 
 export const leaveChat = async (chatId, accountname, isGroupChat) => {
   const chatRef = doc(db, 'chats', chatId);
   if (isGroupChat) {
+    const snapshot = await getDoc(chatRef);
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      const username = data.participantInfo?.[accountname]?.username || accountname;
+      await sendSystemMessage(chatId, `${username}님이 채팅방을 나갔습니다.`, {
+        type: 'leave',
+        target: { accountname, username },
+      });
+    }
+
     await updateDoc(chatRef, {
       participants: arrayRemove(accountname),
       [`participantInfo.${accountname}`]: deleteField(),
@@ -362,8 +383,13 @@ export const toggleReaction = async (chatId, messageId, accountname, reactionTyp
 };
 
 // 채팅방 메시지 실시간 구독 (createdAt 오름차순)
-export const subscribeToMessages = (chatId, callback) => {
-  const q = query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'asc'));
+export const subscribeToMessages = (chatId, callback, joinTime) => {
+  let q = query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'asc'));
+
+  if (joinTime) {
+    q = query(q, where('createdAt', '>=', joinTime));
+  }
+
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
   });
