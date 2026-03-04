@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getImageUrl, formatPrice, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 import { IMAGE_BASE_URL } from '../../constants/url';
 import ImageIcon from '../../assets/icons/icon-image.svg?react';
+import ShoppingCartIcon from '../../assets/icons/icon-shopping-cart.svg?react';
 import AlertModal from '../../components/common/AlertModal';
 import Header from '../../components/common/Header';
 import { POST_PRODUCT_SEPARATOR, AI_DESC_SEPARATOR } from '../../constants/common';
@@ -75,9 +76,7 @@ const ImagePreviewItem = styled.div`
   height: ${({ $isProduct }) => ($isProduct ? 'auto' : '200px')};
   border-radius: ${({ theme }) => theme.borderRadius.base};
   overflow: hidden;
-  ${({ $isProduct, theme }) =>
-    $isProduct &&
-    `border: 1.5px solid ${theme.colors.primary};`}
+  ${({ $isProduct, theme }) => $isProduct && `border: 1.5px solid ${theme.colors.primary};`}
 `;
 
 const PreviewImage = styled.img`
@@ -160,11 +159,6 @@ const FloatingBtn = styled.button`
   align-items: center;
   justify-content: center;
   box-shadow: ${({ theme }) => theme.shadows.base};
-`;
-
-const ProductBtnIcon = styled.span`
-  font-size: 22px;
-  line-height: 1;
 `;
 
 /* ── 상품 피커 모달 ── */
@@ -285,10 +279,7 @@ const parsePostContent = (content) => {
   const sepIdx = content.indexOf(POST_PRODUCT_SEPARATOR);
   if (sepIdx === -1) return [content, []];
   try {
-    return [
-      content.slice(0, sepIdx),
-      JSON.parse(content.slice(sepIdx + POST_PRODUCT_SEPARATOR.length)),
-    ];
+    return [content.slice(0, sepIdx), JSON.parse(content.slice(sepIdx + POST_PRODUCT_SEPARATOR.length))];
   } catch {
     return [content, []];
   }
@@ -346,7 +337,12 @@ const PostCreate = ({ isEdit = false }) => {
                   rawUrl: img.trim(),
                   isNew: false,
                   ...(productInfo
-                    ? { isProduct: true, productName: productInfo.name, productPrice: productInfo.price, productLink: productInfo.link || '' }
+                    ? {
+                        isProduct: true,
+                        productName: productInfo.name,
+                        productPrice: productInfo.price,
+                        productLink: productInfo.link || '',
+                      }
                     : {}),
                 };
               });
@@ -446,13 +442,12 @@ const PostCreate = ({ isEdit = false }) => {
       const imageString = imageUrls.join(',');
 
       const productMeta = images.slice(0, MAX_IMAGES).reduce((acc, img, idx) => {
-        if (img.isProduct) acc.push({ i: idx, name: img.productName, price: img.productPrice, link: img.productLink || '' });
+        if (img.isProduct)
+          acc.push({ i: idx, name: img.productName, price: img.productPrice, link: img.productLink || '' });
         return acc;
       }, []);
       const finalContent =
-        productMeta.length > 0
-          ? content + POST_PRODUCT_SEPARATOR + JSON.stringify(productMeta)
-          : content;
+        productMeta.length > 0 ? content + POST_PRODUCT_SEPARATOR + JSON.stringify(productMeta) : content;
 
       if (isEdit) {
         await updatePost(postId, finalContent, imageString);
@@ -540,7 +535,7 @@ const PostCreate = ({ isEdit = false }) => {
       {images.length < MAX_IMAGES && (
         <FloatingBtnGroup>
           <FloatingBtn type="button" onClick={handleOpenProductPicker} aria-label="내 상품 불러오기">
-            <ProductBtnIcon>🛍️</ProductBtnIcon>
+            <ShoppingCartIcon width="28" height="28" style={{ filter: 'brightness(0) invert(1)' }} />
           </FloatingBtn>
           <FloatingBtn type="button" onClick={() => fileRef.current?.click()} aria-label="사진 추가">
             <ImageIcon width="28" height="28" />
@@ -565,11 +560,7 @@ const PostCreate = ({ isEdit = false }) => {
               ) : (
                 <ProductGrid>
                   {myProducts.map((product) => (
-                    <ProductPickerCard
-                      key={product.id}
-                      type="button"
-                      onClick={() => handleSelectProduct(product)}
-                    >
+                    <ProductPickerCard key={product.id} type="button" onClick={() => handleSelectProduct(product)}>
                       <ProductPickerImg
                         src={getImageUrl(product.itemImage)}
                         alt={product.itemName}
