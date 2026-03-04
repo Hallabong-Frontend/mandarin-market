@@ -207,7 +207,6 @@ const ChatRoom = () => {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
 
-  const [showDeleteChatAlert, setShowDeleteChatAlert] = useState(false);
   const [showDeleteMsgAlert, setShowDeleteMsgAlert] = useState(false);
   const [showReportAlert, setShowReportAlert] = useState(false);
   const [showBgPanel, setShowBgPanel] = useState(false);
@@ -235,6 +234,8 @@ const ChatRoom = () => {
   const themeInitialized = useRef(false);
   const isInitialLoad = useRef(true);
   const prevMsgsLength = useRef(0);
+  const joinedAtRef = useRef(null);
+  const [joinedAtReady, setJoinedAtReady] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'chats', chatId), (snap) => {
@@ -259,10 +260,16 @@ const ChatRoom = () => {
   }, [chatInfo, user?.accountname]);
 
   useEffect(() => {
-    if (!chatId || !user?.accountname) return;
-    const unsub = subscribeToMessages(chatId, setMessages);
+    if (!chatInfo || !user?.accountname || joinedAtReady) return;
+    joinedAtRef.current = chatInfo.participantInfo?.[user.accountname]?.joinedAt ?? null;
+    setJoinedAtReady(true);
+  }, [chatInfo, user?.accountname, joinedAtReady]);
+
+  useEffect(() => {
+    if (!chatId || !user?.accountname || !joinedAtReady) return;
+    const unsub = subscribeToMessages(chatId, setMessages, joinedAtRef.current);
     return () => unsub();
-  }, [chatId, user?.accountname]);
+  }, [chatId, user?.accountname, joinedAtReady]);
 
   useEffect(() => {
     if (user?.accountname) {
@@ -521,7 +528,10 @@ const ChatRoom = () => {
     {
       label: '채팅방 나가기',
       danger: true,
-      onClick: () => setShowDeleteChatAlert(true),
+      onClick: () => {
+        navigate('/chat');
+        leaveChat(chatId, user.accountname, chatInfo?.isGroupChat);
+      },
     },
   ];
 
@@ -643,23 +653,6 @@ const ChatRoom = () => {
       <ChatInputBar chatId={chatId} senderAccountname={user?.accountname} />
 
       <BottomModal isOpen={showModal} onClose={() => setShowModal(false)} items={modalItems} />
-
-      <AlertModal
-        isOpen={showDeleteChatAlert}
-        title="채팅방을 나가시겠습니까?"
-        description={
-          chatInfo?.isGroupChat
-            ? '그룹 채팅방 구성원에서 제외되며, 더 이상 메시지를 받지 않습니다.'
-            : '나간 후에는 채팅 목록에서 숨겨집니다.'
-        }
-        confirmText="나가기"
-        danger
-        onCancel={() => setShowDeleteChatAlert(false)}
-        onConfirm={async () => {
-          await leaveChat(chatId, user.accountname, chatInfo?.isGroupChat);
-          navigate('/chat');
-        }}
-      />
 
       <AlertModal
         isOpen={showDeleteMsgAlert}

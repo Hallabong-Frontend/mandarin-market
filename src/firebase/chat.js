@@ -113,17 +113,17 @@ export const inviteUsersToChat = async (chatId, newUsers, inviterAccountname) =>
     };
   });
 
+  await updateDoc(chatRef, {
+    participants: updatedParticipants,
+    participantInfo: updatedInfo,
+  });
+
   const inviterName = data.participantInfo?.[inviterAccountname]?.username || inviterAccountname;
   const newUsernames = newUsers.map((u) => u.username).join(', ');
   await sendSystemMessage(chatId, `${inviterName}님이 ${newUsernames}님을 초대했습니다.`, {
     type: 'invite',
     inviter: { accountname: inviterAccountname, username: inviterName },
     invited: newUsers.map((u) => ({ accountname: u.accountname, username: u.username })),
-  });
-
-  await updateDoc(chatRef, {
-    participants: updatedParticipants,
-    participantInfo: updatedInfo,
   });
 };
 
