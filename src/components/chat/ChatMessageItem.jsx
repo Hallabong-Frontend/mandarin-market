@@ -11,7 +11,7 @@ const DateDivider = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 8px 0 4px;
+  margin: 6px 0 14px;
 
   &::before,
   &::after {
@@ -28,7 +28,7 @@ const DateDividerText = styled.span`
   background-color: ${({ theme }) => theme.colors.white};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.borderRadius.round};
-  padding: 4px 10px;
+  padding: 4px 12px;
 `;
 
 const MessageWrapper = styled.div`
@@ -132,13 +132,13 @@ const SystemMessage = styled.div`
   justify-content: center;
   align-items: center;
   width: 100%;
-  margin: 2px 0;
+  margin: 6px 0;
 `;
 
 const SystemMessageText = styled.span`
   font-size: ${({ theme }) => theme.fonts.size.xs};
   color: ${({ theme }) => theme.colors.gray500};
-  background-color: ${({ theme }) => theme.colors.gray100};
+  background-color: ${({ theme }) => theme.colors.gray200};
   padding: 4px 12px;
   border-radius: ${({ theme }) => theme.borderRadius.round};
 `;
