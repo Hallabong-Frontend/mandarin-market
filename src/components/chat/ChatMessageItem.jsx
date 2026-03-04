@@ -56,6 +56,7 @@ const Bubble = styled.div`
   font-size: ${({ theme }) => theme.fonts.size.base};
   line-height: 1.5;
   word-break: break-word;
+  white-space: pre-wrap;
 `;
 
 const ChatTime = styled.span`

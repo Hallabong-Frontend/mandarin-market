@@ -48,7 +48,7 @@ const EmojiBtn = styled.button`
   transition: background 0.1s;
 `;
 
-const TextInput = styled.input`
+const TextInput = styled.textarea`
   flex: 1;
   background-color: ${({ theme }) => theme.colors.gray100};
   border: none;
@@ -57,6 +57,11 @@ const TextInput = styled.input`
   padding: 8px 16px;
   font-size: ${({ theme }) => theme.fonts.size.base};
   color: ${({ theme }) => theme.colors.black};
+  resize: none;
+  overflow-y: auto;
+  max-height: 120px;
+  line-height: 1.4;
+  font-family: inherit;
 
   &::placeholder {
     color: ${({ theme }) => theme.colors.gray300};
@@ -101,6 +106,7 @@ const ChatInputBar = ({ chatId, senderAccountname }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [pasteMenu, setPasteMenu] = useState({ show: false, x: 0, y: 0 });
   const fileRef = useRef(null);
+  const textareaRef = useRef(null);
   const pasteMenuRef = useRef(null);
   const inputSelectionRef = useRef({ selectionStart: 0, selectionEnd: 0 });
 
@@ -153,10 +159,20 @@ const ChatInputBar = ({ chatId, senderAccountname }) => {
     setPasteMenu((prev) => ({ ...prev, show: false }));
   };
 
+  const handleTextChange = (e) => {
+    setInputText(e.target.value);
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  };
+
   const handleSend = async () => {
     const text = inputText.trim();
     if (!text || isSending) return;
     setInputText('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
     setIsSending(true);
     try {
       await sendTextMessage(chatId, senderAccountname, text);
@@ -214,12 +230,14 @@ const ChatInputBar = ({ chatId, senderAccountname }) => {
           <EmojiIcon width="22" height="22" color="white" />
         </EmojiBtn>
         <TextInput
+          ref={textareaRef}
           value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
+          onChange={handleTextChange}
           onKeyDown={handleKeyDown}
           onContextMenu={handleInputContextMenu}
           onFocus={() => setShowEmojiPicker(false)}
           placeholder="메시지 입력하기..."
+          rows={1}
         />
         <SendButton onClick={handleSend} disabled={!inputText.trim() || isSending}>
           전송
