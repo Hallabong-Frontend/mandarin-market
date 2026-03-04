@@ -55,7 +55,7 @@ const MessageList = styled.div`
   padding: 16px 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 `;
 
 const ScrollDownButtonArea = styled.div`
