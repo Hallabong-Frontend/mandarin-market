@@ -366,7 +366,7 @@ Set-ExecutionPolicy RemoteSigned
 
 ---
 
-# 👨‍💻 개발하면서 느낀점
+# 개발하면서 느낀점
 
 ### 강민기
 > (작성 예정)
