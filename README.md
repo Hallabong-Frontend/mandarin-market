@@ -157,7 +157,7 @@ npm run format:check
 
 | Chat | Profile | Upload |
 |---|---|---|
-| ![](./images/chat%20room.png) | ![](./images/your%20profile.png) | ![](./images/Upload.png) |
+| ![](./images/chat%20room.png) | ![](./images/yourprofile.png) | ![](./images/Upload.png) |
 
 ---
 
