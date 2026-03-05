@@ -263,24 +263,28 @@ const ChatListItem = ({
       >
         <AvatarWrapper>
           {chat.isGroupChat ? (
-            <GroupAvatarWrap>
-              {(() => {
-                const MAX = 4;
-                const participants = chat.participants || [];
-                const participantInfo = chat.participantInfo || {};
-                const total = participants.length;
-                const showItems = total <= MAX ? participants : participants.slice(0, MAX - 1);
-                const extraCount = total > MAX ? total - (MAX - 1) : 0;
-                return (
-                  <>
-                    {showItems.map((accountname) => (
-                      <Avatar key={accountname} src={participantInfo[accountname]?.image} size="18px" />
-                    ))}
-                    {extraCount > 0 && <ExtraCountBadge>+{extraCount}</ExtraCountBadge>}
-                  </>
-                );
-              })()}
-            </GroupAvatarWrap>
+            chatImage ? (
+              <Avatar src={chatImage} alt={chatTitle} />
+            ) : (
+              <GroupAvatarWrap>
+                {(() => {
+                  const MAX = 4;
+                  const participants = chat.participants || [];
+                  const participantInfo = chat.participantInfo || {};
+                  const total = participants.length;
+                  const showItems = total <= MAX ? participants : participants.slice(0, MAX - 1);
+                  const extraCount = total > MAX ? total - (MAX - 1) : 0;
+                  return (
+                    <>
+                      {showItems.map((accountname) => (
+                        <Avatar key={accountname} src={participantInfo[accountname]?.image} size="18px" />
+                      ))}
+                      {extraCount > 0 && <ExtraCountBadge>+{extraCount}</ExtraCountBadge>}
+                    </>
+                  );
+                })()}
+              </GroupAvatarWrap>
+            )
           ) : (
             <Avatar src={chatImage} alt={chatTitle} />
           )}
