@@ -37,7 +37,7 @@ export const formatDate = (dateString) => {
 // 이미지 URL 처리 (상대경로 -> 절대경로)
 export const getImageUrl = (url) => {
   if (!url) return '';
-  if (url.startsWith('http')) return url;
+  if (url.startsWith('http') || url.startsWith('data:')) return url;
   return `${IMAGE_BASE_URL}/${url}`;
 };
 
