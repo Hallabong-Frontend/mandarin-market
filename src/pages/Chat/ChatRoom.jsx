@@ -239,7 +239,6 @@ const ChatRoom = () => {
   const themeInitialized = useRef(false);
   const isInitialLoad = useRef(true);
   const initialScrollDone = useRef(false);
-  const messageListRef = useRef(null);
   const prevLastMsgIdRef = useRef(null);
   const joinedAtRef = useRef(null);
   const [joinedAtReady, setJoinedAtReady] = useState(false);
@@ -391,6 +390,7 @@ const ChatRoom = () => {
       isInitialLoad.current = false;
       initialScrollDone.current = true;
     } else if (isNewMessage) {
+      initialScrollDone.current = false;
       if (nearBottom || isMine) {
         window.scrollTo({ top: document.documentElement.scrollHeight, behavior: isMine ? 'instant' : 'smooth' });
         scrollToBottomRef.current = isMine;
@@ -404,18 +404,11 @@ const ChatRoom = () => {
     prevLastMsgIdRef.current = lastMessage?.id ?? null;
   }, [realtimeMessages, user?.accountname]);
 
-  // 이미지/스티커 로드 후 높이 변화 감지 → 초기 로드 구간 동안 하단 유지
-  useEffect(() => {
-    const el = messageListRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => {
-      if (initialScrollDone.current) {
-        window.scrollTo(0, document.documentElement.scrollHeight);
-      }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const handleMediaLoad = () => {
+    if (initialScrollDone.current) {
+      window.scrollTo(0, document.documentElement.scrollHeight);
+    }
+  };
 
   useEffect(() => {
     const updateScrollButton = () => {
@@ -427,8 +420,6 @@ const ChatRoom = () => {
       if (isNearBottom) {
         setShowNewMessageAlert(false);
         scrollIntentRef.current = false;
-      } else {
-        initialScrollDone.current = false;
       }
     };
 
@@ -674,7 +665,7 @@ const ChatRoom = () => {
     navigate(`/profile/${otherParticipant.accountname}`);
   };
 
-  const topPanelOffset = showSearchPanel || showRenamePanel ? 56 : 16;
+  const topPanelOffset = showSearchPanel || showRenamePanel ? 56 : 0;
 
   return (
     <>
@@ -726,7 +717,7 @@ const ChatRoom = () => {
           </TopPanel>
         )}
 
-        <MessageList ref={messageListRef} style={{ paddingTop: topPanelOffset }}>
+        <MessageList style={{ paddingTop: topPanelOffset }}>
           <div ref={topSentinelRef} />
           {isLoadingMore && <Spinner />}
           {displayMessages.map((msg, index) => (
@@ -749,6 +740,7 @@ const ChatRoom = () => {
               chatId={chatId}
               isSearchActive={searchMatchIds[currentMatchIndex] === msg.id}
               hasMoreAbove={index === 0 && hasMore}
+              onMediaLoad={handleMediaLoad}
             />
           ))}
           <div ref={bottomRef} />
