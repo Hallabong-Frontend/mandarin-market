@@ -70,11 +70,11 @@ const LoginEmail = () => {
         navigate('/feed', { replace: true });
       } else {
         console.error('[Login] token 없음:', data);
-        setError(data.message || '로그인에 실패했습니다.');
+        setError(`*${data.message || '로그인에 실패했습니다.'}`);
       }
     } catch (err) {
       console.error('[Login Failed]', err.response?.status, err.response?.data);
-      setError(err.response?.data?.message || '이메일 또는 비밀번호를 확인해주세요.');
+      setError(`*${err.response?.data?.message || '이메일 또는 비밀번호를 확인해주세요.'}`);
     } finally {
       setIsLoading(false);
     }
