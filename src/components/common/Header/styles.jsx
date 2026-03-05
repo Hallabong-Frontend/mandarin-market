@@ -23,8 +23,13 @@ export const HeartIcon = styled(HeartIconSvg)`
 
 export const MoreIcon = () => <MoreIconSvg width="24" height="24" />;
 
-export const SearchIcon = ({ size = 24 }) => <SearchIconSvg width={size} height={size} />;
-
+export const SearchIcon = styled(SearchIconSvg)`
+  width: 24px;
+  height: 24px;
+  path {
+    stroke: ${({ theme }) => theme.colors.gray400};
+  }
+`;
 export const HeaderWrapper = styled.header`
   position: fixed;
   top: 0;
