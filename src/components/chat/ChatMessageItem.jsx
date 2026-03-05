@@ -257,6 +257,7 @@ const ChatMessageItem = ({
   chatId,
   isSearchActive = false,
   hasMoreAbove = false,
+  onMediaLoad,
 }) => {
   const navigate = useNavigate();
 
@@ -409,12 +410,14 @@ const ChatMessageItem = ({
                   <StickerImg
                     src={STICKER_MAP[msg.stickerKey]}
                     alt="스티커"
+                    onLoad={onMediaLoad}
                     onContextMenu={(e) => onContextMenu(e, msg, isMine)}
                   />
                 ) : msg.imageUrl ? (
                   <ChatImage
                     src={msg.imageUrl}
                     alt="채팅 이미지"
+                    onLoad={onMediaLoad}
                     onContextMenu={(e) => onContextMenu(e, msg, isMine)}
                   />
                 ) : (
@@ -445,12 +448,14 @@ const ChatMessageItem = ({
             <StickerImg
               src={STICKER_MAP[msg.stickerKey]}
               alt="스티커"
+              onLoad={onMediaLoad}
               onContextMenu={(e) => onContextMenu(e, msg, isMine)}
             />
           ) : msg.imageUrl ? (
             <ChatImage
               src={msg.imageUrl}
               alt="채팅 이미지"
+              onLoad={onMediaLoad}
               onContextMenu={(e) => onContextMenu(e, msg, isMine)}
             />
           ) : editingId === msg.id ? (
