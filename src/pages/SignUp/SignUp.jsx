@@ -55,7 +55,7 @@ const SignUp = () => {
       if (data.message.includes('사용 가능한')) {
         setErrors((prev) => ({ ...prev, email: '' }));
       } else {
-        setErrors((prev) => ({ ...prev, email: `*${data.message}` }));
+        setErrors((prev) => ({ ...prev, email: data.message }));
       }
     } catch (err) {
       setErrors((prev) => ({ ...prev, email: err.response?.data?.message || '*이미 가입된 이메일 주소입니다.' }));
