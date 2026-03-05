@@ -196,7 +196,7 @@ const ChatRoom = () => {
   const [chatInfo, setChatInfo] = useState(null);
   const [realtimeMessages, setRealtimeMessages] = useState([]);
   const [olderMessages, setOlderMessages] = useState([]);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -238,6 +238,8 @@ const ChatRoom = () => {
 
   const themeInitialized = useRef(false);
   const isInitialLoad = useRef(true);
+  const initialScrollDone = useRef(false);
+  const messageListRef = useRef(null);
   const prevLastMsgIdRef = useRef(null);
   const joinedAtRef = useRef(null);
   const [joinedAtReady, setJoinedAtReady] = useState(false);
@@ -288,10 +290,11 @@ const ChatRoom = () => {
     }
   }, [chatId, user?.accountname]);
 
-  // 실시간 구독 결과가 40개 미만이면 더 이상 이전 메시지가 없음
+  // 실시간 구독 결과로 hasMore 초기화 (메시지 로드 전엔 false 유지)
   useEffect(() => {
-    if (realtimeMessages.length > 0 && realtimeMessages.length < 40 && olderMessages.length === 0) {
-      setHasMore(false);
+    if (realtimeMessages.length === 0) return;
+    if (olderMessages.length === 0) {
+      setHasMore(realtimeMessages.length >= 40);
     }
   }, [realtimeMessages, olderMessages]);
 
@@ -386,6 +389,7 @@ const ChatRoom = () => {
     if (isInitialLoad.current) {
       window.scrollTo(0, document.documentElement.scrollHeight);
       isInitialLoad.current = false;
+      initialScrollDone.current = true;
     } else if (isNewMessage) {
       if (nearBottom || isMine) {
         window.scrollTo({ top: document.documentElement.scrollHeight, behavior: isMine ? 'instant' : 'smooth' });
@@ -400,6 +404,19 @@ const ChatRoom = () => {
     prevLastMsgIdRef.current = lastMessage?.id ?? null;
   }, [realtimeMessages, user?.accountname]);
 
+  // 이미지/스티커 로드 후 높이 변화 감지 → 초기 로드 구간 동안 하단 유지
+  useEffect(() => {
+    const el = messageListRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      if (initialScrollDone.current) {
+        window.scrollTo(0, document.documentElement.scrollHeight);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   useEffect(() => {
     const updateScrollButton = () => {
       if (!bottomRef.current) return;
@@ -410,6 +427,8 @@ const ChatRoom = () => {
       if (isNearBottom) {
         setShowNewMessageAlert(false);
         scrollIntentRef.current = false;
+      } else {
+        initialScrollDone.current = false;
       }
     };
 
@@ -707,7 +726,7 @@ const ChatRoom = () => {
           </TopPanel>
         )}
 
-        <MessageList style={{ paddingTop: topPanelOffset }}>
+        <MessageList ref={messageListRef} style={{ paddingTop: topPanelOffset }}>
           <div ref={topSentinelRef} />
           {isLoadingMore && <Spinner />}
           {displayMessages.map((msg, index) => (
