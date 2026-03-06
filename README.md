@@ -226,7 +226,6 @@ Chat --> DirectChat
 Chat --> GroupChat
 Chat --> Reaction
 Chat --> Pin
-
 ```
 
 ### 1. 인증 / 유저
@@ -295,6 +294,7 @@ UI (Pages / Components)
  │   └─ Domain API Modules
  └─ Firebase Layer
      └─ Chat Service
+```
 
 ### 2) Runtime Flow
 
