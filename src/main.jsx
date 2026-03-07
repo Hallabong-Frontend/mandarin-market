@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeModeProvider, useThemeMode } from './context/ThemeModeContext';
+import { ToastProvider } from './context/ToastContext';
 import GlobalStyles from './styles/GlobalStyles';
 import App from './App.jsx';
 
@@ -14,7 +15,9 @@ const RootProviders = () => {
     <ThemeProvider theme={theme}>
       <GlobalStyles />
       <AuthProvider>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
   );

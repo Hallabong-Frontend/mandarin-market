@@ -6,6 +6,7 @@ import { uploadImage } from '../../api/auth';
 import { getImageUrl } from '../../utils/format';
 import { createGroupChat } from '../../firebase/chat';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import FullPagePanel from '../common/FullPagePanel';
 import Avatar from '../common/Avatar';
 import Spinner from '../common/Spinner';
@@ -220,6 +221,7 @@ const Checkbox = styled.div`
 const GroupChatModal = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { user: me } = useAuth();
+  const toast = useToast();
 
   const [groupTitle, setGroupTitle] = useState('');
   const [groupImage, setGroupImage] = useState('');
@@ -260,6 +262,7 @@ const GroupChatModal = ({ isOpen, onClose }) => {
         setResults((data || []).filter((u) => u.accountname !== me.accountname));
       } catch (err) {
         console.error(err);
+        toast.error('사용자 검색에 실패했습니다.');
         setResults([]);
       } finally {
         setIsSearching(false);
@@ -277,6 +280,7 @@ const GroupChatModal = ({ isOpen, onClose }) => {
       setGroupImage(url);
     } catch (err) {
       console.error(err);
+      toast.error('이미지 업로드에 실패했습니다.');
     }
   };
 
@@ -297,6 +301,7 @@ const GroupChatModal = ({ isOpen, onClose }) => {
       navigate(`/chat/${chatId}`);
     } catch (err) {
       console.error(err);
+      toast.error('그룹 채팅방 생성에 실패했습니다.');
     } finally {
       setIsCreating(false);
     }

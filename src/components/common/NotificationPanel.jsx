@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { getUserPosts } from '../../api/user';
 import { getImageUrl, formatTimeAgo } from '../../utils/format';
 import HeartIconSvg from '../../assets/icons/icon-heart.svg?react';
@@ -84,6 +85,7 @@ const NotifTime = styled.p`
 const NotificationPanel = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -96,7 +98,7 @@ const NotificationPanel = ({ isOpen, onClose }) => {
         const allPosts = data.post || [];
         setPosts(allPosts.filter((p) => p.heartCount > 0 || p.commentCount > 0));
       })
-      .catch((err) => console.error('[알림] API 오류:', err))
+      .catch((err) => { console.error('[알림] API 오류:', err); toast.error('알림을 불러오지 못했습니다.'); })
       .finally(() => setLoading(false));
   }, [isOpen, user?.accountname]);
 

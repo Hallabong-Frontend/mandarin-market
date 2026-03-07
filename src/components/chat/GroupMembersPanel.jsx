@@ -5,6 +5,7 @@ import { getChatId, getOrCreateChat, setNickname } from '../../firebase/chat';
 import FullPagePanel from '../common/FullPagePanel';
 import Avatar from '../common/Avatar';
 import NicknameModal from './NicknameModal';
+import { useToast } from '../../context/ToastContext';
 
 const MemberList = styled.ul`
   display: flex;
@@ -91,6 +92,7 @@ const CountLabel = styled.p`
 
 const GroupMembersPanel = ({ isOpen, onClose, chatInfo, currentUser, chatId }) => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [loadingAccountname, setLoadingAccountname] = useState(null);
   const [nicknameTarget, setNicknameTarget] = useState(null);
 
@@ -108,6 +110,7 @@ const GroupMembersPanel = ({ isOpen, onClose, chatInfo, currentUser, chatId }) =
       navigate(`/chat/${dmChatId}`);
     } catch (err) {
       console.error(err);
+      toast.error('채팅방 생성에 실패했습니다.');
     } finally {
       setLoadingAccountname(null);
     }

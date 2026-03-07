@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { followUser, unfollowUser } from '../../api/user';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import Avatar from '../common/Avatar';
 
 const Item = styled.div`
@@ -67,6 +68,7 @@ const SearchKeyword = styled.span`
 const UserItem = ({ userData, keyword = '' }) => {
   const navigate = useNavigate();
   const { user: me } = useAuth();
+  const toast = useToast();
   const [following, setFollowing] = useState(userData.isfollow);
 
   const isMe = me?.accountname === userData.accountname;
@@ -83,6 +85,7 @@ const UserItem = ({ userData, keyword = '' }) => {
       }
     } catch (err) {
       console.error(err);
+      toast.error('팔로우 처리에 실패했습니다.');
     }
   };
 

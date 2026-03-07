@@ -14,6 +14,7 @@ import {
   getReplies,
 } from '../../firebase/posts';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { formatTimeAgo } from '../../utils/format';
 import PostCard from '../../components/post/PostCard';
 import BottomModal from '../../components/common/BottomModal';
@@ -225,6 +226,7 @@ const PostDetail = () => {
   const { postId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
   const inputRef = useRef(null);
 
   const [post, setPost] = useState(null);
@@ -307,6 +309,7 @@ const PostDetail = () => {
       setCommentText('');
     } catch (err) {
       console.error(err);
+      toast.error('댓글 등록에 실패했습니다.');
     } finally {
       setIsSubmitting(false);
     }
@@ -401,6 +404,7 @@ const PostDetail = () => {
           setPost((prev) => ({ ...prev, commentCount: prev.commentCount - 1 }));
         } catch (err) {
           console.error(err);
+          toast.error('댓글 삭제에 실패했습니다.');
         }
       } else if (selectedItem?.type === 'reply') {
         try {
@@ -408,6 +412,7 @@ const PostDetail = () => {
           setReplies((prev) => prev.filter((r) => r.id !== selectedItem.data.id));
         } catch (err) {
           console.error(err);
+          toast.error('답글 삭제에 실패했습니다.');
         }
       }
     } else if (alertType === 'report') {
@@ -415,6 +420,7 @@ const PostDetail = () => {
         await reportComment(postId, selectedItem.data.id);
       } catch (err) {
         console.error(err);
+        toast.error('신고에 실패했습니다.');
       }
     }
   };

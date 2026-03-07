@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { likePost, unlikePost, deletePost, reportPost } from '../../api/post';
 import { getImageUrl, formatDate, formatPrice } from '../../utils/format';
 import { POST_PRODUCT_SEPARATOR } from '../../constants/common';
@@ -214,6 +215,7 @@ const PostCard = ({ post, onDelete }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const toast = useToast();
   const isDetailPage = location.pathname === `/post/${post.id}`;
   const [liked, setLiked] = useState(post.hearted);
   const [likeCount, setLikeCount] = useState(post.heartCount);
@@ -263,6 +265,7 @@ const PostCard = ({ post, onDelete }) => {
       }
     } catch (e) {
       console.error(e);
+      toast.error('좋아요 처리에 실패했습니다.');
     }
   };
 
@@ -302,12 +305,14 @@ const PostCard = ({ post, onDelete }) => {
         onDelete?.(post.id);
       } catch (e) {
         console.error(e);
+        toast.error('게시물 삭제에 실패했습니다.');
       }
     } else if (alertType === 'report') {
       try {
         await reportPost(post.id);
       } catch (e) {
         console.error(e);
+        toast.error('신고에 실패했습니다.');
       }
     }
   };

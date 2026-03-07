@@ -12,6 +12,7 @@ import AlertModal from '../../components/common/AlertModal';
 import AuthInput from '../../components/common/AuthInput';
 import { SpinnerRing } from '../../components/common/Spinner';
 import { AI_DESC_SEPARATOR } from '../../constants/common';
+import { useToast } from '../../context/ToastContext';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -126,6 +127,7 @@ const ProductRegister = ({ isEdit = false }) => {
   const navigate = useNavigate();
   const { productId } = useParams();
   const fileRef = useRef(null);
+  const toast = useToast();
 
   const [previewImage, setPreviewImage] = useState('');
   const [imageFile, setImageFile] = useState(null);
@@ -199,6 +201,7 @@ const ProductRegister = ({ isEdit = false }) => {
           setExistingImageUrl(product.itemImage);
         } catch (err) {
           console.error(err);
+          toast.error('상품 정보를 불러오지 못했습니다.');
         }
       };
       loadProduct();
@@ -216,7 +219,7 @@ const ProductRegister = ({ isEdit = false }) => {
       setFieldError('itemName', '');
     } catch (err) {
       console.error(err);
-      alert('AI 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+      toast.error('AI 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsAiLoading(false);
     }
@@ -275,6 +278,7 @@ const ProductRegister = ({ isEdit = false }) => {
       navigate(-1);
     } catch (err) {
       console.error(err);
+      toast.error(isEdit ? '상품 수정에 실패했습니다.' : '상품 등록에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }

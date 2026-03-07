@@ -6,6 +6,7 @@ import UserItem from '../../components/user/UserItem';
 import Header from '../../components/common/Header';
 import EmptyState from '../../components/common/EmptyState';
 import Spinner from '../../components/common/Spinner';
+import { useToast } from '../../context/ToastContext';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -16,6 +17,7 @@ const ResultList = styled.ul``;
 
 const Search = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [keyword, setKeyword] = useState('');
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,6 +46,7 @@ const Search = () => {
         setResults(data || []);
       } catch (err) {
         console.error(err);
+        toast.error('사용자 검색에 실패했습니다.');
         setResults([]);
       } finally {
         setIsLoading(false);

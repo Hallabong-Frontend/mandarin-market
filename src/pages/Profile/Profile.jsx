@@ -5,6 +5,7 @@ import { getMyProducts, deleteProduct } from '../../api/product';
 import { getMyInfo } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 import { useThemeMode } from '../../context/ThemeModeContext';
+import { useToast } from '../../context/ToastContext';
 import { getChatId, getOrCreateChat, subscribeToChats, sendProfileMessage } from '../../firebase/chat';
 
 import BottomTabNav from '../../components/common/BottomTabNav';
@@ -31,6 +32,7 @@ const Profile = () => {
   const { accountname } = useParams();
   const { user: me, logout } = useAuth();
   const { isDark, toggleMode } = useThemeMode();
+  const toast = useToast();
 
   const isMyProfile = me?.accountname === accountname;
 
@@ -112,6 +114,7 @@ const Profile = () => {
         }
       } catch (err) {
         console.error(err);
+        toast.error('이메일 정보를 불러오지 못했습니다.');
       }
     };
 
@@ -131,6 +134,7 @@ const Profile = () => {
       }
     } catch (err) {
       console.error(err);
+      toast.error('팔로우 처리에 실패했습니다.');
     }
   };
 
@@ -160,6 +164,7 @@ const Profile = () => {
       setProducts((p) => p.filter((item) => item.id !== selectedProduct.id));
     } catch (err) {
       console.error(err);
+      toast.error('상품 삭제에 실패했습니다.');
     }
   };
 

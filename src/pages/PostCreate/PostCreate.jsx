@@ -5,6 +5,7 @@ import { createPost, updatePost, getPost } from '../../api/post';
 import { uploadImage } from '../../api/auth';
 import { getMyProducts } from '../../api/product';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { getImageUrl, formatPrice, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
 import { IMAGE_BASE_URL } from '../../constants/url';
 import ImageIcon from '../../assets/icons/icon-image.svg?react';
@@ -297,6 +298,7 @@ const PostCreate = ({ isEdit = false }) => {
   const navigate = useNavigate();
   const { postId } = useParams();
   const { user } = useAuth();
+  const toast = useToast();
   const fileRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -350,6 +352,7 @@ const PostCreate = ({ isEdit = false }) => {
           }
         } catch (err) {
           console.error(err);
+          toast.error('게시물을 불러오지 못했습니다.');
         }
       };
       loadPost();
@@ -401,6 +404,7 @@ const PostCreate = ({ isEdit = false }) => {
       setMyProducts(data?.product ?? []);
     } catch (err) {
       console.error(err);
+      toast.error('상품 목록을 불러오지 못했습니다.');
     } finally {
       setIsLoadingProducts(false);
     }
@@ -463,6 +467,7 @@ const PostCreate = ({ isEdit = false }) => {
       }
     } catch (err) {
       console.error(err);
+      toast.error(isEdit ? '게시물 수정에 실패했습니다.' : '게시물 등록에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }

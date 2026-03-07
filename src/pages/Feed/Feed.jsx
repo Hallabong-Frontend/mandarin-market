@@ -10,6 +10,7 @@ import Spinner from '../../components/common/Spinner';
 import Header from '../../components/common/Header';
 import EmptyState from '../../components/common/EmptyState';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import EmptyLogoSvg from '../../assets/icons/icon-logo-gray.svg?react';
 const Wrapper = styled.div`
   padding-bottom: 70px;
@@ -31,6 +32,7 @@ const EmptyLogo = () => <EmptyLogoSvg width="100" height="100" />;
 const Feed = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const toast = useToast();
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showHeaderModal, setShowHeaderModal] = useState(false);
@@ -42,6 +44,7 @@ const Feed = () => {
       setPosts(data.posts || []);
     } catch (err) {
       console.error(err);
+      toast.error('피드를 불러오지 못했습니다.');
     } finally {
       setIsLoading(false);
     }

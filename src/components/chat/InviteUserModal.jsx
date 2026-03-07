@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { searchUser } from '../../api/user';
 import { inviteUsersToChat } from '../../firebase/chat';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import FullPagePanel from '../common/FullPagePanel';
 import Avatar from '../common/Avatar';
 import Spinner from '../common/Spinner';
@@ -148,6 +149,7 @@ const Checkbox = styled.div`
 
 const InviteUserModal = ({ isOpen, onClose, chatId, existingParticipants = [] }) => {
   const { user: me } = useAuth();
+  const toast = useToast();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [results, setResults] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -182,6 +184,7 @@ const InviteUserModal = ({ isOpen, onClose, chatId, existingParticipants = [] })
         setResults((data || []).filter((u) => u.accountname !== me.accountname));
       } catch (err) {
         console.error(err);
+        toast.error('사용자 검색에 실패했습니다.');
         setResults([]);
       } finally {
         setIsSearching(false);
@@ -205,9 +208,9 @@ const InviteUserModal = ({ isOpen, onClose, chatId, existingParticipants = [] })
     try {
       await inviteUsersToChat(chatId, selectedUsers, me.accountname);
       onClose();
-      // Optional: show a toast or alert that users are invited
     } catch (err) {
       console.error(err);
+      toast.error('초대에 실패했습니다.');
     } finally {
       setIsInviting(false);
       setSelectedUsers([]);

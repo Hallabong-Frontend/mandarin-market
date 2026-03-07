@@ -4,6 +4,7 @@ import ImageIcon from '../../assets/icons/icon-image.svg?react';
 import EmojiIcon from '../../assets/icons/icon-emoji.svg?react';
 import EmojiPicker from './EmojiPicker';
 import { sendTextMessage, sendImageMessage, sendStickerMessage } from '../../firebase/chat';
+import { useToast } from '../../context/ToastContext';
 
 const InputArea = styled.div`
   position: fixed;
@@ -101,6 +102,7 @@ const PasteMenuItem = styled.li`
 `;
 
 const ChatInputBar = ({ chatId, senderAccountname }) => {
+  const toast = useToast();
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -176,6 +178,9 @@ const ChatInputBar = ({ chatId, senderAccountname }) => {
     setIsSending(true);
     try {
       await sendTextMessage(chatId, senderAccountname, text);
+    } catch (err) {
+      console.error(err);
+      toast.error('메시지 전송에 실패했습니다.');
     } finally {
       setIsSending(false);
     }
@@ -194,6 +199,9 @@ const ChatInputBar = ({ chatId, senderAccountname }) => {
     setIsSending(true);
     try {
       await sendImageMessage(chatId, senderAccountname, file);
+    } catch (err) {
+      console.error(err);
+      toast.error('이미지 전송에 실패했습니다.');
     } finally {
       setIsSending(false);
       e.target.value = '';
@@ -206,6 +214,9 @@ const ChatInputBar = ({ chatId, senderAccountname }) => {
     setIsSending(true);
     try {
       await sendStickerMessage(chatId, senderAccountname, stickerKey);
+    } catch (err) {
+      console.error(err);
+      toast.error('스티커 전송에 실패했습니다.');
     } finally {
       setIsSending(false);
     }
