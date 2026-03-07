@@ -1,9 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-import { register, uploadImage, checkAccountValid } from '../../api/auth';
+import { register, uploadImage, checkAccountValid, login } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
-import { validateAccountname, getImageUrl } from '../../utils/format';
+import { validateAccountname } from '../../utils/format';
+import AuthInput from '../../components/common/AuthInput';
+import SubmitButton from '../../components/common/SubmitButton';
+import Avatar from '../../components/common/Avatar';
+import ImageIconSvg from '../../assets/icons/icon-image.svg?react';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -37,15 +41,6 @@ const AvatarContainer = styled.div`
   height: 100px;
 `;
 
-const Avatar = styled.img`
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  object-fit: cover;
-  background-color: ${({ theme }) => theme.colors.gray100};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-`;
-
 const AvatarEditBtn = styled.button`
   position: absolute;
   bottom: 0;
@@ -65,60 +60,23 @@ const Form = styled.form`
   gap: 20px;
 `;
 
-const Field = styled.div`
+const FieldGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
 `;
 
-const Label = styled.label`
-  font-size: ${({ theme }) => theme.fonts.size.sm};
-  color: ${({ theme }) => theme.colors.gray400};
-`;
-
-const Input = styled.input`
-  width: 100%;
-  border: none;
-  border-bottom: 1px solid ${({ $focused, $error, theme }) =>
-    $error ? theme.colors.error : $focused ? theme.colors.primary : theme.colors.border};
-  padding: 8px 0;
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  color: ${({ theme }) => theme.colors.black};
-  background: transparent;
-  transition: border-color 0.2s;
-
-  &::placeholder { color: ${({ theme }) => theme.colors.gray300}; }
-`;
-
 const ErrorText = styled.p`
   font-size: ${({ theme }) => theme.fonts.size.xs};
   color: ${({ theme }) => theme.colors.error};
+  text-align: center;
 `;
 
-const SuccessText = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.xs};
-  color: ${({ theme }) => theme.colors.success};
-`;
-
-const SubmitButton = styled.button`
+const ButtonWrapper = styled.div`
   margin-top: 8px;
-  width: 100%;
-  padding: 14px;
-  border-radius: ${({ theme }) => theme.borderRadius.round};
-  background-color: ${({ disabled, theme }) => disabled ? theme.colors.gray200 : theme.colors.primary};
-  color: ${({ theme }) => theme.colors.white};
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  font-weight: ${({ theme }) => theme.fonts.weight.medium};
-  transition: ${({ theme }) => theme.transitions.base};
-  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
 `;
 
-const CameraIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-    <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="2"/>
-  </svg>
-);
+const ImageIcon = () => <ImageIconSvg width="18" height="18" />;
 
 const ProfileSetup = () => {
   const navigate = useNavigate();
@@ -128,11 +86,16 @@ const ProfileSetup = () => {
 
   const { email, password } = location.state || {};
 
+  useEffect(() => {
+    if (!email || !password) {
+      navigate('/signup');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [form, setForm] = useState({ username: '', accountname: '', intro: '' });
-  const [focused, setFocused] = useState({});
   const [errors, setErrors] = useState({});
   const [accountValid, setAccountValid] = useState(false);
-  const [previewImage, setPreviewImage] = useState('https://estapi.mandarin.weniv.co.kr/Ellipse.png');
+  const [previewImage, setPreviewImage] = useState('https://dev.wenivops.co.kr/services/mandarin/Ellipse.png');
   const [imageFile, setImageFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -141,30 +104,30 @@ const ProfileSetup = () => {
     form.username.length <= 10 &&
     accountValid &&
     !errors.username &&
-    !errors.accountname;
+    !errors.accountname &&
+    !errors.general;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
     if (name === 'accountname') setAccountValid(false);
+    if (errors.general) setErrors({ ...errors, general: '' });
   };
 
   const handleUsernameBlur = () => {
-    setFocused({ ...focused, username: false });
     if (!form.username) return;
     if (form.username.length < 2 || form.username.length > 10) {
-      setErrors({ ...errors, username: '사용자 이름은 2~10자 이내여야 합니다.' });
+      setErrors({ ...errors, username: '*사용자 이름은 2~10자 이내여야 합니다.' });
     } else {
       setErrors({ ...errors, username: '' });
     }
   };
 
   const handleAccountBlur = async () => {
-    setFocused({ ...focused, accountname: false });
     if (!form.accountname) return;
 
     if (!validateAccountname(form.accountname)) {
-      setErrors({ ...errors, accountname: '영문, 숫자, 밑줄, 마침표만 사용 가능합니다.' });
+      setErrors({ ...errors, accountname: '*영문, 숫자, 밑줄 및 마침표만 사용할 수 있습니다.' });
       return;
     }
 
@@ -174,11 +137,11 @@ const ProfileSetup = () => {
         setErrors({ ...errors, accountname: '' });
         setAccountValid(true);
       } else {
-        setErrors({ ...errors, accountname: data.message });
+        setErrors({ ...errors, accountname: '*이미 사용 중인 ID입니다.' });
         setAccountValid(false);
       }
-    } catch (err) {
-      setErrors({ ...errors, accountname: err.response?.data?.message || '이미 사용 중인 계정ID입니다.' });
+    } catch (error) {
+      setErrors({ ...errors, accountname: '*이미 사용 중인 ID입니다.' });
       setAccountValid(false);
     }
   };
@@ -197,26 +160,30 @@ const ProfileSetup = () => {
     if (!isValid || isLoading) return;
 
     setIsLoading(true);
+
+    // 1단계: 이미지 업로드
+    let imageUrl = '';
     try {
-      let imageUrl = '';
       if (imageFile) {
         const imgData = await uploadImage(imageFile);
         imageUrl = imgData.filename;
       }
+    } catch {
+      setErrors({ ...errors, general: '이미지 업로드에 실패했습니다.' });
+      setIsLoading(false);
+      return;
+    }
 
-      const data = await register({
+    // 2단계: 회원가입
+    try {
+      await register({
         email,
         password,
         username: form.username,
         accountname: form.accountname,
         intro: form.intro,
-        image: imageUrl || 'https://estapi.mandarin.weniv.co.kr/Ellipse.png',
+        image: imageUrl || 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png',
       });
-
-      if (data.user?.token) {
-        authLogin(data.user.token, data.user);
-        navigate('/feed', { replace: true });
-      }
     } catch (err) {
       const msg = err.response?.data?.message;
       if (msg?.includes('계정')) {
@@ -224,13 +191,26 @@ const ProfileSetup = () => {
       } else {
         setErrors({ ...errors, general: msg || '회원가입에 실패했습니다.' });
       }
+      setIsLoading(false);
+      return;
+    }
+
+    // 3단계: 자동 로그인 (register 성공 후)
+    try {
+      const loginData = await login(email, password);
+      const token = loginData.token ?? loginData.user?.token;
+      const userData = loginData.token ? loginData : loginData.user;
+      authLogin(token, userData);
+      navigate('/feed', { replace: true });
+    } catch {
+      // register는 이미 완료 → 로그인 페이지로 안내
+      navigate('/login');
     } finally {
       setIsLoading(false);
     }
   };
 
   if (!email || !password) {
-    navigate('/signup');
     return null;
   }
 
@@ -241,67 +221,53 @@ const ProfileSetup = () => {
 
       <AvatarWrapper>
         <AvatarContainer>
-          <Avatar src={previewImage} alt="프로필 이미지" onError={(e) => { e.target.src = 'https://estapi.mandarin.weniv.co.kr/Ellipse.png'; }} />
+          <Avatar src={previewImage} alt="프로필 이미지" size="100px" border />
           <AvatarEditBtn type="button" onClick={() => fileRef.current?.click()}>
-            <CameraIcon />
+            <ImageIcon />
           </AvatarEditBtn>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
         </AvatarContainer>
       </AvatarWrapper>
 
       <Form onSubmit={handleSubmit}>
-        <Field>
-          <Label>사용자 이름</Label>
-          <Input
-            type="text"
-            name="username"
-            value={form.username}
-            onChange={handleChange}
-            onFocus={() => setFocused({ ...focused, username: true })}
-            onBlur={handleUsernameBlur}
-            $focused={focused.username}
-            $error={!!errors.username}
-            placeholder="2~10자 이내여야 합니다."
-          />
-          {errors.username && <ErrorText>{errors.username}</ErrorText>}
-        </Field>
+        <AuthInput
+          label="사용자 이름"
+          type="text"
+          name="username"
+          value={form.username}
+          onChange={handleChange}
+          onBlur={handleUsernameBlur}
+          placeholder="2~10자 이내여야 합니다."
+          errorText={errors.username}
+        />
 
-        <Field>
-          <Label>계정 ID</Label>
-          <Input
+        <FieldGroup>
+          <AuthInput
+            label="계정 ID"
             type="text"
             name="accountname"
             value={form.accountname}
             onChange={handleChange}
-            onFocus={() => setFocused({ ...focused, accountname: true })}
             onBlur={handleAccountBlur}
-            $focused={focused.accountname}
-            $error={!!errors.accountname}
-            placeholder="영문, 숫자, 밑줄, 마침표 사용 가능"
+            placeholder="영문, 숫자, 특수문자(.),(_)만 사용 가능합니다."
+            errorText={errors.accountname}
           />
-          {errors.accountname && <ErrorText>{errors.accountname}</ErrorText>}
-          {accountValid && !errors.accountname && <SuccessText>사용 가능한 계정ID입니다.</SuccessText>}
-        </Field>
+        </FieldGroup>
 
-        <Field>
-          <Label>소개</Label>
-          <Input
-            type="text"
-            name="intro"
-            value={form.intro}
-            onChange={handleChange}
-            onFocus={() => setFocused({ ...focused, intro: true })}
-            onBlur={() => setFocused({ ...focused, intro: false })}
-            $focused={focused.intro}
-            placeholder="자신을 소개해주세요"
-          />
-        </Field>
+        <AuthInput
+          label="소개"
+          type="text"
+          name="intro"
+          value={form.intro}
+          onChange={handleChange}
+          placeholder="자신과 판매할 상품에 대해 소개해 주세요!"
+        />
 
-        {errors.general && <ErrorText style={{ textAlign: 'center' }}>{errors.general}</ErrorText>}
+        {errors.general && <ErrorText>{errors.general}</ErrorText>}
 
-        <SubmitButton type="submit" disabled={!isValid || isLoading}>
-          {isLoading ? '가입 중...' : '감귤마켓 시작하기'}
-        </SubmitButton>
+        <ButtonWrapper>
+          <SubmitButton disabled={!isValid || isLoading}>{isLoading ? '가입 중...' : '감귤마켓 시작하기'}</SubmitButton>
+        </ButtonWrapper>
       </Form>
     </Wrapper>
   );

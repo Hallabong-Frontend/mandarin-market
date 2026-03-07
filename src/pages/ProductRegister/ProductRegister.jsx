@@ -1,13 +1,18 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import styled, { keyframes } from 'styled-components';
+import styled from 'styled-components';
 import { createProduct, updateProduct, getProduct } from '../../api/product';
 import { uploadImage } from '../../api/auth';
 import { generateProductInfo, parseProductInfo } from '../../api/ai';
 import { getImageUrl, formatPrice, parsePrice } from '../../utils/format';
+import useForm from '../../hooks/useForm';
+import UploadIconSvg from '../../assets/icons/icon-upload.svg?react';
 import Header from '../../components/common/Header';
 import AlertModal from '../../components/common/AlertModal';
-import { useEffect } from 'react';
+import AuthInput from '../../components/common/AuthInput';
+import { SpinnerRing } from '../../components/common/Spinner';
+import { AI_DESC_SEPARATOR } from '../../constants/common';
+import { useToast } from '../../context/ToastContext';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -63,37 +68,10 @@ const Form = styled.form`
   margin-top: 16px;
 `;
 
-const Field = styled.div`
+const ItemNameField = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
-`;
-
-const Label = styled.label`
-  font-size: ${({ theme }) => theme.fonts.size.sm};
-  color: ${({ theme }) => theme.colors.gray400};
-`;
-
-const Input = styled.input`
-  width: 100%;
-  border: none;
-  border-bottom: 1px solid ${({ $focused, theme }) => $focused ? theme.colors.primary : theme.colors.border};
-  padding: 8px 0;
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  color: ${({ theme }) => theme.colors.black};
-  background: transparent;
-  transition: border-color 0.2s;
-
-  &::placeholder { color: ${({ theme }) => theme.colors.gray300}; }
-`;
-
-const ErrorText = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.xs};
-  color: ${({ theme }) => theme.colors.error};
-`;
-
-const spin = keyframes`
-  to { transform: rotate(360deg); }
 `;
 
 const AiButton = styled.button`
@@ -125,16 +103,6 @@ const AiButton = styled.button`
   }
 `;
 
-const SpinnerCircle = styled.span`
-  width: 14px;
-  height: 14px;
-  border: 2px solid ${({ theme }) => theme.colors.primary};
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: ${spin} 0.7s linear infinite;
-  display: inline-block;
-`;
-
 const AiDescBox = styled.div`
   background-color: ${({ theme }) => theme.colors.primaryLight};
   border-left: 3px solid ${({ theme }) => theme.colors.primary};
@@ -153,26 +121,14 @@ const AiDescLabel = styled.p`
   margin-bottom: 4px;
 `;
 
-const UploadIcon = () => (
-  <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-    <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="#DBDBDB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <polyline points="17 8 12 3 7 8" stroke="#DBDBDB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <line x1="12" y1="3" x2="12" y2="15" stroke="#DBDBDB" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-);
+const UploadIcon = () => <UploadIconSvg width="32" height="32" />;
 
 const ProductRegister = ({ isEdit = false }) => {
   const navigate = useNavigate();
   const { productId } = useParams();
   const fileRef = useRef(null);
+  const toast = useToast();
 
-  const [form, setForm] = useState({
-    itemName: '',
-    price: '',
-    link: '',
-  });
-  const [focused, setFocused] = useState({});
-  const [errors, setErrors] = useState({});
   const [previewImage, setPreviewImage] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [existingImageUrl, setExistingImageUrl] = useState('');
@@ -182,67 +138,88 @@ const ProductRegister = ({ isEdit = false }) => {
   const [aiDescription, setAiDescription] = useState('');
   const [showOverwriteModal, setShowOverwriteModal] = useState(false);
 
+  const {
+    values: form,
+    setValues,
+    errors,
+    setFieldError,
+    handleChange,
+    handleBlur,
+    isValid,
+  } = useForm({
+    initialValues: {
+      itemName: '',
+      price: '',
+      link: '',
+    },
+    formatters: {
+      price: parsePrice,
+    },
+    validators: {
+      itemName: (value) => {
+        if (!value) return '';
+        if (value.length < 2 || value.length > 15) {
+          return '상품명은 2~15자 이내여야 합니다.';
+        }
+        return '';
+      },
+    },
+    getIsValid: ({ values, errors }) =>
+      !!previewImage &&
+      values.itemName.length >= 2 &&
+      values.itemName.length <= 15 &&
+      !!values.price &&
+      !!values.link &&
+      !errors.itemName,
+  });
+
   useEffect(() => {
     if (isEdit && productId) {
       const loadProduct = async () => {
         try {
           const data = await getProduct(productId);
           const product = data.product;
-          setForm({
-            itemName: product.itemName,
+          const separatorIndex = product.itemName.indexOf(AI_DESC_SEPARATOR);
+          const parsedName =
+            separatorIndex !== -1
+              ? product.itemName.slice(0, separatorIndex)
+              : product.itemName;
+          const parsedDesc =
+            separatorIndex !== -1
+              ? product.itemName.slice(separatorIndex + AI_DESC_SEPARATOR.length)
+              : '';
+          setValues({
+            itemName: parsedName,
             price: String(product.price),
             link: product.link,
           });
+          if (parsedDesc) {
+            setAiDescription(parsedDesc);
+            setAiGenerated(true);
+          }
           setPreviewImage(getImageUrl(product.itemImage));
           setExistingImageUrl(product.itemImage);
         } catch (err) {
           console.error(err);
+          toast.error('상품 정보를 불러오지 못했습니다.');
         }
       };
       loadProduct();
     }
-  }, [isEdit, productId]);
-
-  const isValid =
-    previewImage &&
-    form.itemName.length >= 2 &&
-    form.itemName.length <= 15 &&
-    form.price &&
-    form.link &&
-    !errors.itemName;
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === 'price') {
-      const numericValue = parsePrice(value);
-      setForm({ ...form, price: numericValue });
-    } else {
-      setForm({ ...form, [name]: value });
-    }
-  };
-
-  const handleNameBlur = () => {
-    setFocused({ ...focused, itemName: false });
-    if (!form.itemName) return;
-    if (form.itemName.length < 2 || form.itemName.length > 15) {
-      setErrors({ ...errors, itemName: '상품명은 2~15자 이내여야 합니다.' });
-    } else {
-      setErrors({ ...errors, itemName: '' });
-    }
-  };
+  }, [isEdit, productId, setValues]);
 
   const doAiGenerate = async () => {
     setIsAiLoading(true);
     try {
       const raw = await generateProductInfo(previewImage || null);
       const { itemName, description } = parseProductInfo(raw);
-      setForm((prev) => ({ ...prev, itemName }));
+      setValues((prev) => ({ ...prev, itemName }));
       setAiDescription(description);
       setAiGenerated(true);
-      setErrors((prev) => ({ ...prev, itemName: '' }));
+      setFieldError('itemName', '');
     } catch (err) {
       console.error(err);
-      alert('AI 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+      toast.error('AI 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsAiLoading(false);
     }
@@ -281,8 +258,12 @@ const ProductRegister = ({ isEdit = false }) => {
         imageUrl = imgData.filename;
       }
 
+      const combinedItemName = aiDescription
+        ? `${form.itemName}${AI_DESC_SEPARATOR}${aiDescription}`
+        : form.itemName;
+
       const productData = {
-        itemName: form.itemName,
+        itemName: combinedItemName,
         price: Number(form.price),
         link: form.link,
         itemImage: imageUrl,
@@ -297,6 +278,7 @@ const ProductRegister = ({ isEdit = false }) => {
       navigate(-1);
     } catch (err) {
       console.error(err);
+      toast.error(isEdit ? '상품 수정에 실패했습니다.' : '상품 등록에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -306,7 +288,6 @@ const ProductRegister = ({ isEdit = false }) => {
     <Wrapper>
       <Header
         type="back-title-save"
-        title={isEdit ? '상품 수정' : '상품 등록'}
         saveDisabled={!isValid || isLoading}
         onSave={handleSave}
       />
@@ -339,7 +320,7 @@ const ProductRegister = ({ isEdit = false }) => {
         >
           {isAiLoading ? (
             <>
-              <SpinnerCircle />
+              <SpinnerRing $size="14px" />
               AI 생성 중...
             </>
           ) : aiGenerated ? (
@@ -350,55 +331,41 @@ const ProductRegister = ({ isEdit = false }) => {
         </AiButton>
 
         <Form onSubmit={handleSave}>
-          <Field>
-            <Label>상품명</Label>
-            <Input
-              type="text"
+          <ItemNameField>
+            <AuthInput
+              label="상품명"
               name="itemName"
               value={form.itemName}
               onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, itemName: true })}
-              onBlur={handleNameBlur}
-              $focused={focused.itemName}
+              onBlur={() => handleBlur('itemName')}
               placeholder="상품명을 입력해주세요"
+              errorText={errors.itemName}
             />
-            {errors.itemName && <ErrorText>{errors.itemName}</ErrorText>}
-            {aiDescription ? (
+            {aiDescription && (
               <>
                 <AiDescLabel>AI 생성 설명</AiDescLabel>
                 <AiDescBox>{aiDescription}</AiDescBox>
               </>
-            ) : null}
-          </Field>
+            )}
+          </ItemNameField>
 
-          <Field>
-            <Label>가격</Label>
-            <Input
-              type="text"
-              name="price"
-              value={form.price ? formatPrice(form.price) : ''}
-              onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, price: true })}
-              onBlur={() => setFocused({ ...focused, price: false })}
-              $focused={focused.price}
-              placeholder="가격을 입력해주세요"
-              inputMode="numeric"
-            />
-          </Field>
+          <AuthInput
+            label="가격"
+            name="price"
+            value={form.price ? formatPrice(form.price) : ''}
+            onChange={handleChange}
+            placeholder="가격을 입력해주세요"
+            inputMode="numeric"
+          />
 
-          <Field>
-            <Label>판매링크</Label>
-            <Input
-              type="url"
-              name="link"
-              value={form.link}
-              onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, link: true })}
-              onBlur={() => setFocused({ ...focused, link: false })}
-              $focused={focused.link}
-              placeholder="URL을 입력해주세요"
-            />
-          </Field>
+          <AuthInput
+            label="판매링크"
+            type="url"
+            name="link"
+            value={form.link}
+            onChange={handleChange}
+            placeholder="URL을 입력해주세요"
+          />
         </Form>
       </Content>
 

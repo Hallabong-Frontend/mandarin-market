@@ -3,19 +3,32 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeModeProvider, useThemeMode } from './context/ThemeModeContext';
+import { ToastProvider } from './context/ToastContext';
 import GlobalStyles from './styles/GlobalStyles';
-import theme from './styles/theme';
 import App from './App.jsx';
+
+const RootProviders = () => {
+  const { theme } = useThemeMode();
+
+  return (
+    <ThemeProvider theme={theme}>
+      <GlobalStyles />
+      <AuthProvider>
+        <ToastProvider>
+          <App />
+        </ToastProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+};
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <ThemeProvider theme={theme}>
-        <GlobalStyles />
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </ThemeProvider>
+      <ThemeModeProvider>
+        <RootProviders />
+      </ThemeModeProvider>
     </BrowserRouter>
   </StrictMode>
 );

@@ -35,8 +35,7 @@ export const register = async (userData) => {
 // 내 정보 가져오기
 export const getMyInfo = async () => {
   const response = await axiosInstance.get('/user/myinfo');
-  // 응답이 배열 형태 [{ user: {...} }]
-  return Array.isArray(response.data) ? response.data[0] : response.data;
+  return response.data;
 };
 
 // 토큰 유효성 검사
@@ -53,8 +52,7 @@ export const uploadImage = async (file) => {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   const data = response.data;
-  // filename을 풀 URL로 변환하여 반환
-  return { ...data, filename: `https://estapi.mandarin.weniv.co.kr/${data.filename}` };
+  return data.info;
 };
 
 // 내 프로필 수정

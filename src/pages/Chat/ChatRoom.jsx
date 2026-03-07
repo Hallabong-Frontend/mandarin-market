@@ -1,276 +1,855 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { doc, onSnapshot } from 'firebase/firestore';
 import styled from 'styled-components';
+import AlertModal from '../../components/common/AlertModal';
 import BottomModal from '../../components/common/BottomModal';
+import Header from '../../components/common/Header';
+import ArrowLeftIconSvg from '../../assets/icons/icon-arrow-left.svg?react';
+import heartFillSrc from '../../assets/emoji/icon_heart_fill.svg';
+import thumbsUpSrc from '../../assets/emoji/icon_thumbs_up_fill.png';
+import starSrc from '../../assets/emoji/icon_star.png';
+import { useAuth } from '../../context/AuthContext';
+import { db } from '../../firebase/config';
+import {
+  subscribeToMessages,
+  fetchOlderMessages,
+  toggleReaction,
+  markAsRead,
+  editMessage,
+  deleteMessage,
+  leaveChat,
+  saveChatTheme,
+  setNickname,
+  updateChatTitle,
+} from '../../firebase/chat';
+import NicknameModal from '../../components/chat/NicknameModal';
+import Spinner from '../../components/common/Spinner';
+import { uploadImage } from '../../api/auth';
+import { getImageUrl } from '../../utils/format';
+import ChatThemePanel, { BG_COLORS, BUBBLE_COLORS } from './ChatThemePanel';
+import InviteUserModal from '../../components/chat/InviteUserModal';
+import GroupMembersPanel from '../../components/chat/GroupMembersPanel';
+import ChatMessageItem from '../../components/chat/ChatMessageItem';
+import ChatInputBar from '../../components/chat/ChatInputBar';
+import ChatContextMenu from '../../components/chat/ChatContextMenu';
+
+const REACTION_SRC_MAP = {
+  heart: heartFillSrc,
+  thumbs_up: thumbsUpSrc,
+  star: starSrc,
+};
 
 const Wrapper = styled.div`
   min-height: 100vh;
-  background-color: ${({ theme }) => theme.colors.gray100};
+  background-color: ${({ $bgColor, $bgImage }) => ($bgImage ? 'transparent' : $bgColor || '#F2F2F2')};
+  background-image: ${({ $bgImage }) => ($bgImage ? `url(${$bgImage})` : 'none')};
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   display: flex;
   flex-direction: column;
-  padding-bottom: 72px;
-`;
-
-const ChatRoomHeader = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: ${({ theme }) => theme.zIndex.header};
-  background-color: ${({ theme }) => theme.colors.white};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-`;
-
-const HeaderLeft = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const BackButton = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const HeaderTitle = styled.h1`
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  font-weight: ${({ theme }) => theme.fonts.weight.bold};
-  color: ${({ theme }) => theme.colors.black};
-`;
-
-const MoreButton = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding-bottom: 56px;
 `;
 
 const MessageList = styled.div`
   flex: 1;
-  padding: 16px;
+  padding: 16px 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-`;
-
-const MessageWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: ${({ $isMine }) => $isMine ? 'flex-end' : 'flex-start'};
-`;
-
-const MessageRow = styled.div`
-  display: flex;
-  align-items: flex-end;
   gap: 8px;
-  flex-direction: ${({ $isMine }) => $isMine ? 'row-reverse' : 'row'};
 `;
 
-const OtherAvatar = styled.img`
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  background-color: ${({ theme }) => theme.colors.gray200};
-  flex-shrink: 0;
-`;
-
-const Bubble = styled.div`
-  max-width: 60%;
-  padding: 10px 14px;
-  border-radius: ${({ $isMine }) => $isMine ? '16px 0 16px 16px' : '0 16px 16px 16px'};
-  background-color: ${({ $isMine, theme }) => $isMine ? theme.colors.primary : theme.colors.white};
-  color: ${({ $isMine, theme }) => $isMine ? theme.colors.white : theme.colors.black};
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  line-height: 1.5;
-  word-break: break-word;
-`;
-
-const ChatTime = styled.span`
-  font-size: ${({ theme }) => theme.fonts.size.xs};
-  color: ${({ theme }) => theme.colors.gray400};
-`;
-
-const SeenLabel = styled.span`
-  font-size: ${({ theme }) => theme.fonts.size.xs};
-  color: ${({ theme }) => theme.colors.gray400};
-  margin-top: 4px;
-`;
-
-const ChatImage = styled.img`
-  max-width: 200px;
-  border-radius: ${({ theme }) => theme.borderRadius.base};
-  object-fit: cover;
-`;
-
-const InputArea = styled.div`
+const ScrollDownButtonArea = styled.div`
   position: fixed;
-  bottom: 0;
+  bottom: 72px;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
   max-width: 390px;
-  background-color: ${({ theme }) => theme.colors.white};
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
+  padding: 0 16px;
   display: flex;
-  align-items: center;
-  padding: 10px 16px;
-  gap: 8px;
+  justify-content: flex-end;
+  pointer-events: none;
+  z-index: ${({ theme }) => theme.zIndex.header};
 `;
 
-const ImageInputBtn = styled.button`
-  width: 32px;
-  height: 32px;
+const ScrollDownButton = styled.button`
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  background-color: ${({ theme }) => theme.colors.white};
+  color: ${({ theme }) => theme.colors.gray500};
+  box-shadow: ${({ theme }) => theme.shadows.sm};
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1;
+  pointer-events: auto;
 `;
 
-const TextInput = styled.input`
+const NewMessageAlert = styled.button`
+  position: fixed;
+  bottom: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.white};
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(242, 110, 34, 0.3);
+  z-index: ${({ theme }) => theme.zIndex.header};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  pointer-events: auto;
+  white-space: nowrap;
+  animation: slideUp 0.3s ease-out;
+
+  @keyframes slideUp {
+    from {
+      transform: translate(-50%, 15px);
+      opacity: 0;
+    }
+    to {
+      transform: translate(-50%, 0);
+      opacity: 1;
+    }
+  }
+
+  &:hover {
+    background-color: #d15d1b;
+  }
+`;
+
+const ScrollDownIcon = styled(ArrowLeftIconSvg)`
+  width: 18px;
+  height: 18px;
+  transform: rotate(-90deg);
+
+  path {
+    stroke: ${({ theme }) => theme.colors.gray500};
+  }
+`;
+
+const TopPanel = styled.div`
+  position: fixed;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 390px;
+  padding: 8px 12px;
+  background: ${({ theme }) => theme.colors.white};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  z-index: ${({ theme }) => theme.zIndex.header};
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const TopInput = styled.input`
   flex: 1;
-  background-color: ${({ theme }) => theme.colors.gray100};
-  border-radius: ${({ theme }) => theme.borderRadius.round};
-  padding: 8px 16px;
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  color: ${({ theme }) => theme.colors.black};
-
-  &::placeholder { color: ${({ theme }) => theme.colors.gray300}; }
+  height: 32px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.base};
+  padding: 0 10px;
+  font-size: ${({ theme }) => theme.fonts.size.sm};
 `;
 
-const SendButton = styled.button`
+const TopBtn = styled.button`
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  color: ${({ theme }) => theme.colors.gray500};
+`;
+
+const TitleInline = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const MemberCountBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: ${({ theme }) => theme.fonts.size.sm};
   font-weight: ${({ theme }) => theme.fonts.weight.medium};
-  color: ${({ disabled, theme }) => disabled ? theme.colors.gray300 : theme.colors.primary};
+  color: ${({ theme }) => theme.colors.gray500};
+  line-height: normal;
+  vertical-align: middle;
+  transform: translateY(2px);
 `;
 
-const BackIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M15 18L9 12L15 6" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const MoreDots = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <circle cx="5" cy="12" r="2" fill="#767676"/>
-    <circle cx="12" cy="12" r="2" fill="#767676"/>
-    <circle cx="19" cy="12" r="2" fill="#767676"/>
-  </svg>
-);
-
-const ImageIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="3" width="18" height="18" rx="3" stroke="#767676" strokeWidth="2"/>
-    <circle cx="8.5" cy="8.5" r="1.5" stroke="#767676" strokeWidth="1.5"/>
-    <path d="M21 15L16 10L5 21" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const DUMMY_MESSAGES = [
-  {
-    id: 1,
-    isMine: false,
-    text: '옷을 인생을 그러므로 없으면 것은 이상은 곧 우리의 위하여, 뿐이다. 이상의 청춘의 뼈 따뜻한 그들의 그와 약동하다. 대고, 못할 넋는 풍부하게 씩는 인생의 인생의 힘입니다.',
-    time: '12:37',
-    seen: false,
-    avatar: 'https://estapi.mandarin.weniv.co.kr/Ellipse.png',
-  },
-  {
-    id: 2,
-    isMine: true,
-    text: '안녕하세요. 감귤 사고싶어요요요요',
-    time: '12:41',
-    seen: true,
-  },
-  {
-    id: 3,
-    isMine: false,
-    text: '안녕하세요. 사진이 너무 맛있어요. 한라봉 언제 애월읍 있나요? 기다리고 기다렸어요 댕댕댕댕',
-    time: '12:50',
-    seen: false,
-    image: 'https://estapi.mandarin.weniv.co.kr/uploads/1608551784259.jpg',
-    avatar: 'https://estapi.mandarin.weniv.co.kr/Ellipse.png',
-  },
-];
-
 const ChatRoom = () => {
+  const { chatId } = useParams();
   const navigate = useNavigate();
-  const fileRef = useRef(null);
-  const [inputText, setInputText] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const { user } = useAuth();
+  const bottomRef = useRef(null);
+  const contextMenuRef = useRef(null);
 
-  const isActive = inputText.trim();
+  const [chatInfo, setChatInfo] = useState(null);
+  const [realtimeMessages, setRealtimeMessages] = useState([]);
+  const [olderMessages, setOlderMessages] = useState([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [contextMenu, setContextMenu] = useState({
+    show: false,
+    anchorRect: null,
+    messageId: null,
+    isMine: false,
+    text: '',
+    type: 'message',
+    reactions: {},
+  });
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
+
+  const [showDeleteMsgAlert, setShowDeleteMsgAlert] = useState(false);
+  const [showReportAlert, setShowReportAlert] = useState(false);
+  const [showBgPanel, setShowBgPanel] = useState(false);
+  const [showMembersPanel, setShowMembersPanel] = useState(false);
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
+
+  const [bgColor, setBgColor] = useState(BG_COLORS[0].value);
+  const [bubbleColor, setBubbleColor] = useState(BUBBLE_COLORS[0].value);
+  const [otherBubbleColor, setOtherBubbleColor] = useState(null);
+  const [bgImage, setBgImage] = useState(null);
+  const [themeReady, setThemeReady] = useState(false);
+  const [isBgImageUploading, setIsBgImageUploading] = useState(false);
+
+  const [showScrollDownButton, setShowScrollDownButton] = useState(false);
+  const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
+
+  const [showSearchPanel, setShowSearchPanel] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchMatchIds, setSearchMatchIds] = useState([]);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+
+  const [showRenamePanel, setShowRenamePanel] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+
+  const themeInitialized = useRef(false);
+  const isInitialLoad = useRef(true);
+  const initialScrollDone = useRef(false);
+  const prevLastMsgIdRef = useRef(null);
+  const joinedAtRef = useRef(null);
+  const [joinedAtReady, setJoinedAtReady] = useState(false);
+  const topSentinelRef = useRef(null);
+  const prevScrollHeightRef = useRef(null);
+  const prevScrollYRef = useRef(null);
+  const prevRealtimeRef = useRef([]);
+  const scrollToBottomRef = useRef(false);
+  const scrollIntentRef = useRef(false);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'chats', chatId), (snap) => {
+      if (snap.exists()) {
+        setChatInfo(snap.data());
+      } else {
+        navigate('/not-found', { replace: true });
+      }
+    });
+    return () => unsub();
+  }, [chatId]);
+
+  useEffect(() => {
+    if (!chatInfo || !user?.accountname || themeInitialized.current) return;
+    const saved = chatInfo.themes?.[user.accountname];
+    if (saved?.bgColor) setBgColor(saved.bgColor);
+    if (saved?.bubbleColor) setBubbleColor(saved.bubbleColor);
+    if (saved?.otherBubbleColor) setOtherBubbleColor(saved.otherBubbleColor);
+    if (saved?.bgImage) setBgImage(saved.bgImage);
+    themeInitialized.current = true;
+    setThemeReady(true);
+  }, [chatInfo, user?.accountname]);
+
+  useEffect(() => {
+    if (!chatInfo || !user?.accountname || joinedAtReady) return;
+    joinedAtRef.current = chatInfo.participantInfo?.[user.accountname]?.joinedAt ?? null;
+    setJoinedAtReady(true);
+  }, [chatInfo, user?.accountname, joinedAtReady]);
+
+  useEffect(() => {
+    if (!chatId || !user?.accountname || !joinedAtReady) return;
+    const unsub = subscribeToMessages(chatId, setRealtimeMessages, joinedAtRef.current);
+    return () => unsub();
+  }, [chatId, user?.accountname, joinedAtReady]);
+
+  useEffect(() => {
+    if (user?.accountname) {
+      markAsRead(chatId, user.accountname);
+    }
+  }, [chatId, user?.accountname]);
+
+  // 실시간 구독 결과로 hasMore 초기화 (메시지 로드 전엔 false 유지)
+  useEffect(() => {
+    if (realtimeMessages.length === 0) return;
+    if (olderMessages.length === 0) {
+      setHasMore(realtimeMessages.length >= 40);
+    }
+  }, [realtimeMessages, olderMessages]);
+
+  // 렌더링에 사용할 메시지 목록: 이전 메시지 + 실시간 메시지 (중복 제거)
+  const displayMessages = useMemo(() => {
+    const ids = new Set();
+    return [...olderMessages, ...realtimeMessages].filter((m) => {
+      if (ids.has(m.id)) return false;
+      ids.add(m.id);
+      return true;
+    });
+  }, [olderMessages, realtimeMessages]);
+
+  // 실시간 구독 창에서 밀려난 메시지를 olderMessages로 보존 (갭 방지)
+  useEffect(() => {
+    if (olderMessages.length > 0 && prevRealtimeRef.current.length > 0) {
+      const realtimeIds = new Set(realtimeMessages.map((m) => m.id));
+      const olderIds = new Set(olderMessages.map((m) => m.id));
+      const dropped = prevRealtimeRef.current.filter(
+        (m) => !realtimeIds.has(m.id) && !olderIds.has(m.id),
+      );
+      if (dropped.length > 0) {
+        setOlderMessages((prev) =>
+          [...prev, ...dropped].sort(
+            (a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0),
+          ),
+        );
+      }
+    }
+    prevRealtimeRef.current = realtimeMessages;
+  }, [realtimeMessages]);
+
+  // 이전 메시지 로드 후 스크롤 위치 복원 / 갭 보정 후 맨 밑 유지
+  useLayoutEffect(() => {
+    if (prevScrollHeightRef.current !== null) {
+      const diff = document.documentElement.scrollHeight - prevScrollHeightRef.current;
+      window.scrollTo(0, (prevScrollYRef.current || 0) + diff);
+      prevScrollHeightRef.current = null;
+      prevScrollYRef.current = null;
+      scrollToBottomRef.current = false;
+    } else if (scrollToBottomRef.current) {
+      // gap prevention이 olderMessages를 추가해 DOM이 커졌을 때 다시 맨 밑으로 보정
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      scrollToBottomRef.current = false;
+    }
+  }, [olderMessages]);
+
+  // 이전 메시지 불러오기
+  const loadOlderMessages = async () => {
+    if (isLoadingMore || !hasMore) return;
+    const oldestTimestamp =
+      olderMessages.length > 0 ? olderMessages[0]?.createdAt : realtimeMessages[0]?.createdAt;
+    if (!oldestTimestamp) return;
+
+    setIsLoadingMore(true);
+    prevScrollHeightRef.current = document.documentElement.scrollHeight;
+    prevScrollYRef.current = window.scrollY;
+    try {
+      const result = await fetchOlderMessages(chatId, oldestTimestamp, 30, joinedAtRef.current);
+      setOlderMessages((prev) => [...result.messages, ...prev]);
+      setHasMore(result.hasMore);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  // 맨 위 sentinel이 화면에 보이면 이전 메시지 로드
+  useEffect(() => {
+    if (!topSentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) loadOlderMessages();
+      },
+      { threshold: 0, rootMargin: '80px 0px 0px 0px' },
+    );
+    observer.observe(topSentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, isLoadingMore, olderMessages, realtimeMessages]);
+
+  useLayoutEffect(() => {
+    if (realtimeMessages.length === 0) return;
+
+    const lastMessage = realtimeMessages[realtimeMessages.length - 1];
+    const isMine = lastMessage?.senderId === user?.accountname;
+    const isNewMessage = lastMessage?.id !== prevLastMsgIdRef.current;
+
+    // showScrollDownButton 상태 대신 실제 스크롤 위치로 판단
+    // (smooth 애니메이션 중 상태가 바뀌어 다음 메시지 자동 스크롤이 막히는 문제 방지)
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    const nearBottom = window.scrollY >= maxScroll - 300 || scrollIntentRef.current;
+
+    if (isInitialLoad.current) {
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      isInitialLoad.current = false;
+      initialScrollDone.current = true;
+    } else if (isNewMessage) {
+      initialScrollDone.current = false;
+      if (nearBottom || isMine) {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: isMine ? 'instant' : 'smooth' });
+        scrollToBottomRef.current = isMine;
+        if (!isMine) scrollIntentRef.current = true;
+        setShowNewMessageAlert(false);
+      } else {
+        setShowNewMessageAlert(true);
+      }
+    }
+
+    prevLastMsgIdRef.current = lastMessage?.id ?? null;
+  }, [realtimeMessages, user?.accountname]);
+
+  const handleMediaLoad = () => {
+    if (initialScrollDone.current) {
+      window.scrollTo(0, document.documentElement.scrollHeight);
+    }
+  };
+
+  useEffect(() => {
+    const updateScrollButton = () => {
+      if (!bottomRef.current) return;
+      const bottomTop = bottomRef.current.getBoundingClientRect().top;
+      const isNearBottom = bottomTop <= window.innerHeight - 72 + 24;
+      setShowScrollDownButton(!isNearBottom);
+
+      if (isNearBottom) {
+        setShowNewMessageAlert(false);
+        scrollIntentRef.current = false;
+      }
+    };
+
+    updateScrollButton();
+    window.addEventListener('scroll', updateScrollButton, { passive: true });
+    window.addEventListener('resize', updateScrollButton);
+    return () => {
+      window.removeEventListener('scroll', updateScrollButton);
+      window.removeEventListener('resize', updateScrollButton);
+    };
+  }, [displayMessages, themeReady]);
+
+  useEffect(() => {
+    if (!contextMenu.show) return;
+    const handleClick = () => setContextMenu((prev) => ({ ...prev, show: false }));
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [contextMenu.show]);
+
+  useEffect(() => {
+    const keyword = searchKeyword.trim().toLowerCase();
+    if (!keyword) {
+      setSearchMatchIds([]);
+      setCurrentMatchIndex(0);
+      return;
+    }
+    const matched = displayMessages
+      .filter((m) => (m.text || '').toLowerCase().includes(keyword))
+      .map((m) => m.id);
+    setSearchMatchIds(matched);
+    setCurrentMatchIndex(0);
+  }, [searchKeyword, displayMessages]);
+
+  const scrollToMessageById = (messageId) => {
+    if (!messageId) return;
+    const el = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  const goToNextMatch = () => {
+    if (!searchMatchIds.length) return;
+    const next = (currentMatchIndex + 1) % searchMatchIds.length;
+    setCurrentMatchIndex(next);
+    scrollToMessageById(searchMatchIds[next]);
+  };
+
+  const goToPrevMatch = () => {
+    if (!searchMatchIds.length) return;
+    const prev = (currentMatchIndex - 1 + searchMatchIds.length) % searchMatchIds.length;
+    setCurrentMatchIndex(prev);
+    scrollToMessageById(searchMatchIds[prev]);
+  };
+
+  useLayoutEffect(() => {
+    if (!contextMenu.show || !contextMenuRef.current || !contextMenu.anchorRect) return;
+    const menu = contextMenuRef.current;
+    const { width, height } = menu.getBoundingClientRect();
+    const { anchorRect } = contextMenu;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    let x = contextMenu.isMine ? anchorRect.left - width : anchorRect.right;
+    let y = anchorRect.top;
+
+    if (x + width > vw) x = vw - width - 8;
+    if (y + height > vh) y = vh - height - 8;
+    if (x < 0) x = 8;
+    if (y < 0) y = 8;
+
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+  }, [contextMenu.show, contextMenu.anchorRect, contextMenu.isMine]);
+
+  const otherParticipant = (() => {
+    if (!chatInfo || !user?.accountname) return null;
+    const otherAccountname = chatInfo.participants?.find((p) => p !== user.accountname);
+    const info = chatInfo.participantInfo?.[otherAccountname] || { username: '', image: '' };
+    return { ...info, accountname: otherAccountname };
+  })();
+
+  const handleContextMenu = (e, msg, isMine) => {
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setContextMenu({
+      show: true,
+      anchorRect: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
+      messageId: msg.id,
+      isMine,
+      text: msg.text,
+      type: 'message',
+      reactions: msg.reactions || {},
+    });
+  };
+
+  const handleEditStart = () => {
+    setEditingId(contextMenu.messageId);
+    setEditText(contextMenu.text);
+    setContextMenu((prev) => ({ ...prev, show: false }));
+  };
+
+  const confirmEdit = async (msg) => {
+    const trimmed = editText.trim();
+    if (!trimmed) return;
+    await editMessage(chatId, msg.id, trimmed);
+    setEditingId(null);
+  };
+
+  const handleDelete = () => {
+    setContextMenu((prev) => ({ ...prev, show: false }));
+    setShowDeleteMsgAlert(true);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(contextMenu.text);
+    setContextMenu((prev) => ({ ...prev, show: false }));
+  };
+
+  const handleReaction = async (reactionType) => {
+    if (!user?.accountname) return;
+    const { messageId, reactions } = contextMenu;
+    const hasReacted = reactions[reactionType]?.includes(user.accountname) || false;
+    setContextMenu((prev) => ({ ...prev, show: false }));
+    await toggleReaction(chatId, messageId, user.accountname, reactionType, hasReacted);
+  };
+
+  const handleReport = () => {
+    setContextMenu((prev) => ({ ...prev, show: false }));
+    setShowReportAlert(true);
+  };
+
+  const handleOpenRename = () => {
+    if (!chatInfo?.isGroupChat) return;
+    setShowSearchPanel(false);
+    setRenameValue(chatInfo?.groupTitle || '');
+    setShowModal(false);
+    requestAnimationFrame(() => {
+      setShowRenamePanel(true);
+    });
+  };
+
+  const handleSaveRename = async () => {
+    const trimmed = renameValue.trim();
+    if (!trimmed) return;
+    if (trimmed === (chatInfo?.groupTitle || '').trim()) {
+      setShowRenamePanel(false);
+      return;
+    }
+    await updateChatTitle(chatId, trimmed);
+    setShowRenamePanel(false);
+  };
+
+  const handleOpenSearch = () => {
+    setShowModal(false);
+    setShowRenamePanel(false);
+    setShowSearchPanel(true);
+  };
+
+  const handleBgImageChange = async (file) => {
+    if (!file) {
+      setBgImage(null);
+      saveChatTheme(chatId, user.accountname, { bgColor, bubbleColor, otherBubbleColor, bgImage: null });
+      return;
+    }
+    setIsBgImageUploading(true);
+    try {
+      const info = await uploadImage(file);
+      const url = getImageUrl(info.filename);
+      setBgImage(url);
+      saveChatTheme(chatId, user.accountname, { bgColor, bubbleColor, otherBubbleColor, bgImage: url });
+    } finally {
+      setIsBgImageUploading(false);
+    }
+  };
 
   const modalItems = [
-    { label: '채팅방 나가기', danger: true, onClick: () => navigate(-1) },
+    ...(chatInfo?.isGroupChat
+      ? [
+          {
+            label: '채팅방 이름 수정',
+            onClick: handleOpenRename,
+          },
+        ]
+      : []),
+    {
+      label: '테마 설정',
+      onClick: () => {
+        setShowModal(false);
+        setShowBgPanel(true);
+      },
+    },
+    ...(chatInfo?.isGroupChat
+      ? [
+          {
+            label: '구성원 보기',
+            onClick: () => {
+              setShowModal(false);
+              setShowMembersPanel(true);
+            },
+          },
+          {
+            label: '초대하기',
+            onClick: () => {
+              setShowModal(false);
+              setShowInviteModal(true);
+            },
+          },
+        ]
+      : [
+          {
+            label: '별명 설정',
+            onClick: () => {
+              setShowModal(false);
+              setShowNicknameModal(true);
+            },
+          },
+        ]),
+    {
+      label: '채팅방 나가기',
+      danger: true,
+      onClick: () => {
+        navigate('/chat');
+        leaveChat(chatId, user.accountname, chatInfo?.isGroupChat);
+      },
+    },
   ];
+
+  const chatTitle = chatInfo?.isGroupChat ? (
+    <TitleInline>
+      <span>{chatInfo?.groupTitle || ''}</span>
+      <MemberCountBadge>{chatInfo?.participants?.length || 0}</MemberCountBadge>
+    </TitleInline>
+  ) : (
+    chatInfo?.nicknames?.[user?.accountname]?.[otherParticipant?.accountname] || otherParticipant?.username || ''
+  );
+
+  const handleTitleClick = () => {
+    if (chatInfo?.isGroupChat) {
+      setShowMembersPanel(true);
+      return;
+    }
+    if (!otherParticipant?.accountname) return;
+    navigate(`/profile/${otherParticipant.accountname}`);
+  };
+
+  const topPanelOffset = showSearchPanel || showRenamePanel ? 56 : 0;
 
   return (
     <>
-      <Wrapper>
-        <ChatRoomHeader>
-          <HeaderLeft>
-            <BackButton onClick={() => navigate(-1)}>
-              <BackIcon />
-            </BackButton>
-            <HeaderTitle>애월읍 위니브 감귤농장</HeaderTitle>
-          </HeaderLeft>
-          <MoreButton onClick={() => setShowModal(true)}>
-            <MoreDots />
-          </MoreButton>
-        </ChatRoomHeader>
+      <Wrapper $bgColor={bgColor} $bgImage={bgImage}>
+        <Header
+          type="back-search-more"
+          title={chatTitle}
+          titleLeft
+          onTitleClick={handleTitleClick}
+          onSearch={handleOpenSearch}
+          onMore={() => setShowModal(true)}
+          alwaysVisible
+        />
 
-        <MessageList>
-          {DUMMY_MESSAGES.map((msg) => (
-            <MessageWrapper key={msg.id} $isMine={msg.isMine}>
-              <MessageRow $isMine={msg.isMine}>
-                {!msg.isMine && (
-                  <OtherAvatar
-                    src={msg.avatar || 'https://estapi.mandarin.weniv.co.kr/Ellipse.png'}
-                    alt="상대방"
-                  />
-                )}
-                <div>
-                  {msg.image ? (
-                    <ChatImage src={msg.image} alt="채팅 이미지" />
-                  ) : (
-                    <Bubble $isMine={msg.isMine}>{msg.text}</Bubble>
-                  )}
-                </div>
-                <ChatTime>{msg.time}</ChatTime>
-              </MessageRow>
-              {msg.isMine && msg.seen && (
-                <SeenLabel>내 말했어요</SeenLabel>
-              )}
-            </MessageWrapper>
+        {showSearchPanel && (
+          <TopPanel>
+            <TopInput
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              placeholder="메시지 검색"
+              autoFocus
+            />
+            <TopBtn onClick={goToPrevMatch}>이전</TopBtn>
+            <TopBtn onClick={goToNextMatch}>다음</TopBtn>
+            <TopBtn
+              onClick={() => {
+                setShowSearchPanel(false);
+                setSearchKeyword('');
+                setSearchMatchIds([]);
+                setCurrentMatchIndex(0);
+              }}
+            >
+              닫기
+            </TopBtn>
+          </TopPanel>
+        )}
+
+        {showRenamePanel && (
+          <TopPanel>
+            <TopInput
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              placeholder="채팅방 이름"
+              maxLength={30}
+              autoFocus
+            />
+            <TopBtn onClick={handleSaveRename}>저장</TopBtn>
+            <TopBtn onClick={() => setShowRenamePanel(false)}>취소</TopBtn>
+          </TopPanel>
+        )}
+
+        <MessageList style={{ paddingTop: topPanelOffset }}>
+          <div ref={topSentinelRef} />
+          {isLoadingMore && <Spinner />}
+          {displayMessages.map((msg, index) => (
+            <ChatMessageItem
+              key={msg.id}
+              msg={msg}
+              prevMsg={index > 0 ? displayMessages[index - 1] : null}
+              nextMsg={displayMessages[index + 1] || null}
+              isMine={msg.senderId === user?.accountname}
+              bubbleColor={bubbleColor}
+              otherBubbleColor={otherBubbleColor}
+              editingId={editingId}
+              editText={editText}
+              setEditText={setEditText}
+              onConfirmEdit={confirmEdit}
+              onContextMenu={handleContextMenu}
+              chatInfo={chatInfo}
+              user={user}
+              reactionSrcMap={REACTION_SRC_MAP}
+              chatId={chatId}
+              isSearchActive={searchMatchIds[currentMatchIndex] === msg.id}
+              hasMoreAbove={index === 0 && hasMore}
+              onMediaLoad={handleMediaLoad}
+            />
           ))}
+          <div ref={bottomRef} />
         </MessageList>
       </Wrapper>
 
-      <InputArea>
-        <ImageInputBtn onClick={() => fileRef.current?.click()}>
-          <ImageIcon />
-        </ImageInputBtn>
-        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} />
-        <TextInput
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="메시지 입력하기..."
-        />
-        <SendButton disabled={!isActive}>전송</SendButton>
-      </InputArea>
+      {showNewMessageAlert && (
+        <NewMessageAlert
+          onClick={() => {
+            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+            setShowNewMessageAlert(false);
+          }}
+        >
+          새 메시지가 도착했습니다
+        </NewMessageAlert>
+      )}
 
-      <BottomModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        items={modalItems}
+      {showScrollDownButton && !showNewMessageAlert && (
+        <ScrollDownButtonArea>
+          <ScrollDownButton onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}>
+            <ScrollDownIcon />
+          </ScrollDownButton>
+        </ScrollDownButtonArea>
+      )}
+
+      <ChatInputBar chatId={chatId} senderAccountname={user?.accountname} />
+
+      <BottomModal isOpen={showModal} onClose={() => setShowModal(false)} items={modalItems} />
+
+      <AlertModal
+        isOpen={showDeleteMsgAlert}
+        title="메시지를 삭제할까요?"
+        description="삭제한 메시지는 복구할 수 없습니다."
+        confirmText="삭제"
+        danger
+        onCancel={() => setShowDeleteMsgAlert(false)}
+        onConfirm={async () => {
+          await deleteMessage(chatId, contextMenu.messageId);
+          setShowDeleteMsgAlert(false);
+        }}
+      />
+
+      <AlertModal
+        isOpen={showReportAlert}
+        title="메시지를 신고할까요?"
+        description="신고된 메시지는 관리자가 검토합니다."
+        confirmText="신고"
+        danger
+        onCancel={() => setShowReportAlert(false)}
+        onConfirm={() => setShowReportAlert(false)}
+      />
+
+      <ChatThemePanel
+        isOpen={showBgPanel}
+        onClose={() => setShowBgPanel(false)}
+        bgColor={bgColor}
+        bubbleColor={bubbleColor}
+        otherBubbleColor={otherBubbleColor}
+        bgImage={bgImage}
+        isBgImageUploading={isBgImageUploading}
+        onBgColorChange={(color) => {
+          setBgColor(color);
+          saveChatTheme(chatId, user.accountname, { bgColor: color, bubbleColor, otherBubbleColor, bgImage });
+        }}
+        onBubbleColorChange={(color) => {
+          setBubbleColor(color);
+          saveChatTheme(chatId, user.accountname, { bgColor, bubbleColor: color, otherBubbleColor, bgImage });
+        }}
+        onOtherBubbleColorChange={(color) => {
+          setOtherBubbleColor(color);
+          saveChatTheme(chatId, user.accountname, { bgColor, bubbleColor, otherBubbleColor: color, bgImage });
+        }}
+        onBgImageChange={handleBgImageChange}
+      />
+
+      <InviteUserModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        chatId={chatId}
+        existingParticipants={chatInfo?.participants || []}
+      />
+
+      <GroupMembersPanel
+        isOpen={showMembersPanel}
+        onClose={() => setShowMembersPanel(false)}
+        chatInfo={chatInfo}
+        currentUser={user}
+        chatId={chatId}
+      />
+
+      <NicknameModal
+        key={showNicknameModal ? 'open' : 'closed'}
+        isOpen={showNicknameModal}
+        onClose={() => setShowNicknameModal(false)}
+        targetName={otherParticipant?.username || ''}
+        currentNickname={chatInfo?.nicknames?.[user?.accountname]?.[otherParticipant?.accountname] || ''}
+        onSave={(nickname) => setNickname(chatId, user.accountname, otherParticipant?.accountname, nickname)}
+      />
+
+      <ChatContextMenu
+        contextMenu={contextMenu}
+        contextMenuRef={contextMenuRef}
+        user={user}
+        reactionSrcMap={REACTION_SRC_MAP}
+        onReaction={handleReaction}
+        onEditStart={handleEditStart}
+        onDelete={handleDelete}
+        onCopy={handleCopy}
+        onReport={handleReport}
       />
     </>
   );

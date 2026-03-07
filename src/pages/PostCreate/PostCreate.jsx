@@ -1,48 +1,24 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { createPost, updatePost, getPost } from '../../api/post';
 import { uploadImage } from '../../api/auth';
+import { getMyProducts } from '../../api/product';
 import { useAuth } from '../../context/AuthContext';
-import { getImageUrl } from '../../utils/format';
-import { useEffect } from 'react';
+import { useToast } from '../../context/ToastContext';
+import { getImageUrl, formatPrice, DEFAULT_PROFILE_IMAGE } from '../../utils/format';
+import { IMAGE_BASE_URL } from '../../constants/url';
+import ImageIcon from '../../assets/icons/icon-image.svg?react';
+import ShoppingCartIcon from '../../assets/icons/icon-shopping-cart.svg?react';
+import AlertModal from '../../components/common/AlertModal';
+import Header from '../../components/common/Header';
+import { POST_PRODUCT_SEPARATOR, AI_DESC_SEPARATOR } from '../../constants/common';
 
 const Wrapper = styled.div`
   min-height: 100vh;
   background-color: ${({ theme }) => theme.colors.white};
-  padding-bottom: 80px;
-`;
-
-const PostHeader = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: ${({ theme }) => theme.zIndex.header};
-  background-color: ${({ theme }) => theme.colors.white};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-`;
-
-const BackButton = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const UploadButton = styled.button`
-  background-color: ${({ disabled, theme }) => disabled ? theme.colors.gray200 : theme.colors.primary};
-  color: ${({ theme }) => theme.colors.white};
-  font-size: ${({ theme }) => theme.fonts.size.sm};
-  font-weight: ${({ theme }) => theme.fonts.weight.medium};
-  padding: 6px 16px;
-  border-radius: ${({ theme }) => theme.borderRadius.round};
-  transition: ${({ theme }) => theme.transitions.base};
-  &:disabled { pointer-events: none; }
+  padding-bottom: 88px;
+  overflow-x: hidden;
 `;
 
 const Content = styled.div`
@@ -58,6 +34,7 @@ const AuthorAvatar = styled.img`
   object-fit: cover;
   flex-shrink: 0;
   background-color: ${({ theme }) => theme.colors.gray100};
+  border: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
 const TextArea = styled.textarea`
@@ -69,55 +46,115 @@ const TextArea = styled.textarea`
   line-height: 1.6;
   border: none;
   outline: none;
+  background: transparent;
+  max-height: 44vh;
+  overflow-y: auto;
 
-  &::placeholder { color: ${({ theme }) => theme.colors.gray300}; }
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.gray300};
+  }
 `;
 
 const ImagePreviews = styled.div`
   display: flex;
+  flex-wrap: nowrap;
   gap: 8px;
-  padding: 0 16px 16px 68px;
+  padding: 0 16px 16px 60px;
   overflow-x: auto;
-  &::-webkit-scrollbar { display: none; }
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  box-sizing: border-box;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 `;
 
 const ImagePreviewItem = styled.div`
   position: relative;
   flex-shrink: 0;
-  width: 100px;
-  height: 100px;
+  width: 300px;
+  height: ${({ $isProduct }) => ($isProduct ? 'auto' : '200px')};
+  border-radius: ${({ theme }) => theme.borderRadius.base};
+  overflow: hidden;
+  ${({ $isProduct, theme }) => $isProduct && `border: 1.5px solid ${theme.colors.primary};`}
 `;
 
 const PreviewImage = styled.img`
   width: 100%;
-  height: 100%;
+  height: ${({ $isProduct }) => ($isProduct ? '160px' : '100%')};
   object-fit: cover;
-  border-radius: ${({ theme }) => theme.borderRadius.base};
+  border-radius: ${({ $isProduct, theme }) => ($isProduct ? '0' : theme.borderRadius.base)};
+  border: ${({ $isProduct, theme }) => ($isProduct ? 'none' : `1px solid ${theme.colors.border}`)};
+  display: block;
+`;
+
+const ProductBadge = styled.span`
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: #fff;
+  font-size: 10px;
+  font-weight: ${({ theme }) => theme.fonts.weight.bold};
+  padding: 3px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+`;
+
+const ProductInfoBar = styled.div`
+  padding: 8px 12px 10px;
+  background-color: ${({ theme }) => theme.colors.white};
+  border-top: 1px solid ${({ theme }) => theme.colors.primary}33;
+`;
+
+const ProductInfoName = styled.p`
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  color: ${({ theme }) => theme.colors.black};
+  font-weight: ${({ theme }) => theme.fonts.weight.medium};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const ProductInfoPrice = styled.p`
+  font-size: 11px;
+  color: ${({ theme }) => theme.colors.primary};
+  font-weight: ${({ theme }) => theme.fonts.weight.medium};
+  margin-top: 2px;
 `;
 
 const RemoveImageBtn = styled.button`
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
-  background-color: rgba(0, 0, 0, 0.5);
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: none;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 12px;
+  background-color: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 14px;
 `;
 
-/* 우측 하단 플로팅 카메라 버튼 */
-const FloatingCameraBtn = styled.button`
+const FloatingBtnGroup = styled.div`
   position: fixed;
   right: calc(50% - 195px + 16px);
   bottom: 24px;
-  width: 48px;
-  height: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+`;
+
+const FloatingBtn = styled.button`
+  width: 52px;
+  height: 52px;
   background-color: ${({ theme }) => theme.colors.primary};
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -125,30 +162,162 @@ const FloatingCameraBtn = styled.button`
   box-shadow: ${({ theme }) => theme.shadows.base};
 `;
 
-const BackIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M15 18L9 12L15 6" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
+/* ── 상품 피커 모달 ── */
 
-const CameraIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="2"/>
-  </svg>
-);
+const PickerOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: ${({ theme }) => theme.zIndex.modal};
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+`;
+
+const PickerSheet = styled.div`
+  width: 100%;
+  max-width: 390px;
+  max-height: 65vh;
+  background-color: ${({ theme }) => theme.colors.white};
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+`;
+
+const PickerHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 16px 12px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  flex-shrink: 0;
+`;
+
+const PickerTitle = styled.h2`
+  font-size: ${({ theme }) => theme.fonts.size.base};
+  font-weight: ${({ theme }) => theme.fonts.weight.bold};
+  color: ${({ theme }) => theme.colors.black};
+`;
+
+const PickerCloseBtn = styled.button`
+  font-size: 22px;
+  color: ${({ theme }) => theme.colors.gray300};
+  line-height: 1;
+`;
+
+const PickerBody = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+const ProductGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+`;
+
+const ProductPickerCard = styled.button`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  background: none;
+  border: 1.5px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.base};
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
+const ProductPickerImg = styled.img`
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background-color: ${({ theme }) => theme.colors.gray100};
+`;
+
+const ProductPickerInfo = styled.div`
+  padding: 8px 10px;
+  width: 100%;
+`;
+
+const ProductPickerName = styled.p`
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  color: ${({ theme }) => theme.colors.black};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const ProductPickerPrice = styled.p`
+  font-size: 11px;
+  color: ${({ theme }) => theme.colors.primary};
+  font-weight: ${({ theme }) => theme.fonts.weight.medium};
+  margin-top: 2px;
+`;
+
+const PickerMessage = styled.p`
+  text-align: center;
+  color: ${({ theme }) => theme.colors.gray300};
+  font-size: ${({ theme }) => theme.fonts.size.sm};
+  padding: 40px 0;
+`;
 
 const MAX_IMAGES = 3;
+
+/* content에서 텍스트와 상품 메타 배열을 분리 */
+const parsePostContent = (content) => {
+  if (!content) return ['', []];
+  const sepIdx = content.indexOf(POST_PRODUCT_SEPARATOR);
+  if (sepIdx === -1) return [content, []];
+  try {
+    return [content.slice(0, sepIdx), JSON.parse(content.slice(sepIdx + POST_PRODUCT_SEPARATOR.length))];
+  } catch {
+    return [content, []];
+  }
+};
+
+/* 절대 URL에서 상대 경로를 추출해 API에 저장 가능한 rawUrl을 반환 */
+const toRawUrl = (url) => {
+  if (!url) return '';
+  const prefix = IMAGE_BASE_URL + '/';
+  if (url.startsWith(prefix)) return url.slice(prefix.length);
+  return url;
+};
 
 const PostCreate = ({ isEdit = false }) => {
   const navigate = useNavigate();
   const { postId } = useParams();
   const { user } = useAuth();
+  const toast = useToast();
   const fileRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const [content, setContent] = useState('');
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [removeTargetIndex, setRemoveTargetIndex] = useState(null);
+
+  const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
+  const [myProducts, setMyProducts] = useState([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  }, [content]);
 
   useEffect(() => {
     if (isEdit && postId) {
@@ -156,17 +325,34 @@ const PostCreate = ({ isEdit = false }) => {
         try {
           const data = await getPost(postId);
           const post = data.post;
-          setContent(post.content);
+          const [textContent, productMeta] = parsePostContent(post.content);
+          setContent(textContent);
           if (post.image) {
-            const imgUrls = post.image.split(',').filter(Boolean).map((img) => ({
-              url: getImageUrl(img.trim()),
-              rawUrl: img.trim(),
-              isNew: false,
-            }));
+            const imgUrls = post.image
+              .split(',')
+              .filter(Boolean)
+              .slice(0, MAX_IMAGES)
+              .map((img, i) => {
+                const productInfo = productMeta.find((p) => p.i === i);
+                return {
+                  url: getImageUrl(img.trim()),
+                  rawUrl: img.trim(),
+                  isNew: false,
+                  ...(productInfo
+                    ? {
+                        isProduct: true,
+                        productName: productInfo.name,
+                        productPrice: productInfo.price,
+                        productLink: productInfo.link || '',
+                      }
+                    : {}),
+                };
+              });
             setImages(imgUrls);
           }
         } catch (err) {
           console.error(err);
+          toast.error('게시물을 불러오지 못했습니다.');
         }
       };
       loadPost();
@@ -175,26 +361,71 @@ const PostCreate = ({ isEdit = false }) => {
 
   const isActive = content.trim() || images.length > 0;
 
+  const handleContentChange = (e) => {
+    setContent(e.target.value);
+  };
+
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     const remaining = MAX_IMAGES - images.length;
+    if (remaining <= 0) {
+      e.target.value = '';
+      return;
+    }
+
     const validFiles = files.slice(0, remaining);
 
     validFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImages((prev) => [
-          ...prev,
-          { url: reader.result, file, isNew: true },
-        ]);
+        setImages((prev) => [...prev, { url: reader.result, file, isNew: true }]);
       };
       reader.readAsDataURL(file);
     });
+
     e.target.value = '';
   };
 
   const handleRemoveImage = (index) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    setRemoveTargetIndex(index);
+  };
+
+  const confirmRemoveImage = () => {
+    setImages((prev) => prev.filter((_, i) => i !== removeTargetIndex));
+    setRemoveTargetIndex(null);
+  };
+
+  const handleOpenProductPicker = async () => {
+    setIsProductPickerOpen(true);
+    if (myProducts.length > 0) return;
+    setIsLoadingProducts(true);
+    try {
+      const data = await getMyProducts(user.accountname);
+      setMyProducts(data?.product ?? []);
+    } catch (err) {
+      console.error(err);
+      toast.error('상품 목록을 불러오지 못했습니다.');
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
+
+  const handleSelectProduct = (product) => {
+    if (images.length >= MAX_IMAGES) return;
+    const rawUrl = toRawUrl(product.itemImage);
+    setImages((prev) => [
+      ...prev,
+      {
+        url: getImageUrl(product.itemImage),
+        rawUrl,
+        isNew: false,
+        isProduct: true,
+        productName: product.itemName.split(AI_DESC_SEPARATOR)[0].trim(),
+        productPrice: product.price,
+        productLink: product.link || '',
+      },
+    ]);
+    setIsProductPickerOpen(false);
   };
 
   const handleUpload = async () => {
@@ -203,7 +434,7 @@ const PostCreate = ({ isEdit = false }) => {
 
     try {
       const imageUrls = [];
-      for (const img of images) {
+      for (const img of images.slice(0, MAX_IMAGES)) {
         if (img.isNew && img.file) {
           const data = await uploadImage(img.file);
           imageUrls.push(data.filename);
@@ -214,15 +445,29 @@ const PostCreate = ({ isEdit = false }) => {
 
       const imageString = imageUrls.join(',');
 
-      if (isEdit) {
-        await updatePost(postId, content, imageString);
-      } else {
-        await createPost(content, imageString);
-      }
+      const productMeta = images.slice(0, MAX_IMAGES).reduce((acc, img, idx) => {
+        if (img.isProduct)
+          acc.push({ i: idx, name: img.productName, price: img.productPrice, link: img.productLink || '' });
+        return acc;
+      }, []);
+      const finalContent =
+        productMeta.length > 0 ? content + POST_PRODUCT_SEPARATOR + JSON.stringify(productMeta) : content;
 
-      navigate(-1);
+      if (isEdit) {
+        await updatePost(postId, finalContent, imageString);
+        navigate(`/post/${postId}`);
+      } else {
+        const data = await createPost(finalContent, imageString);
+        const createdPostId = data?.post?.id;
+        if (createdPostId) {
+          navigate(`/post/${createdPostId}`);
+        } else {
+          navigate('/feed');
+        }
+      }
     } catch (err) {
       console.error(err);
+      toast.error(isEdit ? '게시물 수정에 실패했습니다.' : '게시물 등록에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -230,25 +475,26 @@ const PostCreate = ({ isEdit = false }) => {
 
   return (
     <Wrapper>
-      <PostHeader>
-        <BackButton onClick={() => navigate(-1)}>
-          <BackIcon />
-        </BackButton>
-        <UploadButton disabled={!isActive || isLoading} onClick={handleUpload}>
-          {isLoading ? '업로드 중...' : isEdit ? '수정' : '업로드'}
-        </UploadButton>
-      </PostHeader>
+      <Header
+        type="back-title-upload"
+        uploadDisabled={!isActive || isLoading}
+        onUpload={handleUpload}
+        uploadText={isLoading ? '업로드 중...' : isEdit ? '수정' : '업로드'}
+      />
 
       <Content>
         <AuthorAvatar
           src={getImageUrl(user?.image)}
           alt={user?.username}
-          onError={(e) => { e.target.src = 'https://estapi.mandarin.weniv.co.kr/Ellipse.png'; }}
+          onError={(e) => {
+            e.target.src = DEFAULT_PROFILE_IMAGE;
+          }}
         />
         <TextArea
+          ref={textareaRef}
           value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="게시글을 작성해주세요..."
+          onChange={handleContentChange}
+          placeholder="게시글 입력하기..."
           autoFocus
         />
       </Content>
@@ -256,9 +502,27 @@ const PostCreate = ({ isEdit = false }) => {
       {images.length > 0 && (
         <ImagePreviews>
           {images.map((img, i) => (
-            <ImagePreviewItem key={i}>
-              <PreviewImage src={img.url} alt={`이미지 ${i + 1}`} />
-              <RemoveImageBtn onClick={() => handleRemoveImage(i)}>✕</RemoveImageBtn>
+            <ImagePreviewItem key={i} $isProduct={!!img.isProduct}>
+              <PreviewImage
+                $isProduct={!!img.isProduct}
+                src={img.url}
+                alt={img.isProduct ? img.productName : `이미지 ${i + 1}`}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+              {img.isProduct && (
+                <>
+                  <ProductBadge>상품</ProductBadge>
+                  <ProductInfoBar>
+                    <ProductInfoName>{img.productName}</ProductInfoName>
+                    <ProductInfoPrice>{formatPrice(img.productPrice)}원</ProductInfoPrice>
+                  </ProductInfoBar>
+                </>
+              )}
+              <RemoveImageBtn type="button" onClick={() => handleRemoveImage(i)}>
+                ×
+              </RemoveImageBtn>
             </ImagePreviewItem>
           ))}
         </ImagePreviews>
@@ -274,10 +538,63 @@ const PostCreate = ({ isEdit = false }) => {
       />
 
       {images.length < MAX_IMAGES && (
-        <FloatingCameraBtn onClick={() => fileRef.current?.click()}>
-          <CameraIcon />
-        </FloatingCameraBtn>
+        <FloatingBtnGroup>
+          <FloatingBtn type="button" onClick={handleOpenProductPicker} aria-label="내 상품 불러오기">
+            <ShoppingCartIcon width="28" height="28" style={{ filter: 'brightness(0) invert(1)' }} />
+          </FloatingBtn>
+          <FloatingBtn type="button" onClick={() => fileRef.current?.click()} aria-label="사진 추가">
+            <ImageIcon width="28" height="28" />
+          </FloatingBtn>
+        </FloatingBtnGroup>
       )}
+
+      {isProductPickerOpen && (
+        <PickerOverlay onClick={() => setIsProductPickerOpen(false)}>
+          <PickerSheet onClick={(e) => e.stopPropagation()}>
+            <PickerHeader>
+              <PickerTitle>내 상품 불러오기</PickerTitle>
+              <PickerCloseBtn type="button" onClick={() => setIsProductPickerOpen(false)}>
+                ×
+              </PickerCloseBtn>
+            </PickerHeader>
+            <PickerBody>
+              {isLoadingProducts ? (
+                <PickerMessage>불러오는 중...</PickerMessage>
+              ) : myProducts.length === 0 ? (
+                <PickerMessage>등록된 상품이 없습니다.</PickerMessage>
+              ) : (
+                <ProductGrid>
+                  {myProducts.map((product) => (
+                    <ProductPickerCard key={product.id} type="button" onClick={() => handleSelectProduct(product)}>
+                      <ProductPickerImg
+                        src={getImageUrl(product.itemImage)}
+                        alt={product.itemName}
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/140?text=No+Image';
+                        }}
+                      />
+                      <ProductPickerInfo>
+                        <ProductPickerName>{product.itemName.split(AI_DESC_SEPARATOR)[0].trim()}</ProductPickerName>
+                        <ProductPickerPrice>{formatPrice(product.price)}원</ProductPickerPrice>
+                      </ProductPickerInfo>
+                    </ProductPickerCard>
+                  ))}
+                </ProductGrid>
+              )}
+            </PickerBody>
+          </PickerSheet>
+        </PickerOverlay>
+      )}
+
+      <AlertModal
+        isOpen={removeTargetIndex !== null}
+        title="사진 삭제"
+        description="사진을 삭제하시겠습니까?"
+        confirmText="삭제"
+        onCancel={() => setRemoveTargetIndex(null)}
+        onConfirm={confirmRemoveImage}
+        danger
+      />
     </Wrapper>
   );
 };

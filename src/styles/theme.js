@@ -1,25 +1,6 @@
-const theme = {
-  colors: {
-    primary: '#F26E22',
-    primaryLight: '#FFF0E8',
-    black: '#000000',
-    white: '#FFFFFF',
-    gray100: '#F2F2F2',
-    gray200: '#DBDBDB',
-    gray300: '#B3B3B3',
-    gray400: '#767676',
-    gray500: '#4D4D4D',
-    text: '#333333',
-    error: '#EB5757',
-    success: '#2EB48B',
-    border: '#DBDBDB',
-    background: '#F2F2F2',
-    kakao: '#FEE500',
-    google: '#FFFFFF',
-    facebook: '#1877F2',
-  },
+const baseTheme = {
   fonts: {
-    family: "'Noto Sans KR', sans-serif",
+    family: "'GMarketSans'",
     size: {
       xs: '10px',
       sm: '12px',
@@ -44,11 +25,6 @@ const theme = {
     round: '50px',
     circle: '50%',
   },
-  shadows: {
-    sm: '0px 1px 4px rgba(0, 0, 0, 0.1)',
-    base: '0px 2px 8px rgba(0, 0, 0, 0.15)',
-    lg: '0px 4px 16px rgba(0, 0, 0, 0.2)',
-  },
   transitions: {
     base: '0.2s ease',
     slow: '0.3s ease',
@@ -62,4 +38,60 @@ const theme = {
   },
 };
 
-export default theme;
+export const lightTheme = {
+  ...baseTheme,
+  colors: {
+    primary: '#F26E22',
+    primaryLight: '#FFC7A7',
+    black: '#000000',
+    white: '#FFFFFF',
+    gray100: '#F2F2F2',
+    gray200: '#DBDBDB',
+    gray300: '#B3B3B3',
+    gray400: '#767676',
+    gray500: '#4D4D4D',
+    text: '#333333',
+    error: '#EB5757',
+    success: '#2EB48B',
+    border: '#DBDBDB',
+    background: '#F2F2F2',
+    kakao: '#FEE500',
+    google: '#FFFFFF',
+    facebook: '#1877F2',
+  },
+  shadows: {
+    sm: '0px 1px 4px rgba(0, 0, 0, 0.1)',
+    base: '0px 2px 8px rgba(0, 0, 0, 0.15)',
+    lg: '0px 4px 16px rgba(0, 0, 0, 0.2)',
+  },
+};
+
+export const darkTheme = {
+  ...baseTheme,
+  colors: {
+    primary: '#FF8A3D',
+    primaryLight: '#3A261A',
+    black: '#F4F7FC',
+    white: '#121822',
+    gray100: '#1A2230',
+    gray200: '#283244',
+    gray300: '#516079',
+    gray400: '#8D9AB3',
+    gray500: '#C3CEE2',
+    text: '#E8ECF5',
+    error: '#FF7A7A',
+    success: '#45C89E',
+    border: '#2B374C',
+    background: '#0B1119',
+    kakao: '#FEE500',
+    google: '#1C2432',
+    facebook: '#3B6ED1',
+  },
+  shadows: {
+    sm: '0px 1px 4px rgba(0, 0, 0, 0.35)',
+    base: '0px 2px 8px rgba(0, 0, 0, 0.45)',
+    lg: '0px 4px 16px rgba(0, 0, 0, 0.55)',
+  },
+};
+
+export default lightTheme;

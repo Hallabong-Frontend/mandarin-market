@@ -1,8 +1,17 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import BottomTabNav from '../../components/common/BottomTabNav';
 import BottomModal from '../../components/common/BottomModal';
-import { useState } from 'react';
+import Header from '../../components/common/Header';
+import Spinner from '../../components/common/Spinner';
+import { useAuth } from '../../context/AuthContext';
+import { subscribeToChats, leaveChat } from '../../firebase/chat';
+import EmptyState from '../../components/common/EmptyState';
+import AlertModal from '../../components/common/AlertModal';
+import GroupChatModal from '../../components/chat/GroupChatModal';
+import ChatListItem from '../../components/chat/ChatListItem';
+import useChatSwipe from '../../hooks/useChatSwipe';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -10,186 +19,228 @@ const Wrapper = styled.div`
   padding-bottom: 70px;
 `;
 
-const ChatHeader = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: ${({ theme }) => theme.zIndex.header};
-  background-color: ${({ theme }) => theme.colors.white};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-`;
-
-const BackButton = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const MoreButton = styled.button`
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ChatItemEl = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover { background-color: ${({ theme }) => theme.colors.gray100}; }
-`;
-
-const AvatarWrapper = styled.div`
-  position: relative;
-  flex-shrink: 0;
-`;
-
-const Avatar = styled.img`
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover;
-  background-color: ${({ theme }) => theme.colors.gray100};
-`;
-
-const UnreadDot = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 12px;
-  height: 12px;
-  background-color: ${({ theme }) => theme.colors.primary};
-  border-radius: 50%;
-  border: 2px solid ${({ theme }) => theme.colors.white};
-`;
-
-const ChatInfo = styled.div`
-  flex: 1;
-  overflow: hidden;
-`;
-
-const ChatTop = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-`;
-
-const ChatUsername = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  font-weight: ${({ theme }) => theme.fonts.weight.medium};
-  color: ${({ theme }) => theme.colors.black};
-`;
-
-const ChatTime = styled.span`
-  font-size: ${({ theme }) => theme.fonts.size.xs};
-  color: ${({ theme }) => theme.colors.gray300};
-`;
-
-const ChatLastMsg = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.sm};
-  color: ${({ theme }) => theme.colors.gray400};
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const BackIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M15 18L9 12L15 6" stroke="#767676" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const MoreDots = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <circle cx="5" cy="12" r="2" fill="#767676"/>
-    <circle cx="12" cy="12" r="2" fill="#767676"/>
-    <circle cx="19" cy="12" r="2" fill="#767676"/>
-  </svg>
-);
-
-const DUMMY_CHATS = [
-  {
-    id: 1,
-    username: '애월읍 위니브 감귤농장',
-    lastMessage: '이번에 정정 언제하맨마씀?',
-    time: '2020.10.25',
-    unread: true,
-    avatar: 'https://estapi.mandarin.weniv.co.kr/Ellipse.png',
+const alertConfig = {
+  delete: {
+    title: '채팅방 나가기',
+    description: '나간 후에는 채팅 목록에서 숨겨집니다.',
+    confirmText: '나가기',
   },
-  {
-    id: 2,
-    username: '제주감귤마을',
-    lastMessage: '깊은 어둠의 존재감, 롤스로이스 뉴 블랙 배지...',
-    time: '2020.10.25',
-    unread: true,
-    avatar: 'https://estapi.mandarin.weniv.co.kr/Ellipse.png',
+  block: {
+    title: '사용자 차단',
+    description: '차단하면 해당 사용자와의 채팅이 목록에서 숨겨집니다.',
+    confirmText: '차단',
   },
-  {
-    id: 3,
-    username: '누구네 농장 친환경 한라봉',
-    lastMessage: '내 차는 내가 평가한다. 오픈 이벤트에 참여 하...',
-    time: '2020.10.25',
-    unread: false,
-    avatar: 'https://estapi.mandarin.weniv.co.kr/Ellipse.png',
+  report: {
+    title: '채팅 신고',
+    description: '신고된 내용은 관리자가 검토합니다.',
+    confirmText: '신고',
   },
-];
+};
 
 const ChatList = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [chats, setChats] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showGroupChatModal, setShowGroupChatModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null); // { type, chatId }
+  const [pinnedChatIds, setPinnedChatIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('pinnedChats')) || [];
+    } catch {
+      return [];
+    }
+  });
+  const [blockedChatIds, setBlockedChatIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('blockedChats')) || [];
+    } catch {
+      return [];
+    }
+  });
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+
+  const { swipedChatId, setSwipedChatId, pinSwipedChatId, setPinSwipedChatId, didSwipe, handlePointerDown, handlePointerUp } =
+    useChatSwipe();
+
+  useEffect(() => {
+    if (!user?.accountname) return;
+    const unsubscribe = subscribeToChats(user.accountname, (data) => {
+      setChats(data);
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, [user?.accountname]);
+
+  const getOtherParticipant = (chat) => {
+    const otherAccountname = chat.participants?.find((p) => p !== user.accountname);
+    const info = chat.participantInfo?.[otherAccountname] || { username: otherAccountname, image: '' };
+    const nickname = chat.nicknames?.[user.accountname]?.[otherAccountname];
+    return { ...info, username: nickname || info.username };
+  };
+
+  const isUnread = (chat) => {
+    if (!chat.lastMessage || chat.lastSenderId === user.accountname) return false;
+    const myReadAt = chat.readAt?.[user.accountname];
+    if (!myReadAt) return true;
+    return (chat.lastMessageAt?.toMillis() || 0) > myReadAt.toMillis();
+  };
+
+  const togglePin = (chatId) => {
+    setPinnedChatIds((prev) => {
+      const next = prev.includes(chatId) ? prev.filter((id) => id !== chatId) : [...prev, chatId];
+      localStorage.setItem('pinnedChats', JSON.stringify(next));
+      return next;
+    });
+    setPinSwipedChatId(null);
+  };
+
+  const handleAlertConfirm = async () => {
+    if (!pendingAction) return;
+    const { type, chatId } = pendingAction;
+
+    if (type === 'delete') {
+      const chat = chats.find((c) => c.id === chatId);
+      await leaveChat(chatId, user.accountname, chat?.isGroupChat);
+      setPinnedChatIds((prev) => {
+        const next = prev.filter((id) => id !== chatId);
+        localStorage.setItem('pinnedChats', JSON.stringify(next));
+        return next;
+      });
+    } else if (type === 'block') {
+      setBlockedChatIds((prev) => {
+        const next = [...prev, chatId];
+        localStorage.setItem('blockedChats', JSON.stringify(next));
+        return next;
+      });
+    }
+
+    setPendingAction(null);
+    setSwipedChatId(null);
+  };
+
+  const displayChats = chats
+    .filter((chat) => !blockedChatIds.includes(chat.id))
+    .sort((a, b) => {
+      const aPinned = pinnedChatIds.includes(a.id) ? 1 : 0;
+      const bPinned = pinnedChatIds.includes(b.id) ? 1 : 0;
+      if (aPinned !== bPinned) return bPinned - aPinned;
+      return (b.lastMessageAt?.toMillis() || 0) - (a.lastMessageAt?.toMillis() || 0);
+    });
+
+  const filteredChats = displayChats.filter((chat) => {
+    if (!searchKeyword) return true;
+    const isGroup = chat.isGroupChat;
+    const title = isGroup ? chat.groupTitle : getOtherParticipant(chat).username;
+    return title?.toLowerCase().includes(searchKeyword.toLowerCase());
+  });
 
   const modalItems = [
-    { label: '설정', onClick: () => {} },
+    {
+      label: '그룹채팅 만들기',
+      onClick: () => {
+        setShowModal(false);
+        setShowGroupChatModal(true);
+      },
+    },
   ];
 
   return (
     <>
       <Wrapper>
-        <ChatHeader>
-          <BackButton onClick={() => navigate(-1)}>
-            <BackIcon />
-          </BackButton>
-          <MoreButton onClick={() => setShowModal(true)}>
-            <MoreDots />
-          </MoreButton>
-        </ChatHeader>
+        {isSearching ? (
+          <Header
+            type="search-input"
+            keyword={searchKeyword}
+            onKeywordChange={(e) => setSearchKeyword(e.target.value)}
+            searchPlaceholder="사용자 이름 검색"
+            alwaysVisible
+            onBack={() => {
+              setIsSearching(false);
+              setSearchKeyword('');
+            }}
+          />
+        ) : (
+          <Header
+            type="back-search-more"
+            onSearch={() => setIsSearching(true)}
+            onMore={() => setShowModal(true)}
+            alwaysVisible
+          />
+        )}
 
-        {DUMMY_CHATS.map((chat) => (
-          <ChatItemEl key={chat.id} onClick={() => navigate(`/chat/${chat.id}`)}>
-            <AvatarWrapper>
-              <Avatar src={chat.avatar} alt={chat.username} />
-              {chat.unread && <UnreadDot />}
-            </AvatarWrapper>
-            <ChatInfo>
-              <ChatTop>
-                <ChatUsername>{chat.username}</ChatUsername>
-                <ChatTime>{chat.time}</ChatTime>
-              </ChatTop>
-              <ChatLastMsg>{chat.lastMessage}</ChatLastMsg>
-            </ChatInfo>
-          </ChatItemEl>
-        ))}
+        {isLoading ? (
+          <Spinner padding="40vh 0" />
+        ) : filteredChats.length === 0 ? (
+          <EmptyState
+            text={searchKeyword ? '검색 결과가 없습니다.' : '채팅 내역이 없습니다.'}
+            padding="60px 0"
+            fontSize="sm"
+            color="gray300"
+          />
+        ) : (
+          filteredChats.map((chat) => {
+            const isGroup = chat.isGroupChat;
+            const other = getOtherParticipant(chat);
+            const chatTitle = isGroup ? chat.groupTitle : other.username;
+            const chatImage = isGroup ? chat.groupImage : other.image;
+
+            const isLeftSwiped = swipedChatId === chat.id;
+            const isRightSwiped = pinSwipedChatId === chat.id;
+            const isPinned = pinnedChatIds.includes(chat.id);
+
+            return (
+              <ChatListItem
+                key={chat.id}
+                chat={chat}
+                isLeftSwiped={isLeftSwiped}
+                isRightSwiped={isRightSwiped}
+                isPinned={isPinned}
+                isUnread={isUnread(chat)}
+                chatTitle={chatTitle}
+                chatImage={chatImage}
+                searchKeyword={searchKeyword}
+                onPinToggle={togglePin}
+                onAction={(type, chatId) => setPendingAction({ type, chatId })}
+                onNavigate={() => {
+                  if (didSwipe.current) {
+                    didSwipe.current = false;
+                    return;
+                  }
+                  if (isLeftSwiped) {
+                    setSwipedChatId(null);
+                    return;
+                  }
+                  if (isRightSwiped) {
+                    setPinSwipedChatId(null);
+                    return;
+                  }
+                  navigate(`/chat/${chat.id}`);
+                }}
+                onPointerDown={handlePointerDown}
+                onPointerUp={handlePointerUp(chat.id)}
+              />
+            );
+          })
+        )}
       </Wrapper>
 
       <BottomTabNav />
 
-      <BottomModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        items={modalItems}
+      <BottomModal isOpen={showModal} onClose={() => setShowModal(false)} items={modalItems} />
+
+      <AlertModal
+        isOpen={!!pendingAction}
+        title={alertConfig[pendingAction?.type]?.title}
+        description={alertConfig[pendingAction?.type]?.description}
+        confirmText={alertConfig[pendingAction?.type]?.confirmText}
+        danger
+        onCancel={() => setPendingAction(null)}
+        onConfirm={handleAlertConfirm}
       />
+      <GroupChatModal isOpen={showGroupChatModal} onClose={() => setShowGroupChatModal(false)} />
     </>
   );
 };

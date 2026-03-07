@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const BASE_URL = 'https://estapi.mandarin.weniv.co.kr';
+import { BASE_URL, IMAGE_BASE_URL } from '../constants/url';
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -25,14 +24,16 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isLoginRequest = error.config?.url === '/user/login';
+    if (error.response?.status === 401 && !isLoginRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+    console.error('[API Error]', error.config?.url, error.response?.status, error.response?.data);
     return Promise.reject(error);
   }
 );
 
-export const IMAGE_BASE_URL = BASE_URL;
 export default axiosInstance;
+export { IMAGE_BASE_URL };

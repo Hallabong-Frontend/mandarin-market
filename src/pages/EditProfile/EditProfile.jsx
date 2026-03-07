@@ -1,10 +1,15 @@
-import { useState, useRef } from 'react';
+﻿import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { updateMyProfile, uploadImage, checkAccountValid } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 import { validateAccountname, getImageUrl } from '../../utils/format';
+import { syncParticipantProfileInChats, syncSharedProfileMessagesInChats } from '../../firebase/chat';
+import useForm from '../../hooks/useForm';
 import Header from '../../components/common/Header';
+import AuthInput from '../../components/common/AuthInput';
+import Avatar from '../../components/common/Avatar';
+import ImageIconSvg from '../../assets/icons/icon-image.svg?react';
 
 const Wrapper = styled.div`
   min-height: 100vh;
@@ -27,15 +32,6 @@ const AvatarContainer = styled.div`
   height: 88px;
 `;
 
-const Avatar = styled.img`
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  object-fit: cover;
-  background-color: ${({ theme }) => theme.colors.gray100};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-`;
-
 const AvatarEditBtn = styled.button`
   position: absolute;
   bottom: 0;
@@ -55,34 +51,10 @@ const Form = styled.form`
   gap: 20px;
 `;
 
-const Field = styled.div`
+const InputGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 6px;
-`;
-
-const Label = styled.label`
-  font-size: ${({ theme }) => theme.fonts.size.sm};
-  color: ${({ theme }) => theme.colors.gray400};
-`;
-
-const Input = styled.input`
-  width: 100%;
-  border: none;
-  border-bottom: 1px solid ${({ $focused, $error, theme }) =>
-    $error ? theme.colors.error : $focused ? theme.colors.primary : theme.colors.border};
-  padding: 8px 0;
-  font-size: ${({ theme }) => theme.fonts.size.base};
-  color: ${({ theme }) => theme.colors.black};
-  background: transparent;
-  transition: border-color 0.2s;
-
-  &::placeholder { color: ${({ theme }) => theme.colors.gray300}; }
-`;
-
-const ErrorText = styled.p`
-  font-size: ${({ theme }) => theme.fonts.size.xs};
-  color: ${({ theme }) => theme.colors.error};
 `;
 
 const SuccessText = styled.p`
@@ -90,79 +62,156 @@ const SuccessText = styled.p`
   color: ${({ theme }) => theme.colors.success};
 `;
 
-const CameraIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-    <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="2"/>
-  </svg>
-);
+const InfoText = styled.p`
+  font-size: ${({ theme }) => theme.fonts.size.xs};
+  color: ${({ theme }) => theme.colors.gray400};
+`;
+
+const ImageIcon = () => <ImageIconSvg width="18" height="18" />;
 
 const EditProfile = () => {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   const fileRef = useRef(null);
+  const accountCheckSeqRef = useRef(0);
 
-  const [form, setForm] = useState({
-    username: user?.username || '',
-    accountname: user?.accountname || '',
-    intro: user?.intro || '',
-  });
-  const [focused, setFocused] = useState({});
-  const [errors, setErrors] = useState({});
   const [accountValid, setAccountValid] = useState(true);
-  const [previewImage, setPreviewImage] = useState(getImageUrl(user?.image) || 'https://estapi.mandarin.weniv.co.kr/Ellipse.png');
+  const [isCheckingAccount, setIsCheckingAccount] = useState(false);
+  const [previewImage, setPreviewImage] = useState(
+    getImageUrl(user?.image) || 'https://dev.wenivops.co.kr/services/mandarin/Ellipse.png',
+  );
   const [imageFile, setImageFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const isChanged = form.username !== user?.username || form.accountname !== user?.accountname || form.intro !== user?.intro || imageFile;
+  const {
+    values: form,
+    errors,
+    setFieldError,
+    handleChange,
+    handleBlur,
+    validateField,
+    isValid,
+  } = useForm({
+    initialValues: {
+      username: user?.username || '',
+      accountname: user?.accountname || '',
+      intro: user?.intro || '',
+    },
+    validators: {
+      username: (value) => {
+        if (!value) return '';
+        if (value.length < 2 || value.length > 10) {
+          return '사용자 이름은 2~10자 이내여야 합니다.';
+        }
+        return '';
+      },
+      accountname: (value) => {
+        if (!value || value === user?.accountname) return '';
+        if (!validateAccountname(value)) {
+          return '영문, 숫자, 특수문자(.,_)만 사용할 수 있습니다.';
+        }
+        return '';
+      },
+    },
+    getIsChanged: (values) =>
+      values.username !== user?.username ||
+      values.accountname !== user?.accountname ||
+      values.intro !== user?.intro ||
+      !!imageFile,
+    getIsValid: ({ values, errors: formErrors }) =>
+      values.username.length >= 2 &&
+      values.username.length <= 10 &&
+      (values.accountname === user?.accountname || validateAccountname(values.accountname)) &&
+      !formErrors.username &&
+      !formErrors.accountname &&
+      (values.username !== user?.username ||
+        values.accountname !== user?.accountname ||
+        values.intro !== user?.intro ||
+        !!imageFile),
+  });
 
-  const isValid =
-    form.username.length >= 2 &&
-    form.username.length <= 10 &&
-    (form.accountname === user?.accountname || accountValid) &&
-    !errors.username &&
-    !errors.accountname &&
-    isChanged;
+  const checkAccountAvailability = useCallback(
+    async (accountname, options = {}) => {
+      const { showChecking = true } = options;
+      const seq = ++accountCheckSeqRef.current;
+      if (showChecking) setIsCheckingAccount(true);
 
-  const handleChange = (e) => {
+      try {
+        const data = await checkAccountValid(accountname);
+        if (seq !== accountCheckSeqRef.current) return false;
+
+        if (data?.message?.includes('사용 가능')) {
+          setFieldError('accountname', '');
+          setAccountValid(true);
+          return true;
+        }
+
+        setFieldError('accountname', data?.message || '이미 사용 중인 계정ID입니다.');
+        setAccountValid(false);
+        return false;
+      } catch (err) {
+        if (seq !== accountCheckSeqRef.current) return false;
+        setFieldError('accountname', err.response?.data?.message || '이미 사용 중인 계정ID입니다.');
+        setAccountValid(false);
+        return false;
+      } finally {
+        if (showChecking && seq === accountCheckSeqRef.current) {
+          setIsCheckingAccount(false);
+        }
+      }
+    },
+    [setFieldError],
+  );
+
+  const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-    if (name === 'accountname' && value !== user?.accountname) setAccountValid(false);
-  };
+    handleChange(e);
+    if (name !== 'accountname') return;
 
-  const handleUsernameBlur = () => {
-    setFocused({ ...focused, username: false });
-    if (!form.username) return;
-    if (form.username.length < 2 || form.username.length > 10) {
-      setErrors({ ...errors, username: '사용자 이름은 2~10자 이내여야 합니다.' });
-    } else {
-      setErrors({ ...errors, username: '' });
-    }
-  };
-
-  const handleAccountBlur = async () => {
-    setFocused({ ...focused, accountname: false });
-    if (!form.accountname || form.accountname === user?.accountname) return;
-
-    if (!validateAccountname(form.accountname)) {
-      setErrors({ ...errors, accountname: '영문, 숫자, 밑줄, 마침표만 사용 가능합니다.' });
+    if (value === user?.accountname) {
+      setAccountValid(true);
+      setFieldError('accountname', '');
+      setIsCheckingAccount(false);
       return;
     }
 
-    try {
-      const data = await checkAccountValid(form.accountname);
-      if (data.message === '사용 가능한 계정ID 입니다.') {
-        setErrors({ ...errors, accountname: '' });
-        setAccountValid(true);
-      } else {
-        setErrors({ ...errors, accountname: data.message });
-        setAccountValid(false);
-      }
-    } catch (err) {
-      setErrors({ ...errors, accountname: err.response?.data?.message || '이미 사용 중인 계정ID입니다.' });
-      setAccountValid(false);
+    if (value && !validateAccountname(value)) {
+      setFieldError('accountname', '영문, 숫자, 특수문자(.,_)만 사용할 수 있습니다.');
+      setIsCheckingAccount(false);
+    } else {
+      setFieldError('accountname', '');
     }
+
+    setAccountValid(false);
   };
+
+  const handleAccountBlur = async () => {
+    if (!form.accountname || form.accountname === user?.accountname) return;
+
+    if (!validateField('accountname')) {
+      return;
+    }
+
+    await checkAccountAvailability(form.accountname);
+  };
+
+  useEffect(() => {
+    if (!form.accountname || form.accountname === user?.accountname) {
+      setIsCheckingAccount(false);
+      return;
+    }
+
+    if (!validateAccountname(form.accountname)) {
+      setIsCheckingAccount(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      checkAccountAvailability(form.accountname);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [form.accountname, user?.accountname, checkAccountAvailability]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -175,7 +224,15 @@ const EditProfile = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!isValid || isLoading) return;
+    if (!isValid || isLoading || isCheckingAccount) return;
+
+    if (!validateField('username')) return;
+
+    if (form.accountname !== user?.accountname) {
+      if (!validateField('accountname')) return;
+      const available = await checkAccountAvailability(form.accountname, { showChecking: false });
+      if (!available) return;
+    }
 
     setIsLoading(true);
     try {
@@ -192,10 +249,20 @@ const EditProfile = () => {
         image: imageUrl,
       });
 
+      await syncParticipantProfileInChats(data.user.accountname, {
+        username: data.user.username,
+        image: data.user.image,
+      });
+      await syncSharedProfileMessagesInChats(data.user.accountname, {
+        username: data.user.username,
+        image: data.user.image,
+        intro: data.user.intro || '',
+      });
+
       updateUser(data.user);
-      navigate(-1);
-    } catch (err) {
-      console.error(err);
+      navigate(`/profile/${data.user.accountname}`, { replace: true });
+    } catch (error) {
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -205,76 +272,75 @@ const EditProfile = () => {
     <Wrapper>
       <Header
         type="back-title-save"
-        title="프로필 수정"
-        saveDisabled={!isValid || isLoading}
+        saveDisabled={!isValid || isLoading || isCheckingAccount}
         onSave={handleSave}
       />
 
       <Content>
         <AvatarWrapper>
           <AvatarContainer>
-            <Avatar
-              src={previewImage}
-              alt="프로필 이미지"
-              onError={(e) => { e.target.src = 'https://estapi.mandarin.weniv.co.kr/Ellipse.png'; }}
-            />
+            <Avatar src={previewImage} alt="프로필 이미지" size="88px" border />
             <AvatarEditBtn type="button" onClick={() => fileRef.current?.click()}>
-              <CameraIcon />
+              <ImageIcon />
             </AvatarEditBtn>
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleImageChange}
+            />
           </AvatarContainer>
         </AvatarWrapper>
 
         <Form onSubmit={handleSave}>
-          <Field>
-            <Label>사용자 이름 (2~10자)</Label>
-            <Input
-              type="text"
-              name="username"
-              value={form.username}
-              onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, username: true })}
-              onBlur={handleUsernameBlur}
-              $focused={focused.username}
-              $error={!!errors.username}
-            />
-            {errors.username && <ErrorText>{errors.username}</ErrorText>}
-          </Field>
+          <AuthInput
+            label="사용자 이름 (2~10자)"
+            type="text"
+            id="username"
+            name="username"
+            value={form.username}
+            onChange={handleFormChange}
+            onBlur={() => handleBlur('username')}
+            errorText={errors.username}
+            placeholder="2~10자 이내여야 합니다."
+          />
 
-          <Field>
-            <Label>계정 ID</Label>
-            <Input
+          <InputGroup>
+            <AuthInput
+              label="계정 ID"
               type="text"
+              id="accountname"
               name="accountname"
               value={form.accountname}
-              onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, accountname: true })}
+              onChange={handleFormChange}
               onBlur={handleAccountBlur}
-              $focused={focused.accountname}
-              $error={!!errors.accountname}
+              errorText={errors.accountname}
+              placeholder="영문, 숫자, 특수문자(.,_)만 사용 가능합니다."
             />
-            {errors.accountname && <ErrorText>{errors.accountname}</ErrorText>}
-            {accountValid && form.accountname !== user?.accountname && !errors.accountname && (
+            {isCheckingAccount && form.accountname !== user?.accountname && !errors.accountname && (
+              <InfoText>계정ID 확인 중...</InfoText>
+            )}
+            {accountValid && form.accountname !== user?.accountname && !errors.accountname && !isCheckingAccount && (
               <SuccessText>사용 가능한 계정ID입니다.</SuccessText>
             )}
-          </Field>
+          </InputGroup>
 
-          <Field>
-            <Label>소개</Label>
-            <Input
-              type="text"
-              name="intro"
-              value={form.intro}
-              onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, intro: true })}
-              onBlur={() => setFocused({ ...focused, intro: false })}
-              $focused={focused.intro}
-            />
-          </Field>
+          <AuthInput
+            label="소개"
+            type="text"
+            id="intro"
+            name="intro"
+            value={form.intro}
+            onChange={handleFormChange}
+            placeholder="자신과 판매할 상품에 대해 소개해 주세요."
+          />
         </Form>
       </Content>
     </Wrapper>
   );
 };
 
+export { EditProfile };
 export default EditProfile;
+
