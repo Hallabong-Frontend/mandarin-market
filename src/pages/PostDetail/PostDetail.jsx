@@ -216,12 +216,22 @@ const PostCommentBtn = styled.button`
 
 const MoreDots = () => <MoreDotsIconSvg width="18" height="18" />;
 
+/**
+ * Firestore Timestamp 또는 ISO 문자열을 상대 시간으로 변환
+ * @param {import('firebase/firestore').Timestamp|string|null} createdAt - Firestore Timestamp 또는 날짜 문자열
+ * @returns {string} 상대 시간 문자열 (예: '5분 전'), createdAt이 없으면 '방금'
+ */
 const toTimeAgo = (createdAt) => {
   if (!createdAt) return '방금';
   if (typeof createdAt?.toDate === 'function') return formatTimeAgo(createdAt.toDate().toISOString());
   return formatTimeAgo(createdAt);
 };
 
+/**
+ * 게시글 상세 페이지 컴포넌트
+ * 게시글 내용, 댓글/대댓글, 댓글 고정 기능을 포함
+ * @returns {JSX.Element}
+ */
 const PostDetail = () => {
   const { postId } = useParams();
   const navigate = useNavigate();
@@ -276,6 +286,12 @@ const PostDetail = () => {
     loadFirebaseData();
   }, [postId]);
 
+  /**
+   * 댓글 또는 대댓글 제출
+   * replyTarget이 있으면 대댓글, 없으면 일반 댓글로 처리
+   * @returns {Promise<void>}
+   * @throws {Error} API 또는 Firebase 호출 실패 시 토스트 에러 출력
+   */
   const handleSubmitComment = async () => {
     if (!commentText.trim() || isSubmitting) return;
     setIsSubmitting(true);
@@ -315,6 +331,13 @@ const PostDetail = () => {
     }
   };
 
+  /**
+   * 답글 달기 클릭 시 대상 댓글 설정 및 입력창 포커스
+   * @param {Object} comment - 대상 댓글 데이터
+   * @param {number} comment.id - 댓글 ID
+   * @param {Object} comment.author - 댓글 작성자 정보
+   * @returns {void}
+   */
   const handleReplyClick = (comment) => {
     setReplyTarget({ commentId: String(comment.id), authorUsername: comment.author.username });
     inputRef.current?.focus();
@@ -330,6 +353,10 @@ const PostDetail = () => {
     await toggleCommentLike(postId, commentId, user.accountname, hasLiked);
   };
 
+  /**
+   * 댓글 고정/해제 토글 (게시글 작성자만 가능)
+   * @returns {Promise<void>}
+   */
   const handlePinToggle = async () => {
     setShowCommentModal(false);
     const commentId = String(selectedItem?.data?.id);
@@ -342,6 +369,11 @@ const PostDetail = () => {
     }
   };
 
+  /**
+   * 대댓글 목록 펼치기/접기 토글
+   * @param {string} commentId - 대상 댓글 ID
+   * @returns {void}
+   */
   const toggleReplies = (commentId) => {
     setExpandedReplies((prev) => {
       const next = new Set(prev);
@@ -351,6 +383,11 @@ const PostDetail = () => {
     });
   };
 
+  /**
+   * 댓글/대댓글 더보기 버튼 클릭 시 모달 표시
+   * @param {{ type: 'comment'|'reply', data: Object }} item - 선택된 댓글 또는 대댓글
+   * @returns {void}
+   */
   const handleItemMore = (item) => {
     setSelectedItem(item);
     setShowCommentModal(true);
@@ -394,6 +431,11 @@ const PostDetail = () => {
         ]),
   ];
 
+  /**
+   * 댓글/대댓글 삭제 또는 신고 확인 처리
+   * @returns {Promise<void>}
+   * @throws {Error} 삭제/신고 API 호출 실패 시 토스트 에러 출력
+   */
   const handleAlertConfirm = async () => {
     setShowDeleteAlert(false);
     if (alertType === 'delete') {
