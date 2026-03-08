@@ -24,11 +24,23 @@ import {
 import { uploadImage } from '../api/auth';
 import { getImageUrl } from '../utils/format';
 
-// chatId: 두 accountname을 알파벳순 정렬 후 '|' 로 결합
-// accountname은 영문/숫자/._만 허용되므로 '|'는 충돌 없음
+/**
+ * 두 accountname으로 1:1 채팅방 ID를 생성한다. (알파벳순 정렬 후 '|' 결합)
+ *
+ * @param {string} a - 첫 번째 계정 ID
+ * @param {string} b - 두 번째 계정 ID
+ * @returns {string} 채팅방 ID
+ */
 export const getChatId = (a, b) => [a, b].sort().join('|');
 
-// 채팅방이 없으면 생성, 있으면 그대로 사용
+/**
+ * 1:1 채팅방이 없으면 생성하고, 있으면 그대로 사용한다.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {Object} myInfo - 내 유저 정보 (accountname, username, image)
+ * @param {Object} otherInfo - 상대방 유저 정보
+ * @returns {Promise<void>}
+ */
 export const getOrCreateChat = async (chatId, myInfo, otherInfo) => {
   const chatRef = doc(db, 'chats', chatId);
   const chatSnap = await getDoc(chatRef);
@@ -53,7 +65,15 @@ export const getOrCreateChat = async (chatId, myInfo, otherInfo) => {
   }
 };
 
-// 그룹 채팅방 생성 (자동 ID 부여, 그룹 제목/이미지 설정)
+/**
+ * 그룹 채팅방을 생성한다. 제목/이미지 미입력 시 참여자 이름으로 자동 설정.
+ *
+ * @param {Object} myInfo - 내 유저 정보
+ * @param {Object[]} selectedUsers - 초대할 유저 목록
+ * @param {string} groupTitle - 그룹 채팅방 제목
+ * @param {string} groupImage - 그룹 채팅방 이미지 URL
+ * @returns {Promise<string>} 생성된 채팅방 ID
+ */
 export const createGroupChat = async (myInfo, selectedUsers, groupTitle, groupImage) => {
   const chatRef = doc(collection(db, 'chats'));
 
@@ -94,7 +114,14 @@ export const createGroupChat = async (myInfo, selectedUsers, groupTitle, groupIm
   return chatRef.id;
 };
 
-// 채팅방에 새로운 대화 상대 초대
+/**
+ * 그룹 채팅방에 새 유저를 초대하고 시스템 메시지를 전송한다.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {Object[]} newUsers - 초대할 유저 목록
+ * @param {string} inviterAccountname - 초대한 유저의 계정 ID
+ * @returns {Promise<void>}
+ */
 export const inviteUsersToChat = async (chatId, newUsers, inviterAccountname) => {
   const chatRef = doc(db, 'chats', chatId);
   const snapshot = await getDoc(chatRef);
@@ -144,7 +171,14 @@ const sendSystemMessage = async (chatId, text, metadata = null) => {
   });
 };
 
-// 텍스트 메시지 전송
+/**
+ * 텍스트 메시지를 전송하고 채팅방 마지막 메시지를 업데이트한다.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {string} senderId - 보낸 사람 계정 ID
+ * @param {string} text - 메시지 내용
+ * @returns {Promise<void>}
+ */
 export const sendTextMessage = async (chatId, senderId, text) => {
   await addDoc(collection(db, 'chats', chatId, 'messages'), {
     senderId,
@@ -159,7 +193,14 @@ export const sendTextMessage = async (chatId, senderId, text) => {
   });
 };
 
-// 이미지 메시지 전송 (Mandarin API 업로드 후 URL 저장)
+/**
+ * 유저 프로필 카드를 메시지로 공유한다.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {string} senderId - 보낸 사람 계정 ID
+ * @param {Object} profile - 공유할 유저 프로필 (accountname, username, image, intro)
+ * @returns {Promise<void>}
+ */
 export const sendProfileMessage = async (chatId, senderId, profile) => {
   await addDoc(collection(db, 'chats', chatId, 'messages'), {
     senderId,
@@ -180,6 +221,14 @@ export const sendProfileMessage = async (chatId, senderId, profile) => {
   });
 };
 
+/**
+ * 이미지 파일을 업로드한 뒤 이미지 메시지를 전송한다.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {string} senderId - 보낸 사람 계정 ID
+ * @param {File} file - 전송할 이미지 파일
+ * @returns {Promise<void>}
+ */
 export const sendImageMessage = async (chatId, senderId, file) => {
   const info = await uploadImage(file);
   const imageUrl = getImageUrl(info.filename);
@@ -197,15 +246,26 @@ export const sendImageMessage = async (chatId, senderId, file) => {
   });
 };
 
-// 채팅방 입장 시 읽음 처리
+/**
+ * 채팅방 입장 시 해당 유저의 읽음 시간을 기록한다.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {string} accountname - 읽음 처리할 유저 계정 ID
+ * @returns {Promise<void>}
+ */
 export const markAsRead = async (chatId, accountname) => {
   await updateDoc(doc(db, 'chats', chatId), {
     [`readAt.${accountname}`]: serverTimestamp(),
   });
 };
 
-// 내 채팅 목록 실시간 구독 (lastMessageAt 내림차순)
-// 1:1 채팅에서 나간 경우 hiddenFor에 포함되므로 클라이언트에서 필터링
+/**
+ * 내 채팅 목록을 실시간으로 구독한다. 나간 채팅방은 클라이언트에서 필터링.
+ *
+ * @param {string} accountname - 내 계정 ID
+ * @param {Function} callback - 채팅 목록 배열을 받는 콜백
+ * @returns {Function} Firestore 구독 해제 함수
+ */
 export const subscribeToChats = (accountname, callback) => {
   const q = query(collection(db, 'chats'), where('participants', 'array-contains', accountname));
   return onSnapshot(q, (snapshot) => {
@@ -217,6 +277,13 @@ export const subscribeToChats = (accountname, callback) => {
   });
 };
 
+/**
+ * 프로필 변경 시 참여 중인 모든 채팅방의 participantInfo를 일괄 업데이트한다.
+ *
+ * @param {string} accountname - 계정 ID
+ * @param {Object} profile - 업데이트할 프로필 정보 (username, image)
+ * @returns {Promise<void>}
+ */
 export const syncParticipantProfileInChats = async (accountname, profile) => {
   if (!accountname) return;
   const chatsQuery = query(collection(db, 'chats'), where('participants', 'array-contains', accountname));
@@ -233,6 +300,13 @@ export const syncParticipantProfileInChats = async (accountname, profile) => {
   await batch.commit();
 };
 
+/**
+ * 프로필 변경 시 공유된 프로필 메시지의 정보를 일괄 업데이트한다.
+ *
+ * @param {string} accountname - 계정 ID
+ * @param {Object} profile - 업데이트할 프로필 정보 (username, image, intro)
+ * @returns {Promise<void>}
+ */
 export const syncSharedProfileMessagesInChats = async (accountname, profile) => {
   if (!accountname) return;
   const chatsQuery = query(collection(db, 'chats'), where('participants', 'array-contains', accountname));
@@ -259,9 +333,14 @@ export const syncSharedProfileMessagesInChats = async (accountname, profile) => 
   }
 };
 
-// 채팅방 나가기
-// - 그룹 채팅: participants와 participantInfo에서 제거 (다른 구성원 데이터 유지)
-// - 1:1 채팅: hiddenFor에 추가 (상대방 데이터 유지, 나만 목록에서 숨김)
+/**
+ * 채팅방을 나간다. 그룹은 참여자 목록에서 제거, 1:1은 hiddenFor에 추가(숨김 처리).
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {string} accountname - 나가는 유저 계정 ID
+ * @param {boolean} isGroupChat - 그룹 채팅 여부
+ * @returns {Promise<void>}
+ */
 export const leaveChat = async (chatId, accountname, isGroupChat) => {
   const chatRef = doc(db, 'chats', chatId);
   if (isGroupChat) {
@@ -286,7 +365,12 @@ export const leaveChat = async (chatId, accountname, isGroupChat) => {
   }
 };
 
-// 채팅방 및 하위 메시지 전체 삭제
+/**
+ * 채팅방과 하위 메시지를 모두 삭제한다.
+ *
+ * @param {string} chatId - 삭제할 채팅방 ID
+ * @returns {Promise<void>}
+ */
 export const deleteChat = async (chatId) => {
   const messagesRef = collection(db, 'chats', chatId, 'messages');
   const snapshot = await getDocs(messagesRef);
@@ -296,7 +380,14 @@ export const deleteChat = async (chatId) => {
   await deleteDoc(doc(db, 'chats', chatId));
 };
 
-// 메시지 수정
+/**
+ * 메시지 내용을 수정하고 채팅방 마지막 메시지 미리보기를 갱신한다.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {string} messageId - 수정할 메시지 ID
+ * @param {string} newText - 수정할 내용
+ * @returns {Promise<void>}
+ */
 export const editMessage = async (chatId, messageId, newText) => {
   await updateDoc(doc(db, 'chats', chatId, 'messages', messageId), { text: newText });
 
@@ -318,7 +409,13 @@ export const editMessage = async (chatId, messageId, newText) => {
   });
 };
 
-// 메시지 삭제
+/**
+ * 메시지를 삭제하고 채팅방 마지막 메시지 미리보기를 갱신한다.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {string} messageId - 삭제할 메시지 ID
+ * @returns {Promise<void>}
+ */
 export const deleteMessage = async (chatId, messageId) => {
   await deleteDoc(doc(db, 'chats', chatId, 'messages', messageId));
 
@@ -348,7 +445,15 @@ export const deleteMessage = async (chatId, messageId) => {
   });
 };
 
-// 상대방 별명 설정 (나만 보임, 빈 문자열이면 삭제)
+/**
+ * 상대방 별명을 설정한다. 나에게만 보이며, 빈 문자열이면 별명을 삭제한다.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {string} myAccountname - 내 계정 ID
+ * @param {string} targetAccountname - 별명을 설정할 상대 계정 ID
+ * @param {string} nickname - 별명 (빈 문자열이면 삭제)
+ * @returns {Promise<void>}
+ */
 export const setNickname = async (chatId, myAccountname, targetAccountname, nickname) => {
   const chatRef = doc(db, 'chats', chatId);
   if ((nickname || '').trim()) {
@@ -362,20 +467,41 @@ export const setNickname = async (chatId, myAccountname, targetAccountname, nick
   }
 };
 
-// 채팅방 테마 저장 (사용자별)
+/**
+ * 채팅방 테마를 저장한다. 유저별로 독립적으로 적용된다.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {string} accountname - 계정 ID
+ * @param {string} theme - 테마 이름
+ * @returns {Promise<void>}
+ */
 export const saveChatTheme = async (chatId, accountname, theme) => {
   await updateDoc(doc(db, 'chats', chatId), {
     [`themes.${accountname}`]: theme,
   });
 };
 
+/**
+ * 그룹 채팅방 제목을 수정한다.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {string} title - 새 제목
+ * @returns {Promise<void>}
+ */
 export const updateChatTitle = async (chatId, title) => {
   await updateDoc(doc(db, 'chats', chatId), {
     groupTitle: (title || '').trim(),
   });
 };
 
-// 스티커 메시지 전송
+/**
+ * 스티커 메시지를 전송한다.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {string} senderId - 보낸 사람 계정 ID
+ * @param {string} stickerKey - 스티커 식별 키
+ * @returns {Promise<void>}
+ */
 export const sendStickerMessage = async (chatId, senderId, stickerKey) => {
   await addDoc(collection(db, 'chats', chatId, 'messages'), {
     senderId,
@@ -391,7 +517,16 @@ export const sendStickerMessage = async (chatId, senderId, stickerKey) => {
   });
 };
 
-// 메시지 리액션 토글 (heart, thumbs_up, star)
+/**
+ * 메시지 리액션을 토글한다. 이미 반응한 경우 취소, 아니면 추가.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {string} messageId - 메시지 ID
+ * @param {string} accountname - 반응하는 유저 계정 ID
+ * @param {'heart'|'thumbs_up'|'star'} reactionType - 리액션 종류
+ * @param {boolean} hasReacted - 이미 반응했는지 여부
+ * @returns {Promise<void>}
+ */
 export const toggleReaction = async (chatId, messageId, accountname, reactionType, hasReacted) => {
   const msgRef = doc(db, 'chats', chatId, 'messages', messageId);
   await updateDoc(msgRef, {
@@ -399,7 +534,15 @@ export const toggleReaction = async (chatId, messageId, accountname, reactionTyp
   });
 };
 
-// 채팅방 메시지 실시간 구독 (최신 limitCount개, createdAt 오름차순)
+/**
+ * 채팅방 메시지를 실시간으로 구독한다. 최신 limitCount개를 오름차순으로 전달.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {Function} callback - 메시지 배열을 받는 콜백
+ * @param {Object} [joinTime] - 그룹 채팅 입장 시간 (입장 이전 메시지 제외)
+ * @param {number} [limitCount=40] - 가져올 최대 메시지 수
+ * @returns {Function} Firestore 구독 해제 함수
+ */
 export const subscribeToMessages = (chatId, callback, joinTime, limitCount = 40) => {
   const constraints = [
     orderBy('createdAt', 'asc'),
@@ -412,7 +555,15 @@ export const subscribeToMessages = (chatId, callback, joinTime, limitCount = 40)
   });
 };
 
-// 특정 시점 이전 메시지 조회 (위로 스크롤 시 이전 메시지 로드용)
+/**
+ * 특정 시점 이전의 메시지를 조회한다. 위로 스크롤 시 이전 메시지 로드에 사용.
+ *
+ * @param {string} chatId - 채팅방 ID
+ * @param {Object} beforeTimestamp - 이 시점 이전 메시지만 조회
+ * @param {number} [limitCount=30] - 가져올 최대 메시지 수
+ * @param {Object} [joinTime=null] - 그룹 채팅 입장 시간 필터
+ * @returns {Promise<{ messages: Object[], hasMore: boolean }>}
+ */
 export const fetchOlderMessages = async (chatId, beforeTimestamp, limitCount = 30, joinTime = null) => {
   const constraints = [
     orderBy('createdAt', 'asc'),
