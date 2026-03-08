@@ -211,6 +211,16 @@ const TimeText = styled.span`
   margin-top: 16px;
 `;
 
+/**
+ * 게시글 카드 컴포넌트
+ * 피드 및 게시글 상세 페이지에서 게시글 1개를 표시한다.
+ * 이미지 캐러셀(최대 3장), 좋아요, 댓글, 삭제/수정/신고 기능을 포함한다.
+ *
+ * @param {Object} props
+ * @param {Object} props.post - 게시글 데이터
+ * @param {Function} [props.onDelete] - 게시글 삭제 후 부모에게 알리는 콜백
+ * @returns {JSX.Element}
+ */
 const PostCard = ({ post, onDelete }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -252,6 +262,12 @@ const PostCard = ({ post, onDelete }) => {
     };
   }, []);
 
+  /**
+   * 좋아요 토글 핸들러
+   * 낙관적 업데이트로 UI를 즉시 반영하고, API 호출 실패 시 토스트를 표시한다.
+   *
+   * @returns {Promise<void>}
+   */
   const handleLike = async () => {
     try {
       if (liked) {
@@ -269,6 +285,9 @@ const PostCard = ({ post, onDelete }) => {
     }
   };
 
+  /**
+   * 더보기(⋮) 버튼 클릭 핸들러 - 바텀 모달을 열어 수정/삭제/신고 메뉴를 표시한다.
+   */
   const handleMore = () => setShowModal(true);
 
   const modalItems = isMyPost
@@ -297,6 +316,12 @@ const PostCard = ({ post, onDelete }) => {
         },
       ];
 
+  /**
+   * 삭제/신고 확인 알럿 핸들러
+   * alertType에 따라 게시글 삭제 또는 신고 API를 호출한다.
+   *
+   * @returns {Promise<void>}
+   */
   const handleAlertConfirm = async () => {
     setShowAlert(false);
     if (alertType === 'delete') {
@@ -317,14 +342,24 @@ const PostCard = ({ post, onDelete }) => {
     }
   };
 
+  /**
+   * 작성자 프로필 페이지로 이동한다.
+   */
   const handleGoProfile = () => {
     navigate(`/profile/${post.author?.accountname}`);
   };
 
+  /**
+   * 게시글 상세 페이지로 이동한다.
+   */
   const handleGoDetail = () => {
     navigate(`/post/${post.id}`);
   };
 
+  /**
+   * 이미지 스크롤 이벤트 핸들러
+   * 디바운스(90ms)로 현재 보이는 이미지 인덱스를 계산해 페이지네이션 점을 업데이트한다.
+   */
   const handleImageScroll = () => {
     const wrapper = imageWrapperRef.current;
     if (!wrapper) return;
@@ -340,6 +375,11 @@ const PostCard = ({ post, onDelete }) => {
     }, 90);
   };
 
+  /**
+   * 페이지네이션 점 클릭 핸들러 - 해당 인덱스의 이미지로 부드럽게 스크롤한다.
+   *
+   * @param {number} index - 이동할 이미지 인덱스
+   */
   const handleDotClick = (index) => {
     const wrapper = imageWrapperRef.current;
     if (!wrapper) return;
