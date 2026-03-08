@@ -17,6 +17,12 @@ const Button = styled.button`
   }
 `;
 
+/**
+ * 전체 너비 제출 버튼. disabled 시 연한 primary 색상으로 표시된다.
+ *
+ * @param {{ children: React.ReactNode, disabled: boolean, onClick: Function, type: string, className: string }} props
+ * @returns {JSX.Element}
+ */
 export default function SubmitButton({ children, disabled, onClick, type = 'submit', className }) {
   return (
     <Button type={type} disabled={disabled} onClick={onClick} className={className}>

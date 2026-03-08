@@ -56,6 +56,12 @@ const ModalButton = styled.button`
   }
 `;
 
+/**
+ * 중앙 확인 다이얼로그. 취소/확인 버튼과 danger 스타일을 지원한다.
+ *
+ * @param {{ isOpen: boolean, title: string, description: string, cancelText: string, confirmText: string, onCancel: Function, onConfirm: Function, danger: boolean }} props
+ * @returns {JSX.Element|null}
+ */
 const AlertModal = ({
   isOpen,
   title,

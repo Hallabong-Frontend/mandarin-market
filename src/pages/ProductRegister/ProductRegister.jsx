@@ -123,6 +123,12 @@ const AiDescLabel = styled.p`
 
 const UploadIcon = () => <UploadIconSvg width="32" height="32" />;
 
+/**
+ * 상품 등록·수정 페이지. AI 상품 설명 생성을 지원하며 isEdit으로 모드를 전환한다.
+ *
+ * @param {{ isEdit: boolean }} props
+ * @returns {JSX.Element}
+ */
 const ProductRegister = ({ isEdit = false }) => {
   const navigate = useNavigate();
   const { productId } = useParams();
@@ -208,6 +214,11 @@ const ProductRegister = ({ isEdit = false }) => {
     }
   }, [isEdit, productId, setValues]);
 
+  /**
+   * AI로 상품명과 설명을 생성하고 폼에 적용한다.
+   *
+   * @returns {Promise<void>}
+   */
   const doAiGenerate = async () => {
     setIsAiLoading(true);
     try {
@@ -225,6 +236,9 @@ const ProductRegister = ({ isEdit = false }) => {
     }
   };
 
+  /**
+   * 기존 입력값 덮어쓰기 여부를 확인하고 AI 생성을 시작한다. 이미지가 없으면 경고를 표시한다.
+   */
   const handleAiGenerate = () => {
     if (!previewImage) {
       alert('이미지를 먼저 업로드해 주세요.');
@@ -237,6 +251,11 @@ const ProductRegister = ({ isEdit = false }) => {
     doAiGenerate();
   };
 
+  /**
+   * 상품 이미지를 선택해 미리보기를 업데이트한다.
+   *
+   * @param {React.ChangeEvent<HTMLInputElement>} e
+   */
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -246,6 +265,12 @@ const ProductRegister = ({ isEdit = false }) => {
     reader.readAsDataURL(file);
   };
 
+  /**
+   * 이미지를 업로드하고 상품을 등록 또는 수정한다.
+   *
+   * @param {React.FormEvent} e
+   * @returns {Promise<void>}
+   */
   const handleSave = async (e) => {
     e.preventDefault();
     if (!isValid || isLoading) return;

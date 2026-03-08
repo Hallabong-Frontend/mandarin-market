@@ -70,6 +70,12 @@ const Message = styled.p`
   line-height: 1.4;
 `;
 
+/**
+ * 화면 상단에 토스트 알림 목록을 렌더링한다. 클릭 시 해당 토스트를 제거한다.
+ *
+ * @param {{ toasts: Array<{ id: string, message: string, type: 'success'|'error'|'info' }>, onRemove: Function }} props
+ * @returns {JSX.Element|null}
+ */
 const ToastContainer = ({ toasts, onRemove }) => {
   if (!toasts.length) return null;
 

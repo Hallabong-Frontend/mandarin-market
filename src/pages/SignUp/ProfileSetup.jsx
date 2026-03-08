@@ -78,6 +78,11 @@ const ButtonWrapper = styled.div`
 
 const ImageIcon = () => <ImageIconSvg width="18" height="18" />;
 
+/**
+ * 회원가입 프로필 설정 페이지. 이미지 업로드 → 회원가입 → 자동 로그인 순으로 처리한다.
+ *
+ * @returns {JSX.Element|null}
+ */
 const ProfileSetup = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -107,6 +112,11 @@ const ProfileSetup = () => {
     !errors.accountname &&
     !errors.general;
 
+  /**
+   * 폼 값을 업데이트한다. 계정 ID 변경 시 유효 상태를 초기화한다.
+   *
+   * @param {React.ChangeEvent<HTMLInputElement>} e
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
@@ -114,6 +124,9 @@ const ProfileSetup = () => {
     if (errors.general) setErrors({ ...errors, general: '' });
   };
 
+  /**
+   * 사용자 이름 포커스 해제 시 2~10자 길이를 검사한다.
+   */
   const handleUsernameBlur = () => {
     if (!form.username) return;
     if (form.username.length < 2 || form.username.length > 10) {
@@ -123,6 +136,11 @@ const ProfileSetup = () => {
     }
   };
 
+  /**
+   * 계정 ID 포커스 해제 시 형식 검사 후 서버에 중복 여부를 확인한다.
+   *
+   * @returns {Promise<void>}
+   */
   const handleAccountBlur = async () => {
     if (!form.accountname) return;
 
@@ -146,6 +164,11 @@ const ProfileSetup = () => {
     }
   };
 
+  /**
+   * 프로필 이미지를 선택해 미리보기를 업데이트한다.
+   *
+   * @param {React.ChangeEvent<HTMLInputElement>} e
+   */
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -155,6 +178,12 @@ const ProfileSetup = () => {
     reader.readAsDataURL(file);
   };
 
+  /**
+   * 이미지 업로드 → 회원가입 → 자동 로그인을 순차적으로 처리한다.
+   *
+   * @param {React.FormEvent} e
+   * @returns {Promise<void>}
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isValid || isLoading) return;

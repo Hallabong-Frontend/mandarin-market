@@ -186,6 +186,11 @@ const MemberCountBadge = styled.span`
   transform: translateY(2px);
 `;
 
+/**
+ * 실시간 1:1 및 그룹 채팅방. 메시지 구독·페이지네이션·테마·검색·리액션을 통합 관리한다.
+ *
+ * @returns {JSX.Element}
+ */
 const ChatRoom = () => {
   const { chatId } = useParams();
   const navigate = useNavigate();
@@ -341,7 +346,11 @@ const ChatRoom = () => {
     }
   }, [olderMessages]);
 
-  // 이전 메시지 불러오기
+  /**
+   * 이전 메시지를 추가로 불러온다. 스크롤 위치를 보존하며 페이지네이션을 처리한다.
+   *
+   * @returns {Promise<void>}
+   */
   const loadOlderMessages = async () => {
     if (isLoadingMore || !hasMore) return;
     const oldestTimestamp =
@@ -404,6 +413,9 @@ const ChatRoom = () => {
     prevLastMsgIdRef.current = lastMessage?.id ?? null;
   }, [realtimeMessages, user?.accountname]);
 
+  /**
+   * 미디어(이미지) 로드 완료 시 초기 스크롤이 맞지 않으면 맨 아래로 보정한다.
+   */
   const handleMediaLoad = () => {
     if (initialScrollDone.current) {
       window.scrollTo(0, document.documentElement.scrollHeight);
@@ -453,6 +465,11 @@ const ChatRoom = () => {
     setCurrentMatchIndex(0);
   }, [searchKeyword, displayMessages]);
 
+  /**
+   * 특정 메시지 ID 요소로 부드럽게 스크롤한다.
+   *
+   * @param {string} messageId - 이동할 메시지 ID
+   */
   const scrollToMessageById = (messageId) => {
     if (!messageId) return;
     const el = document.querySelector(`[data-message-id="${messageId}"]`);
@@ -460,6 +477,9 @@ const ChatRoom = () => {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
+  /**
+   * 검색 결과 다음 항목으로 이동한다.
+   */
   const goToNextMatch = () => {
     if (!searchMatchIds.length) return;
     const next = (currentMatchIndex + 1) % searchMatchIds.length;
@@ -467,6 +487,9 @@ const ChatRoom = () => {
     scrollToMessageById(searchMatchIds[next]);
   };
 
+  /**
+   * 검색 결과 이전 항목으로 이동한다.
+   */
   const goToPrevMatch = () => {
     if (!searchMatchIds.length) return;
     const prev = (currentMatchIndex - 1 + searchMatchIds.length) % searchMatchIds.length;
@@ -501,6 +524,13 @@ const ChatRoom = () => {
     return { ...info, accountname: otherAccountname };
   })();
 
+  /**
+   * 메시지 우클릭 컨텍스트 메뉴를 열고 위치를 설정한다.
+   *
+   * @param {React.MouseEvent} e - 마우스 이벤트
+   * @param {Object} msg - 대상 메시지 객체
+   * @param {boolean} isMine - 내 메시지 여부
+   */
   const handleContextMenu = (e, msg, isMine) => {
     e.preventDefault();
     const rect = e.currentTarget.getBoundingClientRect();
@@ -515,12 +545,21 @@ const ChatRoom = () => {
     });
   };
 
+  /**
+   * 선택한 메시지 수정 모드를 시작하고 컨텍스트 메뉴를 닫는다.
+   */
   const handleEditStart = () => {
     setEditingId(contextMenu.messageId);
     setEditText(contextMenu.text);
     setContextMenu((prev) => ({ ...prev, show: false }));
   };
 
+  /**
+   * 수정된 메시지를 저장한다. 빈 문자열이면 저장하지 않는다.
+   *
+   * @param {Object} msg - 수정 대상 메시지 객체
+   * @returns {Promise<void>}
+   */
   const confirmEdit = async (msg) => {
     const trimmed = editText.trim();
     if (!trimmed) return;
@@ -528,16 +567,28 @@ const ChatRoom = () => {
     setEditingId(null);
   };
 
+  /**
+   * 메시지 삭제 확인 모달을 열고 컨텍스트 메뉴를 닫는다.
+   */
   const handleDelete = () => {
     setContextMenu((prev) => ({ ...prev, show: false }));
     setShowDeleteMsgAlert(true);
   };
 
+  /**
+   * 메시지 텍스트를 클립보드에 복사한다.
+   */
   const handleCopy = () => {
     navigator.clipboard.writeText(contextMenu.text);
     setContextMenu((prev) => ({ ...prev, show: false }));
   };
 
+  /**
+   * 메시지에 리액션을 추가하거나 취소한다.
+   *
+   * @param {'heart'|'thumbs_up'|'star'} reactionType - 리액션 종류
+   * @returns {Promise<void>}
+   */
   const handleReaction = async (reactionType) => {
     if (!user?.accountname) return;
     const { messageId, reactions } = contextMenu;
@@ -546,11 +597,17 @@ const ChatRoom = () => {
     await toggleReaction(chatId, messageId, user.accountname, reactionType, hasReacted);
   };
 
+  /**
+   * 메시지 신고 확인 모달을 열고 컨텍스트 메뉴를 닫는다.
+   */
   const handleReport = () => {
     setContextMenu((prev) => ({ ...prev, show: false }));
     setShowReportAlert(true);
   };
 
+  /**
+   * 그룹채팅 이름 수정 패널을 열고 검색·메뉴 패널을 닫는다.
+   */
   const handleOpenRename = () => {
     if (!chatInfo?.isGroupChat) return;
     setShowSearchPanel(false);
@@ -561,6 +618,11 @@ const ChatRoom = () => {
     });
   };
 
+  /**
+   * 변경된 그룹채팅 이름을 저장한다. 기존 값과 같으면 저장하지 않는다.
+   *
+   * @returns {Promise<void>}
+   */
   const handleSaveRename = async () => {
     const trimmed = renameValue.trim();
     if (!trimmed) return;
@@ -572,12 +634,21 @@ const ChatRoom = () => {
     setShowRenamePanel(false);
   };
 
+  /**
+   * 메시지 검색 패널을 열고 이름 수정·메뉴 패널을 닫는다.
+   */
   const handleOpenSearch = () => {
     setShowModal(false);
     setShowRenamePanel(false);
     setShowSearchPanel(true);
   };
 
+  /**
+   * 채팅방 배경 이미지를 변경하고 테마 설정을 저장한다. null 전달 시 배경을 제거한다.
+   *
+   * @param {File|null} file - 업로드할 이미지 파일
+   * @returns {Promise<void>}
+   */
   const handleBgImageChange = async (file) => {
     if (!file) {
       setBgImage(null);
@@ -656,6 +727,9 @@ const ChatRoom = () => {
     chatInfo?.nicknames?.[user?.accountname]?.[otherParticipant?.accountname] || otherParticipant?.username || ''
   );
 
+  /**
+   * 채팅방 제목 클릭 시 그룹이면 구성원 패널을, 1:1이면 상대 프로필로 이동한다.
+   */
   const handleTitleClick = () => {
     if (chatInfo?.isGroupChat) {
       setShowMembersPanel(true);

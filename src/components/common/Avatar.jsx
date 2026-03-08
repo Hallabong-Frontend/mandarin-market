@@ -12,6 +12,12 @@ const StyledAvatar = styled.img`
   ${({ $border, theme }) => $border && `border: 1px solid ${theme.colors?.border || '#dbdbdb'};`}
 `;
 
+/**
+ * 원형 프로필 이미지. 이미지 로드 실패 시 기본 이미지로 대체된다.
+ *
+ * @param {{ src: string, alt: string, size: string, border: boolean, onClick: Function, className: string }} props
+ * @returns {JSX.Element}
+ */
 const Avatar = ({ src, alt = '프로필 이미지', size, border, onClick, className }) => {
   const handleImageError = (e) => {
     e.target.src = DEFAULT_PROFILE_IMAGE;

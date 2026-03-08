@@ -46,6 +46,12 @@ const ModalItem = styled.button`
   }
 `;
 
+/**
+ * 하단에서 슬라이드 업으로 열리는 액션 시트. 오버레이 클릭 시 닫힌다.
+ *
+ * @param {{ isOpen: boolean, onClose: Function, items: Array<{ label: string, onClick: Function, danger?: boolean }> }} props
+ * @returns {JSX.Element|null}
+ */
 const BottomModal = ({ isOpen, onClose, items = [] }) => {
   if (!isOpen) return null;
 

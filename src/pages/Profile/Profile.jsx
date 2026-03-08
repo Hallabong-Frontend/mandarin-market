@@ -27,6 +27,11 @@ const Wrapper = styled.div`
   padding-bottom: 70px;
 `;
 
+/**
+ * 유저 프로필 페이지. 내 프로필과 타인 프로필을 모두 처리하며 팔로우·상품·게시물을 관리한다.
+ *
+ * @returns {JSX.Element}
+ */
 const Profile = () => {
   const navigate = useNavigate();
   const { accountname } = useParams();
@@ -59,6 +64,11 @@ const Profile = () => {
 
   const productListRef = useRef(null);
 
+  /**
+   * 프로필·게시물·상품 데이터를 병렬로 불러온다. 실패 시 404로 이동한다.
+   *
+   * @returns {Promise<void>}
+   */
   const loadData = useCallback(async () => {
     try {
       const [profileData, postsData, productsData] = await Promise.all([
@@ -121,6 +131,11 @@ const Profile = () => {
     loadPrivacyEmail();
   }, [showPrivacyInfo, me?.email]);
 
+  /**
+   * 팔로우/언팔로우를 토글하고 팔로워 수를 즉시 반영한다.
+   *
+   * @returns {Promise<void>}
+   */
   const handleFollow = async () => {
     try {
       if (following) {
@@ -138,6 +153,11 @@ const Profile = () => {
     }
   };
 
+  /**
+   * 상품 클릭 시 내 상품이면 관리 모달을, 타인 상품이면 판매 링크를 연다.
+   *
+   * @param {Object} product - 클릭한 상품 객체
+   */
   const handleProductClick = (product) => {
     if (isMyProfile) {
       setSelectedProduct(product);
@@ -147,6 +167,11 @@ const Profile = () => {
     }
   };
 
+  /**
+   * 상대와의 1:1 채팅방을 생성하거나 기존 채팅방으로 이동한다.
+   *
+   * @returns {Promise<void>}
+   */
   const handleChat = async () => {
     const chatId = getChatId(me.accountname, profile.accountname);
     await getOrCreateChat(
@@ -157,6 +182,11 @@ const Profile = () => {
     navigate(`/chat/${chatId}`);
   };
 
+  /**
+   * 선택한 상품을 삭제하고 목록에서 제거한다.
+   *
+   * @returns {Promise<void>}
+   */
   const handleDeleteProduct = async () => {
     setShowDeleteProductAlert(false);
     try {
@@ -168,6 +198,12 @@ const Profile = () => {
     }
   };
 
+  /**
+   * 채팅 항목의 표시 제목과 이미지를 반환한다. 그룹채팅과 1:1을 구분 처리한다.
+   *
+   * @param {Object} chat - 채팅 객체
+   * @returns {{ title: string, image: string }}
+   */
   const getChatPreview = (chat) => {
     if (chat.isGroupChat) {
       return {
@@ -193,10 +229,19 @@ const Profile = () => {
     };
   });
 
+  /**
+   * 프로필 공유 채팅 모달을 연다.
+   */
   const handleShare = () => {
     setShowShareChatModal(true);
   };
 
+  /**
+   * 선택한 채팅방에 프로필 메시지를 전송하고 해당 채팅방으로 이동한다.
+   *
+   * @param {{ id: string }} chat - 선택한 채팅 객체
+   * @returns {Promise<void>}
+   */
   const handleShareToChat = async (chat) => {
     if (!chat?.id || !me?.accountname || !profile?.accountname) return;
     await sendProfileMessage(chat.id, me.accountname, {
@@ -209,6 +254,11 @@ const Profile = () => {
     navigate(`/chat/${chat.id}`);
   };
 
+  /**
+   * 상품 목록을 좌우로 스크롤한다.
+   *
+   * @param {1|-1} direction - 스크롤 방향 (1: 오른쪽, -1: 왼쪽)
+   */
   const scrollProductList = (direction) => {
     const listEl = productListRef.current;
     if (!listEl) return;

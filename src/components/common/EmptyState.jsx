@@ -16,6 +16,12 @@ const Text = styled.p`
   text-align: center;
 `;
 
+/**
+ * 목록이 비었을 때 표시하는 빈 상태 컴포넌트.
+ *
+ * @param {{ text: string, children: React.ReactNode, padding: string, height: string, fontSize: string, color: string }} props
+ * @returns {JSX.Element}
+ */
 const EmptyState = ({ text, children, padding, height, fontSize, color }) => {
   return (
     <Container $padding={padding} $height={height}>

@@ -41,6 +41,11 @@ const SignUpLink = styled.p`
   }
 `;
 
+/**
+ * 이메일 로그인 페이지. 로그인 성공 시 피드 페이지로 이동한다.
+ *
+ * @returns {JSX.Element}
+ */
 const LoginEmail = () => {
   const navigate = useNavigate();
   const { login: authLogin } = useAuth();
@@ -50,11 +55,22 @@ const LoginEmail = () => {
 
   const isActive = form.email.trim() && form.password.trim();
 
+  /**
+   * 폼 값을 업데이트하고 에러 메시지를 초기화한다.
+   *
+   * @param {React.ChangeEvent<HTMLInputElement>} e
+   */
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
   };
 
+  /**
+   * 이메일·비밀번호로 로그인하고 피드 페이지로 이동한다.
+   *
+   * @param {React.FormEvent} e
+   * @returns {Promise<void>}
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isActive || isLoading) return;

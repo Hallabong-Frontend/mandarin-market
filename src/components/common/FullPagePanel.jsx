@@ -40,6 +40,12 @@ const CloseBtn = styled.button`
   font-size: 18px;
 `;
 
+/**
+ * 전체 화면을 덮는 슬라이드 패널. 오버레이 클릭 또는 닫기 버튼으로 닫힌다.
+ *
+ * @param {{ isOpen: boolean, onClose: Function, title: string, children: React.ReactNode }} props
+ * @returns {JSX.Element|null}
+ */
 const FullPagePanel = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 

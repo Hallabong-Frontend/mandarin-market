@@ -72,6 +72,11 @@ const ChatIcon = ({ hasUnread }) => (
 const PostIcon = () => <PostIconSvg width="24" height="24" />;
 const ProfileIcon = () => <ProfileIconSvg width="24" height="24" />;
 
+/**
+ * 하단 고정 탭 네비게이션. 현재 경로에 따라 활성 탭을 강조하고, 읽지 않은 채팅이 있으면 점을 표시한다.
+ *
+ * @returns {JSX.Element}
+ */
 const BottomTabNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,6 +97,12 @@ const BottomTabNav = () => {
     return () => unsubscribe();
   }, [user?.accountname]);
 
+  /**
+   * 현재 경로가 해당 탭과 일치하는지 확인한다.
+   *
+   * @param {string} path - 탭 경로
+   * @returns {boolean}
+   */
   const isActive = (path) => {
     if (path === '/feed') return location.pathname === '/feed' || location.pathname === '/';
     if (path.startsWith('/profile/')) return location.pathname.startsWith('/profile/');

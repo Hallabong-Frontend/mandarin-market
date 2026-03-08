@@ -20,6 +20,12 @@ const SpinnerWrapper = styled.div`
   padding: ${({ $padding }) => $padding || '40px 0'};
 `;
 
+/**
+ * 로딩 중 표시하는 회전 링 스피너.
+ *
+ * @param {{ size: string, padding: string }} props
+ * @returns {JSX.Element}
+ */
 const Spinner = ({ size, padding }) => (
   <SpinnerWrapper $padding={padding}>
     <SpinnerRing $size={size} />

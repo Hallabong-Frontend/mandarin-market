@@ -38,6 +38,12 @@ const ErrorText = styled.span`
   color: ${({ theme }) => theme.colors.error};
 `;
 
+/**
+ * 하단 테두리 스타일 입력 필드. 에러 상태일 때 빨간 테두리와 에러 메시지를 표시한다.
+ *
+ * @param {{ label: string, type: string, id: string, name: string, value: string, onChange: Function, onBlur: Function, placeholder: string, errorText: string }} props
+ * @returns {JSX.Element}
+ */
 export default function AuthInput({
   label,
   type = 'text',

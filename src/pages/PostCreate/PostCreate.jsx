@@ -274,7 +274,12 @@ const PickerMessage = styled.p`
 
 const MAX_IMAGES = 3;
 
-/* content에서 텍스트와 상품 메타 배열을 분리 */
+/**
+ * 게시물 content에서 텍스트와 상품 메타 배열을 분리한다.
+ *
+ * @param {string} content - 게시물 콘텐츠 문자열
+ * @returns {[string, Array]} [텍스트, 상품 메타 배열]
+ */
 const parsePostContent = (content) => {
   if (!content) return ['', []];
   const sepIdx = content.indexOf(POST_PRODUCT_SEPARATOR);
@@ -286,7 +291,12 @@ const parsePostContent = (content) => {
   }
 };
 
-/* 절대 URL에서 상대 경로를 추출해 API에 저장 가능한 rawUrl을 반환 */
+/**
+ * 절대 URL에서 API 저장용 상대 경로를 추출한다. 이미 상대 경로면 그대로 반환한다.
+ *
+ * @param {string} url - 이미지 URL
+ * @returns {string} 상대 경로 URL
+ */
 const toRawUrl = (url) => {
   if (!url) return '';
   const prefix = IMAGE_BASE_URL + '/';
@@ -294,6 +304,12 @@ const toRawUrl = (url) => {
   return url;
 };
 
+/**
+ * 게시물 작성·수정 페이지. 텍스트·이미지·상품 첨부를 지원하며 isEdit으로 모드를 전환한다.
+ *
+ * @param {{ isEdit: boolean }} props
+ * @returns {JSX.Element}
+ */
 const PostCreate = ({ isEdit = false }) => {
   const navigate = useNavigate();
   const { postId } = useParams();
@@ -361,10 +377,20 @@ const PostCreate = ({ isEdit = false }) => {
 
   const isActive = content.trim() || images.length > 0;
 
+  /**
+   * 텍스트 입력값을 업데이트한다.
+   *
+   * @param {React.ChangeEvent<HTMLTextAreaElement>} e
+   */
   const handleContentChange = (e) => {
     setContent(e.target.value);
   };
 
+  /**
+   * 이미지 파일을 선택해 미리보기 목록에 추가한다. 최대 3장 제한을 적용한다.
+   *
+   * @param {React.ChangeEvent<HTMLInputElement>} e
+   */
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     const remaining = MAX_IMAGES - images.length;
@@ -386,15 +412,28 @@ const PostCreate = ({ isEdit = false }) => {
     e.target.value = '';
   };
 
+  /**
+   * 특정 인덱스 이미지 삭제 확인 모달을 연다.
+   *
+   * @param {number} index - 삭제할 이미지 인덱스
+   */
   const handleRemoveImage = (index) => {
     setRemoveTargetIndex(index);
   };
 
+  /**
+   * 확인된 이미지를 미리보기 목록에서 제거한다.
+   */
   const confirmRemoveImage = () => {
     setImages((prev) => prev.filter((_, i) => i !== removeTargetIndex));
     setRemoveTargetIndex(null);
   };
 
+  /**
+   * 내 상품 피커를 열고 상품 목록이 없으면 API에서 불러온다.
+   *
+   * @returns {Promise<void>}
+   */
   const handleOpenProductPicker = async () => {
     setIsProductPickerOpen(true);
     if (myProducts.length > 0) return;
@@ -410,6 +449,11 @@ const PostCreate = ({ isEdit = false }) => {
     }
   };
 
+  /**
+   * 선택한 상품을 이미지 목록에 상품 카드 형태로 추가한다.
+   *
+   * @param {Object} product - 선택한 상품 객체
+   */
   const handleSelectProduct = (product) => {
     if (images.length >= MAX_IMAGES) return;
     const rawUrl = toRawUrl(product.itemImage);
@@ -428,6 +472,11 @@ const PostCreate = ({ isEdit = false }) => {
     setIsProductPickerOpen(false);
   };
 
+  /**
+   * 이미지를 업로드하고 게시물을 등록 또는 수정한다.
+   *
+   * @returns {Promise<void>}
+   */
   const handleUpload = async () => {
     if (!isActive || isLoading) return;
     setIsLoading(true);

@@ -69,6 +69,11 @@ const InfoText = styled.p`
 
 const ImageIcon = () => <ImageIconSvg width="18" height="18" />;
 
+/**
+ * 프로필 편집 페이지. 사용자 이름·계정 ID·소개·이미지를 수정하고 Firebase 채팅 데이터를 동기화한다.
+ *
+ * @returns {JSX.Element}
+ */
 const EditProfile = () => {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
@@ -130,6 +135,13 @@ const EditProfile = () => {
         !!imageFile),
   });
 
+  /**
+   * 계정 ID 중복 여부를 API로 확인한다. 경쟁 조건 방지를 위해 시퀀스 번호를 사용한다.
+   *
+   * @param {string} accountname - 확인할 계정 ID
+   * @param {{ showChecking?: boolean }} [options]
+   * @returns {Promise<boolean>} 사용 가능하면 true
+   */
   const checkAccountAvailability = useCallback(
     async (accountname, options = {}) => {
       const { showChecking = true } = options;
@@ -163,6 +175,11 @@ const EditProfile = () => {
     [setFieldError],
   );
 
+  /**
+   * 폼 값을 업데이트한다. 계정 ID 변경 시 형식을 즉시 검사한다.
+   *
+   * @param {React.ChangeEvent<HTMLInputElement>} e
+   */
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     handleChange(e);
@@ -185,6 +202,11 @@ const EditProfile = () => {
     setAccountValid(false);
   };
 
+  /**
+   * 계정 ID 포커스 해제 시 형식 검사 후 서버에 중복 여부를 확인한다.
+   *
+   * @returns {Promise<void>}
+   */
   const handleAccountBlur = async () => {
     if (!form.accountname || form.accountname === user?.accountname) return;
 
@@ -213,6 +235,11 @@ const EditProfile = () => {
     return () => clearTimeout(timer);
   }, [form.accountname, user?.accountname, checkAccountAvailability]);
 
+  /**
+   * 프로필 이미지 파일을 선택해 미리보기를 업데이트한다.
+   *
+   * @param {React.ChangeEvent<HTMLInputElement>} e
+   */
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -222,6 +249,12 @@ const EditProfile = () => {
     reader.readAsDataURL(file);
   };
 
+  /**
+   * 프로필을 저장하고 Firebase 채팅 참여자 정보와 공유 메시지를 동기화한다.
+   *
+   * @param {React.FormEvent} e
+   * @returns {Promise<void>}
+   */
   const handleSave = async (e) => {
     e.preventDefault();
     if (!isValid || isLoading || isCheckingAccount) return;

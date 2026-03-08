@@ -82,6 +82,12 @@ const NotifTime = styled.p`
   margin-top: 2px;
 `;
 
+/**
+ * 내 게시물의 좋아요·댓글 알림을 전체 화면 패널로 보여준다.
+ *
+ * @param {{ isOpen: boolean, onClose: Function }} props
+ * @returns {JSX.Element}
+ */
 const NotificationPanel = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { user } = useAuth();

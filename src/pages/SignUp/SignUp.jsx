@@ -29,6 +29,11 @@ const ButtonWrapper = styled.div`
   margin-top: 14px;
 `;
 
+/**
+ * 이메일·비밀번호 입력 페이지. 유효성 검사 후 프로필 설정 페이지로 이동한다.
+ *
+ * @returns {JSX.Element}
+ */
 const SignUp = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
@@ -37,10 +42,20 @@ const SignUp = () => {
 
   const isValid = !errors.email && !errors.password && form.email && form.password;
 
+  /**
+   * 폼 값을 업데이트한다.
+   *
+   * @param {React.ChangeEvent<HTMLInputElement>} e
+   */
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  /**
+   * 이메일 포커스 해제 시 형식 검사 후 서버에 중복 여부를 확인한다.
+   *
+   * @returns {Promise<void>}
+   */
   const handleEmailBlur = async () => {
     if (!form.email) return;
 
@@ -64,6 +79,9 @@ const SignUp = () => {
     }
   };
 
+  /**
+   * 비밀번호 포커스 해제 시 6자 이상 여부를 확인한다.
+   */
   const handlePasswordBlur = () => {
     if (!form.password) return;
     if (!validatePassword(form.password)) {
@@ -73,6 +91,12 @@ const SignUp = () => {
     }
   };
 
+  /**
+   * 이메일·비밀번호 최종 검증 후 프로필 설정 페이지로 이동한다.
+   *
+   * @param {React.FormEvent} e
+   * @returns {Promise<void>}
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isValid || isChecking) return;

@@ -28,6 +28,12 @@ const Tab = styled.button`
   transition: ${({ theme }) => theme.transitions.base};
 `;
 
+/**
+ * 팔로워/팔로잉 목록 페이지. 탭 전환으로 두 목록을 모두 조회할 수 있다.
+ *
+ * @param {{ type: 'follower'|'following' }} props
+ * @returns {JSX.Element}
+ */
 const FollowList = ({ type = 'follower' }) => {
   const { accountname } = useParams();
   const [activeTab, setActiveTab] = useState(type);
@@ -35,6 +41,11 @@ const FollowList = ({ type = 'follower' }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    /**
+     * 활성 탭에 따라 팔로워 또는 팔로잉 목록을 불러온다.
+     *
+     * @returns {Promise<void>}
+     */
     const fetchList = async () => {
       setIsLoading(true);
       try {

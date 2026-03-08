@@ -37,6 +37,11 @@ const alertConfig = {
   },
 };
 
+/**
+ * 채팅 목록 페이지. 실시간 구독·고정·차단·검색·그룹채팅 생성을 지원한다.
+ *
+ * @returns {JSX.Element}
+ */
 const ChatList = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -74,6 +79,12 @@ const ChatList = () => {
     return () => unsubscribe();
   }, [user?.accountname]);
 
+  /**
+   * 채팅에서 상대방 정보를 반환한다. 닉네임이 있으면 username을 대체한다.
+   *
+   * @param {Object} chat - 채팅 객체
+   * @returns {{ username: string, image: string, accountname: string }}
+   */
   const getOtherParticipant = (chat) => {
     const otherAccountname = chat.participants?.find((p) => p !== user.accountname);
     const info = chat.participantInfo?.[otherAccountname] || { username: otherAccountname, image: '' };
@@ -81,6 +92,12 @@ const ChatList = () => {
     return { ...info, username: nickname || info.username };
   };
 
+  /**
+   * 해당 채팅에 읽지 않은 메시지가 있는지 확인한다.
+   *
+   * @param {Object} chat - 채팅 객체
+   * @returns {boolean}
+   */
   const isUnread = (chat) => {
     if (!chat.lastMessage || chat.lastSenderId === user.accountname) return false;
     const myReadAt = chat.readAt?.[user.accountname];
@@ -88,6 +105,11 @@ const ChatList = () => {
     return (chat.lastMessageAt?.toMillis() || 0) > myReadAt.toMillis();
   };
 
+  /**
+   * 채팅 고정을 토글하고 localStorage에 저장한다.
+   *
+   * @param {string} chatId - 고정할 채팅 ID
+   */
   const togglePin = (chatId) => {
     setPinnedChatIds((prev) => {
       const next = prev.includes(chatId) ? prev.filter((id) => id !== chatId) : [...prev, chatId];
@@ -97,6 +119,11 @@ const ChatList = () => {
     setPinSwipedChatId(null);
   };
 
+  /**
+   * 나가기/차단 알림 확인 시 해당 액션을 실행한다.
+   *
+   * @returns {Promise<void>}
+   */
   const handleAlertConfirm = async () => {
     if (!pendingAction) return;
     const { type, chatId } = pendingAction;
