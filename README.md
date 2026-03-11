@@ -673,6 +673,9 @@ VITE_FIREBASE_MEASUREMENT_ID=
 - **테스트 규모:** 진입 플로우, 홈 피드, 게시물 상세, 프로필, 채팅방 목록 및 상세 등 서비스 전 영역에 걸쳐 총 85개의 테스트 케이스(TC) 시나리오 수행
 - **테스트 결과:** 초기 테스트 기준 PASS 81건, FAIL 4건 발견 -> 발견된 모든 결함 사항에 대해 디버깅 및 트러블슈팅을 거쳐 100% 수정 완료
 
+<img width="1216" height="443" alt="QA" src="https://github.com/user-attachments/assets/be2c59db-14ef-429b-9d94-f7933d73cfe6" />
+
+
 **[전체 QA 테스트 케이스 결과 시트 보기 (PASS/FAIL 상세 내역)](https://docs.google.com/spreadsheets/d/1VaPGRgT-3vPIA6LUegBzEXE3lgx-Au1zTTVegeukJKs/edit?gid=1394061809#gid=1394061809)**
 
 ---
