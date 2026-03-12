@@ -628,7 +628,7 @@ VITE_FIREBASE_MEASUREMENT_ID=
 
 |                                                 최적화 전                                                  |                                                 최적화 후                                                  |
 | :--------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------: |
-| <img src="https://github.com/user-attachments/assets/9dde8eca-40c5-476f-96ff-f1c084e788cc" width="100%" /> | <img src="https://github.com/user-attachments/assets/f3e60f0f-19bc-42f3-8745-f8d842e1215a" width="100%" /> |
+| <img src="https://github.com/user-attachments/assets/9dde8eca-40c5-476f-96ff-f1c084e788cc" width="100%" /> | <img src="https://github.com/user-attachments/assets/6e75b9f8-dd0a-4555-80c1-10d32a8c4418" width="100%" /> |
 
 #### 성능 (Performance)
 
