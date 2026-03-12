@@ -96,7 +96,7 @@ const LoginMain = () => {
   return (
     <PageWrapper>
       <LogoSection>
-        <img src={symbolLogoW} alt="감귤마켓 심볼" width="120" />
+        <img src={symbolLogoW} alt="감귤마켓 심볼" width="120" height="120" />
       </LogoSection>
 
       <BottomSheet>
