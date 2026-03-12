@@ -643,7 +643,7 @@ VITE_FIREBASE_MEASUREMENT_ID=
 
 #### 접근성 (Accessibility)
 
-- <Routes>를 <main> 태그로 래핑하여 시맨틱 구조 개선 및 웹 표준 준수
+- Routes를 main 태그로 래핑하여 시맨틱 구조 개선 및 웹 표준 준수
 
 ---
 
