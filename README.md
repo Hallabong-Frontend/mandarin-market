@@ -668,7 +668,6 @@ export default api;
 ```
 
 **결과**
-
 - 토큰 처리 로직을 한 곳에서 관리
 - 인증 관련 중복 코드 감소
 - 만료 토큰 상태에서 사용자 경험 일관화
@@ -706,7 +705,6 @@ useEffect(() => {
 ```
 
 **결과**
-
 - 채팅방 이동 시 중복 listener 문제 완화
 - 불필요한 강제 스크롤 감소
 - 새 메시지 수신 경험 개선
@@ -732,7 +730,6 @@ const handleUpdateProfile = async () => {
 ```
 
 **결과**
-
 - 프로필 수정 후 즉시 변경 사항 반영
 - 사용자 데이터와 UI 상태 동기화
 - 프로필 페이지 UX 개선
@@ -754,7 +751,6 @@ const showTime = !prevMessage || formatMsgTime(prevMessage.createdAt) !== format
 ```
 
 **결과**
-
 - 채팅 UI 가독성 개선
 - 메신저 서비스와 유사한 메시지 표시 방식 구현
 
@@ -793,7 +789,6 @@ export const subscribeToMessages = (chatId, callback, joinTime, limitCount = 40)
 ```
 
 **결과**
-
 - 초기 렌더링 데이터 수를 통제하여, 대규모 채팅방의 진입 속도 및 렉(Lag) 현상 대폭 개선
 - 유저별 joinTime 동적 필터링으로 재초대 시 이전 대화가 보이는 프라이버시 버그 완벽 차단
 - 불필요한 과거 데이터 호출을 막아 Firebase 읽기(Read) 비용 및 프론트엔드 메모리 최적화 달성
@@ -802,8 +797,7 @@ export const subscribeToMessages = (chatId, callback, joinTime, limitCount = 40)
 
 ### 6. Header 컴포넌트 구조 확장성 문제
 
-**문제**
-
+**문제**  
 프로젝트에서 여러 화면에서 공통으로 사용하는 `Header` 컴포넌트를 구현하면서  
 초기에는 `type` 값을 기준으로 화면별 헤더 UI를 분기하는 방식으로 구조를 설계했습니다.
 
@@ -817,8 +811,7 @@ export const subscribeToMessages = (chatId, callback, joinTime, limitCount = 40)
 헤더 내부 요소 조합이 다양해지면서 문자열 기반 조건 분기 로직이 점점 복잡해지는 문제가 발생했습니다.
 또한 새로운 Header 유형이 추가될 때마다 분기 로직을 계속 수정해야 하는 구조적 한계가 있었습니다.
 
-**해결**
-
+**해결**  
 확장성과 재사용성을 개선하기 위해 Compound Component 패턴을 대안으로 검토했습니다.
 Header 내부 요소를 독립적인 컴포넌트로 분리하여 필요한 UI 요소를 조합하는 방식입니다.
 
